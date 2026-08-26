@@ -5,13 +5,16 @@ import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { colors, spacing, radius } from '../lib/theme'
 import DateField from '../components/DateField'
+import { formatDateRange } from '../lib/pregnancy'
 import { loadCareItems, loadLMP, scheduleItem, addCustomItem } from '../lib/carePlan'
 import { addAppointmentToCalendar } from '../lib/calendar'
 
 export default function AddItemScreen() {
   const router = useRouter()
-  const params = useLocalSearchParams<{ id?: string; title?: string; date?: string; time?: string; location?: string; prepNote?: string }>()
+  const params = useLocalSearchParams<{ id?: string; title?: string; date?: string; time?: string; location?: string; prepNote?: string; windowStart?: string; windowEnd?: string }>()
   const isEditing = !!params.id
+  const windowStart = params.windowStart ? new Date(params.windowStart) : null
+  const windowEnd = params.windowEnd ? new Date(params.windowEnd) : null
 
   const [title, setTitle] = useState(params.title ?? '')
   const [date, setDate] = useState<Date | null>(params.date ? new Date(params.date) : null)
@@ -20,6 +23,8 @@ export default function AddItemScreen() {
   const [prepNote, setPrepNote] = useState(params.prepNote ?? '')
   const [addToCalendar, setAddToCalendar] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  const outsideWindow = !!(date && windowStart && windowEnd && (date.getTime() < windowStart.getTime() || date.getTime() > windowEnd.getTime()))
 
   async function save() {
     if (!title.trim()) return Alert.alert('Add a title', 'What is this appointment for?')
@@ -95,6 +100,15 @@ export default function AddItemScreen() {
             </Field>
           </View>
 
+          {outsideWindow && windowStart && windowEnd && (
+            <View style={styles.warningRow}>
+              <Ionicons name="alert-circle-outline" size={16} color={colors.urgent} />
+              <Text style={styles.warningText}>
+                That's outside the recommended window ({formatDateRange(windowStart, windowEnd)}). Doctors' schedules don't always line up — you can still save it.
+              </Text>
+            </View>
+          )}
+
           <Field label="Doctor / location (optional)">
             <TextInput
               style={styles.input}
@@ -131,6 +145,10 @@ export default function AddItemScreen() {
             <Text style={styles.saveBtnText}>{isEditing ? 'Save' : 'Add to plan'}</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity style={styles.skipBtn} onPress={() => router.back()} disabled={saving}>
+            <Text style={styles.skipBtnText}>Skip for now</Text>
+          </TouchableOpacity>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -160,9 +178,14 @@ const styles = StyleSheet.create({
   input:      { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: colors.textPrimary },
   multiline:  { minHeight: 70, textAlignVertical: 'top' },
 
+  warningRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: colors.urgentBg, borderRadius: radius.sm, padding: spacing.sm, marginTop: -4, marginBottom: spacing.md },
+  warningText: { flex: 1, fontSize: 12.5, color: colors.urgent, lineHeight: 18 },
+
   calendarRow:     { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.md },
   calendarRowText: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
 
   saveBtn:     { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', marginTop: spacing.xs },
   saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  skipBtn:     { alignItems: 'center', paddingVertical: spacing.sm, marginTop: spacing.xs },
+  skipBtnText: { color: colors.textSecondary, fontWeight: '600', fontSize: 13.5 },
 })

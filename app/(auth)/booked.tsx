@@ -62,8 +62,10 @@ export default function BookedScreen() {
                         time: item.scheduledTimeLabel ?? '',
                         location: item.location ?? '',
                         prepNote: item.prepNote ?? '',
+                        windowStart: item.windowStart.toISOString(),
+                        windowEnd: item.windowEnd.toISOString(),
                       }
-                    : { id: item.id, title: item.title },
+                    : { id: item.id, title: item.title, windowStart: item.windowStart.toISOString(), windowEnd: item.windowEnd.toISOString() },
                 })}
               >
                 <Ionicons

@@ -140,6 +140,8 @@ export default function AppointmentDetailScreen() {
                     time: item.scheduledTimeLabel ?? '',
                     location: item.location ?? '',
                     prepNote: item.prepNote ?? '',
+                    windowStart: item.windowStart.toISOString(),
+                    windowEnd: item.windowEnd.toISOString(),
                   },
                 })}
               >
@@ -161,7 +163,7 @@ export default function AppointmentDetailScreen() {
               )}
               <TouchableOpacity
                 style={styles.primaryBtn}
-                onPress={() => router.push({ pathname: '/add-item', params: { id: item.id, title: item.title, prepNote: item.prepNote ?? '' } })}
+                onPress={() => router.push({ pathname: '/add-item', params: { id: item.id, title: item.title, prepNote: item.prepNote ?? '', windowStart: item.windowStart.toISOString(), windowEnd: item.windowEnd.toISOString() } })}
               >
                 <Text style={styles.primaryBtnText}>Schedule now</Text>
               </TouchableOpacity>

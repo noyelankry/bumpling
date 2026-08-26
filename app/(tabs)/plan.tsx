@@ -169,7 +169,7 @@ export default function PlanScreen() {
                       <TouchableOpacity
                         activeOpacity={0.85}
                         style={styles.scheduleBtn}
-                        onPress={() => router.push({ pathname: '/add-item', params: { id: item.id, title: item.title, prepNote: item.prepNote ?? '' } })}
+                        onPress={() => router.push({ pathname: '/add-item', params: { id: item.id, title: item.title, prepNote: item.prepNote ?? '', windowStart: item.windowStart.toISOString(), windowEnd: item.windowEnd.toISOString() } })}
                       >
                         <Text style={styles.scheduleBtnText}>Schedule now</Text>
                       </TouchableOpacity>
