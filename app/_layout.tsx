@@ -3,7 +3,7 @@ import { Slot, useRouter, useSegments } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
 import { DEV_BYPASS_KEY } from '../lib/devBypass'
-import { hasLMP } from '../lib/carePlan'
+import { hasLMP, hasCompletedCatchUp } from '../lib/carePlan'
 
 const ONBOARDING_KEY = 'bumpling_onboarding_seen'
 
@@ -38,12 +38,25 @@ export default function RootLayout() {
         const lmpSet = await hasLMP()
         if (cancelled) return
 
-        const onLmpScreen = (segments as string[]).join('/') === '(auth)/lmp'
+        const path = (segments as string[]).join('/')
+        const onLmpScreen = path === '(auth)/lmp'
+        const onCatchUpScreen = path === '(auth)/catch-up'
+
         if (!lmpSet && !onLmpScreen) {
           router.replace('/(auth)/lmp')
           return
         }
-        if (lmpSet && inAuth) router.replace('/(tabs)')
+
+        if (lmpSet) {
+          const catchUpDone = await hasCompletedCatchUp()
+          if (cancelled) return
+
+          if (!catchUpDone && !onCatchUpScreen) {
+            router.replace('/(auth)/catch-up')
+            return
+          }
+          if (catchUpDone && inAuth) router.replace('/(tabs)')
+        }
         return
       }
 

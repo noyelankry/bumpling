@@ -5,6 +5,7 @@ import { addDays, computeCareItems, type CareItem } from './pregnancy'
 
 const ITEMS_KEY = 'bumpling_care_items'
 const LMP_KEY = 'bumpling_lmp'
+const CATCHUP_KEY = 'bumpling_catchup_done'
 
 export const TODAY = new Date()
 
@@ -82,6 +83,14 @@ export async function saveLMP(date: Date): Promise<void> {
   await AsyncStorage.setItem(LMP_KEY, date.toISOString())
 }
 
+export async function hasCompletedCatchUp(): Promise<boolean> {
+  return (await AsyncStorage.getItem(CATCHUP_KEY)) === 'true'
+}
+
+export async function markCatchUpDone(): Promise<void> {
+  await AsyncStorage.setItem(CATCHUP_KEY, 'true')
+}
+
 /** Weeks-since-LMP for a plain calendar date — lets a user-picked date slot into the same window math. */
 function weeksSinceLMP(date: Date, lmp: Date): number {
   return (date.getTime() - lmp.getTime()) / (7 * 24 * 60 * 60 * 1000)
@@ -125,6 +134,14 @@ export async function addCustomItem(
 
 export async function markDone(items: CareItemWithCustom[], id: string): Promise<CareItemWithCustom[]> {
   const next = items.map(i => i.id === id ? { ...i, done: true, doneAt: new Date() } : i)
+  await saveCareItems(next)
+  return next
+}
+
+export async function markManyDone(items: CareItemWithCustom[], ids: string[]): Promise<CareItemWithCustom[]> {
+  const idSet = new Set(ids)
+  const doneAt = new Date()
+  const next = items.map(i => idSet.has(i.id) ? { ...i, done: true, doneAt } : i)
   await saveCareItems(next)
   return next
 }
