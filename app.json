@@ -32,7 +32,13 @@
     },
     "plugins": [
       "expo-router",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Bumpling uses your calendar to add appointments you've scheduled."
+        }
+      ]
     ]
   }
 }

@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { colors, spacing, radius } from '../../lib/theme'
 import { formatDate, formatDateRange, formatWeekday } from '../../lib/pregnancy'
 import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, removeItem, markDone, unmarkDone, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
+import { addAppointmentToCalendar } from '../../lib/calendar'
 
 export default function AppointmentDetailScreen() {
   const router = useRouter()
@@ -56,6 +57,21 @@ export default function AppointmentDetailScreen() {
   async function handleUnmarkDone() {
     const next = await unmarkDone(items, item!.id)
     setItems(next)
+  }
+
+  async function handleAddToCalendar() {
+    const result = await addAppointmentToCalendar({
+      title: item!.title,
+      date: item!.scheduledAt!,
+      timeLabel: item!.scheduledTimeLabel,
+      location: item!.location,
+      notes: item!.prepNote,
+    })
+    if (Platform.OS === 'web') {
+      window.alert(result.message)
+    } else {
+      Alert.alert(result.ok ? 'Added' : "Couldn't add to calendar", result.message)
+    }
   }
 
   return (
@@ -128,6 +144,9 @@ export default function AppointmentDetailScreen() {
                 })}
               >
                 <Text style={styles.secondaryBtnText}>Change details</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.secondaryBtn} onPress={handleAddToCalendar}>
+                <Text style={styles.secondaryBtnText}>Add to calendar</Text>
               </TouchableOpacity>
             </>
           ) : (

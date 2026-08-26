@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { colors, spacing, radius } from '../lib/theme'
 import DateField from '../components/DateField'
 import { loadCareItems, loadLMP, scheduleItem, addCustomItem } from '../lib/carePlan'
+import { addAppointmentToCalendar } from '../lib/calendar'
 
 export default function AddItemScreen() {
   const router = useRouter()
@@ -17,6 +18,7 @@ export default function AddItemScreen() {
   const [time, setTime] = useState(params.time ?? '')
   const [location, setLocation] = useState(params.location ?? '')
   const [prepNote, setPrepNote] = useState(params.prepNote ?? '')
+  const [addToCalendar, setAddToCalendar] = useState(false)
   const [saving, setSaving] = useState(false)
 
   async function save() {
@@ -32,6 +34,23 @@ export default function AddItemScreen() {
       const lmp = await loadLMP()
       await addCustomItem(current, lmp, details)
     }
+
+    if (addToCalendar) {
+      const result = await addAppointmentToCalendar({
+        title: details.title,
+        date: details.date,
+        timeLabel: details.timeLabel,
+        location: details.location,
+        notes: details.prepNote,
+      })
+      if (!result.ok) {
+        setSaving(false)
+        // The appointment itself is already saved — only the calendar step failed.
+        Alert.alert("Couldn't add to calendar", result.message, [{ text: 'OK', onPress: () => router.back() }])
+        return
+      }
+    }
+
     setSaving(false)
     router.back()
   }
@@ -97,6 +116,17 @@ export default function AddItemScreen() {
             />
           </Field>
 
+          {Platform.OS !== 'web' && (
+            <TouchableOpacity style={styles.calendarRow} onPress={() => setAddToCalendar(v => !v)} activeOpacity={0.7}>
+              <Ionicons
+                name={addToCalendar ? 'checkbox' : 'square-outline'}
+                size={20}
+                color={addToCalendar ? colors.primary : colors.textSecondary}
+              />
+              <Text style={styles.calendarRowText}>Add to my calendar</Text>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={save} disabled={saving}>
             <Text style={styles.saveBtnText}>{isEditing ? 'Save' : 'Add to plan'}</Text>
           </TouchableOpacity>
@@ -129,6 +159,9 @@ const styles = StyleSheet.create({
   fieldLabel: { fontSize: 13, fontWeight: '600', color: colors.textPrimary, marginBottom: 6 },
   input:      { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: colors.textPrimary },
   multiline:  { minHeight: 70, textAlignVertical: 'top' },
+
+  calendarRow:     { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.md },
+  calendarRowText: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
 
   saveBtn:     { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', marginTop: spacing.xs },
   saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
