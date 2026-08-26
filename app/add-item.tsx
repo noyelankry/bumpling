@@ -4,13 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { colors, spacing, radius } from '../lib/theme'
-import { loadCareItems, scheduleItem, addCustomItem } from '../lib/carePlan'
-
-function parseDate(input: string): Date | null {
-  const withYear = /\d{4}/.test(input) ? input : `${input} ${new Date().getFullYear()}`
-  const d = new Date(withYear)
-  return isNaN(d.getTime()) ? null : d
-}
+import { parseDate } from '../lib/pregnancy'
+import { loadCareItems, loadLMP, scheduleItem, addCustomItem } from '../lib/carePlan'
 
 export default function AddItemScreen() {
   const router = useRouter()
@@ -37,7 +32,8 @@ export default function AddItemScreen() {
     if (isEditing && params.id) {
       await scheduleItem(current, params.id, { title: title.trim(), date, timeLabel: time.trim() || undefined, prepNote: prepNote.trim() || undefined })
     } else {
-      await addCustomItem(current, { title: title.trim(), date, timeLabel: time.trim() || undefined, prepNote: prepNote.trim() || undefined })
+      const lmp = await loadLMP()
+      await addCustomItem(current, lmp, { title: title.trim(), date, timeLabel: time.trim() || undefined, prepNote: prepNote.trim() || undefined })
     }
     setSaving(false)
     router.back()

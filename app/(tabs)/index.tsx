@@ -6,7 +6,7 @@ import { useRouter, useFocusEffect } from 'expo-router'
 import { colors, spacing, radius } from '../../lib/theme'
 import { BabyMark, FetusIllustration, MoodFace } from '../../components/illustrations'
 import { gestationalAge, formatDate, formatDateRange } from '../../lib/pregnancy'
-import { TODAY, LMP, DEFAULT_CARE_ITEMS, loadCareItems, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
 
 type Mood = 'happy' | 'calm' | 'okay' | 'tired' | 'anxious'
 
@@ -27,12 +27,16 @@ const QUICK_LINKS = [
 export default function HomeScreen() {
   const [mood, setMood] = useState<Mood | null>(null)
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
+  const [lmp, setLmp] = useState<Date>(TODAY)
   const router = useRouter()
-  const age = gestationalAge(LMP, TODAY)
+  const age = gestationalAge(lmp, TODAY)
 
-  useFocusEffect(useCallback(() => { loadCareItems().then(setItems) }, []))
+  useFocusEffect(useCallback(() => {
+    loadCareItems().then(setItems)
+    loadLMP().then(setLmp)
+  }, []))
 
-  const computed = computeCareItems(items, LMP, TODAY)
+  const computed = computeCareItems(items, lmp, TODAY)
   const nextItem = computed
     .filter(i => i.status !== 'scheduled')
     .sort((a, b) => a.bookBy.getTime() - b.bookBy.getTime())[0]

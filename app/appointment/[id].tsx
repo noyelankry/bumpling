@@ -5,16 +5,20 @@ import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { colors, spacing, radius } from '../../lib/theme'
 import { formatDate, formatDateRange, formatWeekday } from '../../lib/pregnancy'
-import { TODAY, LMP, DEFAULT_CARE_ITEMS, loadCareItems, removeItem, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, removeItem, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
 
 export default function AppointmentDetailScreen() {
   const router = useRouter()
   const { id } = useLocalSearchParams<{ id: string }>()
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
+  const [lmp, setLmp] = useState<Date>(TODAY)
 
-  useFocusEffect(useCallback(() => { loadCareItems().then(setItems) }, []))
+  useFocusEffect(useCallback(() => {
+    loadCareItems().then(setItems)
+    loadLMP().then(setLmp)
+  }, []))
 
-  const computed = useMemo(() => computeCareItems(items, LMP, TODAY), [items])
+  const computed = useMemo(() => computeCareItems(items, lmp, TODAY), [items, lmp])
   const item = computed.find(i => i.id === id)
 
   if (!item) {

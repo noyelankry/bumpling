@@ -6,19 +6,32 @@ import { useRouter, useFocusEffect } from 'expo-router'
 import { colors, spacing, radius } from '../../lib/theme'
 import { BabyMark, BellyMark } from '../../components/illustrations'
 import { addDays, formatDate, formatDateRange, formatWeekday, gestationalAge } from '../../lib/pregnancy'
-import { TODAY, LMP, DEFAULT_CARE_ITEMS, loadCareItems, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
 
-const ITEM_META: Record<string, { chipBg: string; iconColor: string; trackColor: string; dateColor: string }> = {
-  nipt: { chipBg: colors.sage, iconColor: colors.sageDeep, trackColor: colors.sageDeep, dateColor: colors.textSecondary },
-  nt: { chipBg: colors.peach, iconColor: colors.primaryDark, trackColor: colors.sageDeep, dateColor: colors.textSecondary },
-  anatomy: { chipBg: colors.neutralChip, iconColor: colors.neutralChipDeep, trackColor: colors.peachDeep, dateColor: colors.urgent },
+// Grouped by trimester (derived from the item's own window) rather than a
+// per-id table, since the real test chart has 18+ items — a fixed table
+// wouldn't scale, and trimester grouping is a genuinely useful visual cue.
+const TRIMESTER_META = [
+  { chipBg: colors.peach, iconColor: colors.primaryDark, trackColor: colors.peachDeep },
+  { chipBg: colors.sage, iconColor: colors.sageDeep, trackColor: colors.sageDeep },
+  { chipBg: colors.lavender, iconColor: colors.lavenderDeep, trackColor: colors.lavenderDeep },
+] as const
+
+function metaFor(windowStartWeek: number) {
+  const trimester = windowStartWeek < 14 ? 0 : windowStartWeek < 28 ? 1 : 2
+  return TRIMESTER_META[trimester]
 }
-const DEFAULT_META = { chipBg: colors.lavender, iconColor: colors.lavenderDeep, trackColor: colors.lavenderDeep, dateColor: colors.textSecondary }
 
-function ItemIcon({ id, size, color }: { id: string; size: number; color: string }) {
-  if (id === 'nt') return <BellyMark size={size} color={color} />
-  if (id === 'anatomy') return <Ionicons name="body-outline" size={size} color={color} />
-  if (id === 'nipt') return <Ionicons name="flask-outline" size={size} color={color} />
+function ItemIcon({ title, size, color }: { title: string; size: number; color: string }) {
+  const t = title.toLowerCase()
+  if (t.includes('ultrasound') || t.includes('scan')) return <BellyMark size={size} color={color} />
+  if (t.includes('blood') || t.includes('urine') || t.includes('screening') || t.includes('biochem') || t.includes('gbs') || t.includes('glucose')) {
+    return <Ionicons name="flask-outline" size={size} color={color} />
+  }
+  if (t.includes('vaccine')) return <Ionicons name="shield-checkmark-outline" size={size} color={color} />
+  if (t.includes('doctor visit')) return <Ionicons name="medical-outline" size={size} color={color} />
+  if (t.includes('amniocentesis') || t.includes('sampling') || t.includes('echo')) return <Ionicons name="body-outline" size={size} color={color} />
+  if (t.includes('monitoring')) return <Ionicons name="time-outline" size={size} color={color} />
   return <Ionicons name="calendar-outline" size={size} color={color} />
 }
 
@@ -26,11 +39,15 @@ export default function PlanScreen() {
   const router = useRouter()
   const [trackWidth, setTrackWidth] = useState(0)
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
-  const age = useMemo(() => gestationalAge(LMP, TODAY), [])
+  const [lmp, setLmp] = useState<Date>(TODAY)
+  const age = useMemo(() => gestationalAge(lmp, TODAY), [lmp])
 
-  useFocusEffect(useCallback(() => { loadCareItems().then(setItems) }, []))
+  useFocusEffect(useCallback(() => {
+    loadCareItems().then(setItems)
+    loadLMP().then(setLmp)
+  }, []))
 
-  const computed = useMemo(() => computeCareItems(items, LMP, TODAY), [items])
+  const computed = useMemo(() => computeCareItems(items, lmp, TODAY), [items, lmp])
 
   const scheduled = computed.filter(i => i.status === 'scheduled')
   const upcoming = computed
@@ -69,6 +86,9 @@ export default function PlanScreen() {
     const db = b.status === 'scheduled' && b.scheduledAt ? b.scheduledAt : b.windowStart
     return da.getTime() - db.getTime()
   })
+  const TIMELINE_LIST_LIMIT = 6
+  const timelineVisible = timelineItems.slice(0, TIMELINE_LIST_LIMIT)
+  const timelineHiddenCount = timelineItems.length - timelineVisible.length
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -125,7 +145,7 @@ export default function PlanScreen() {
             <Text style={styles.sectionTitle}>What needs your attention</Text>
             <View style={{ gap: spacing.xs, marginBottom: spacing.lg }}>
               {attention.map(item => {
-                const meta = ITEM_META[item.id] ?? DEFAULT_META
+                const meta = metaFor(item.windowStartWeek)
                 return (
                   <TouchableOpacity
                     key={item.id}
@@ -134,7 +154,7 @@ export default function PlanScreen() {
                     onPress={() => router.push(`/appointment/${item.id}`)}
                   >
                     <View style={[styles.iconChip, { backgroundColor: meta.chipBg }]}>
-                      <ItemIcon id={item.id} size={20} color={meta.iconColor} />
+                      <ItemIcon title={item.title} size={20} color={meta.iconColor} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.attentionTitle}>{item.title}</Text>
@@ -170,7 +190,7 @@ export default function PlanScreen() {
             <Text style={styles.sectionTitle}>Next up</Text>
             <View style={styles.listCard}>
               {scheduled.map((item, i) => {
-                const meta = ITEM_META[item.id] ?? DEFAULT_META
+                const meta = metaFor(item.windowStartWeek)
                 return (
                   <TouchableOpacity
                     key={item.id}
@@ -179,7 +199,7 @@ export default function PlanScreen() {
                     onPress={() => router.push(`/appointment/${item.id}`)}
                   >
                     <View style={[styles.iconChip, { backgroundColor: meta.chipBg }]}>
-                      <ItemIcon id={item.id} size={18} color={meta.iconColor} />
+                      <ItemIcon title={item.title} size={18} color={meta.iconColor} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.attentionTitle}>{item.title}</Text>
@@ -209,7 +229,7 @@ export default function PlanScreen() {
           <View style={styles.trackWrap} onLayout={(e: LayoutChangeEvent) => setTrackWidth(e.nativeEvent.layout.width)}>
             <View style={styles.trackLine} />
             {trackWidth > 0 && computed.map(item => {
-              const meta = ITEM_META[item.id] ?? DEFAULT_META
+              const meta = metaFor(item.windowStartWeek)
               if (item.status === 'scheduled' && item.scheduledAt) {
                 return (
                   <View
@@ -233,8 +253,8 @@ export default function PlanScreen() {
           </View>
 
           <View style={styles.timelineList}>
-            {timelineItems.map(item => {
-              const meta = ITEM_META[item.id] ?? DEFAULT_META
+            {timelineVisible.map(item => {
+              const meta = metaFor(item.windowStartWeek)
               const isScheduled = item.status === 'scheduled' && item.scheduledAt
               return (
                 <View key={item.id} style={styles.timelineListRow}>
@@ -246,12 +266,15 @@ export default function PlanScreen() {
                     ]}
                   />
                   <Text style={styles.timelineListTitle}>{item.title}</Text>
-                  <Text style={[styles.timelineListDate, { color: isScheduled ? colors.textSecondary : meta.dateColor }]}>
+                  <Text style={styles.timelineListDate}>
                     {isScheduled ? formatDate(item.scheduledAt!) : formatDateRange(item.windowStart, item.windowEnd)}
                   </Text>
                 </View>
               )
             })}
+            {timelineHiddenCount > 0 && (
+              <Text style={styles.timelineMore}>+{timelineHiddenCount} more later</Text>
+            )}
           </View>
 
           <View style={styles.legendRow}>
@@ -339,7 +362,8 @@ const styles = StyleSheet.create({
   timelineSwatch:  { width: 10, height: 10, borderRadius: 3 },
   timelineSwatchDot: { borderRadius: 5 },
   timelineListTitle: { flex: 1, fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  timelineListDate:  { fontSize: 12, fontWeight: '600' },
+  timelineListDate:  { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
+  timelineMore:      { fontSize: 12, color: colors.textSecondary, fontStyle: 'italic', marginTop: 2 },
 
   legendRow:  { flexDirection: 'row', gap: spacing.md, paddingTop: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },

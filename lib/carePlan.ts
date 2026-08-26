@@ -3,36 +3,40 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { addDays, computeCareItems, type CareItem } from './pregnancy'
 
-const STORAGE_KEY = 'bumpling_care_items'
+const ITEMS_KEY = 'bumpling_care_items'
+const LMP_KEY = 'bumpling_lmp'
 
 export const TODAY = new Date()
-export const LMP = addDays(TODAY, -(11 * 7 + 3))
 
+// Used only until the user has entered their own LMP during onboarding.
+const FALLBACK_LMP = addDays(TODAY, -(11 * 7 + 3))
+
+// Sourced from the user's prenatal care schedule (first/second/third
+// trimester test chart). Window weeks are gestational weeks since LMP.
 export const DEFAULT_CARE_ITEMS: CareItem[] = [
-  {
-    id: 'nipt',
-    title: 'NIPT',
-    windowStartWeek: 10,
-    windowEndWeek: 13,
-    bookingLeadDays: 5,
-    scheduledAt: addDays(TODAY, 5),
-    scheduledTimeLabel: '10:30 AM',
-    prepNote: 'No fasting needed',
-  },
-  {
-    id: 'nt',
-    title: 'Nuchal translucency',
-    windowStartWeek: 11,
-    windowEndWeek: 14,
-    bookingLeadDays: 12,
-  },
-  {
-    id: 'anatomy',
-    title: 'Early anatomy scan',
-    windowStartWeek: 18,
-    windowEndWeek: 20,
-    bookingLeadDays: 10,
-  },
+  // First trimester
+  { id: 'first-ob-visit', title: 'First doctor visit', windowStartWeek: 0, windowEndWeek: 12, bookingLeadDays: 7 },
+  { id: 'first-blood-tests', title: 'Blood tests', windowStartWeek: 0, windowEndWeek: 12, bookingLeadDays: 7 },
+  { id: 'first-urine-tests', title: 'Urine tests', windowStartWeek: 0, windowEndWeek: 12, bookingLeadDays: 7 },
+  { id: 'first-ultrasound', title: 'First ultrasound', windowStartWeek: 7, windowEndWeek: 8, bookingLeadDays: 5 },
+  { id: 'genetic-screening', title: 'Genetic screening tests', windowStartWeek: 0, windowEndWeek: 13, bookingLeadDays: 7 },
+  { id: 'nuchal-translucency', title: 'Nuchal translucency scan', windowStartWeek: 11, windowEndWeek: 13, bookingLeadDays: 10 },
+  { id: 'first-tri-biochem', title: 'First trimester biochemical screening', windowStartWeek: 11, windowEndWeek: 13, bookingLeadDays: 10 },
+  { id: 'cvs', title: 'Chorionic villus sampling (CVS)', windowStartWeek: 11, windowEndWeek: 13, bookingLeadDays: 10 },
+
+  // Second trimester
+  { id: 'early-anatomy-scan', title: 'Early anatomy scan', windowStartWeek: 14, windowEndWeek: 16, bookingLeadDays: 10 },
+  { id: 'second-tri-biochem', title: 'Second trimester biochemical screening', windowStartWeek: 16, windowEndWeek: 19, bookingLeadDays: 10 },
+  { id: 'amniocentesis', title: 'Amniocentesis', windowStartWeek: 16, windowEndWeek: 20, bookingLeadDays: 10 },
+  { id: 'late-anatomy-scan', title: 'Late anatomy scan', windowStartWeek: 21, windowEndWeek: 24, bookingLeadDays: 10 },
+  { id: 'fetal-echo', title: 'Fetal echocardiogram', windowStartWeek: 19, windowEndWeek: 25, bookingLeadDays: 10 },
+  { id: 'glucose-test', title: 'Glucose tolerance test', windowStartWeek: 24, windowEndWeek: 28, bookingLeadDays: 10 },
+
+  // Third trimester
+  { id: 'pertussis-vaccine', title: 'Pertussis (Tdap) vaccine', windowStartWeek: 27, windowEndWeek: 36, bookingLeadDays: 14 },
+  { id: 'third-tri-ultrasound', title: 'Third trimester ultrasound', windowStartWeek: 30, windowEndWeek: 33, bookingLeadDays: 10 },
+  { id: 'gbs-culture', title: 'GBS culture (if indicated)', windowStartWeek: 35, windowEndWeek: 38, bookingLeadDays: 7 },
+  { id: 'post-term-monitoring', title: 'Post-term monitoring', windowStartWeek: 40, windowEndWeek: 41, bookingLeadDays: 3 },
 ]
 
 type StoredCareItem = Omit<CareItem, 'scheduledAt'> & { scheduledAt?: string; custom?: boolean }
@@ -48,7 +52,7 @@ function deserialize(stored: StoredCareItem[]): CareItemWithCustom[] {
 }
 
 export async function loadCareItems(): Promise<CareItemWithCustom[]> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY)
+  const raw = await AsyncStorage.getItem(ITEMS_KEY)
   if (!raw) return DEFAULT_CARE_ITEMS
   try {
     return deserialize(JSON.parse(raw))
@@ -58,12 +62,25 @@ export async function loadCareItems(): Promise<CareItemWithCustom[]> {
 }
 
 async function saveCareItems(items: CareItemWithCustom[]): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(serialize(items)))
+  await AsyncStorage.setItem(ITEMS_KEY, JSON.stringify(serialize(items)))
+}
+
+export async function loadLMP(): Promise<Date> {
+  const raw = await AsyncStorage.getItem(LMP_KEY)
+  return raw ? new Date(raw) : FALLBACK_LMP
+}
+
+export async function hasLMP(): Promise<boolean> {
+  return (await AsyncStorage.getItem(LMP_KEY)) != null
+}
+
+export async function saveLMP(date: Date): Promise<void> {
+  await AsyncStorage.setItem(LMP_KEY, date.toISOString())
 }
 
 /** Weeks-since-LMP for a plain calendar date — lets a user-picked date slot into the same window math. */
-function weeksSinceLMP(date: Date): number {
-  return (date.getTime() - LMP.getTime()) / (7 * 24 * 60 * 60 * 1000)
+function weeksSinceLMP(date: Date, lmp: Date): number {
+  return (date.getTime() - lmp.getTime()) / (7 * 24 * 60 * 60 * 1000)
 }
 
 export async function scheduleItem(
@@ -82,9 +99,10 @@ export async function scheduleItem(
 
 export async function addCustomItem(
   items: CareItemWithCustom[],
+  lmp: Date,
   details: { title: string; date: Date; timeLabel?: string; prepNote?: string }
 ): Promise<CareItemWithCustom[]> {
-  const week = weeksSinceLMP(details.date)
+  const week = weeksSinceLMP(details.date, lmp)
   const entry: CareItemWithCustom = {
     id: `custom-${Date.now()}`,
     title: details.title,
