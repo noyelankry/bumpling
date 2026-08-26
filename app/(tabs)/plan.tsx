@@ -1,28 +1,36 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, LayoutChangeEvent } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { colors, spacing, radius } from '../../lib/theme'
 import { BabyMark, BellyMark } from '../../components/illustrations'
 import { addDays, formatDate, formatDateRange, formatWeekday, gestationalAge } from '../../lib/pregnancy'
-import { TODAY, LMP, computedCareItems } from '../../lib/carePlan'
+import { TODAY, LMP, DEFAULT_CARE_ITEMS, loadCareItems, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
 
 const ITEM_META: Record<string, { chipBg: string; iconColor: string; trackColor: string; dateColor: string }> = {
   nipt: { chipBg: colors.sage, iconColor: colors.sageDeep, trackColor: colors.sageDeep, dateColor: colors.textSecondary },
   nt: { chipBg: colors.peach, iconColor: colors.primaryDark, trackColor: colors.sageDeep, dateColor: colors.textSecondary },
   anatomy: { chipBg: colors.neutralChip, iconColor: colors.neutralChipDeep, trackColor: colors.peachDeep, dateColor: colors.urgent },
 }
+const DEFAULT_META = { chipBg: colors.lavender, iconColor: colors.lavenderDeep, trackColor: colors.lavenderDeep, dateColor: colors.textSecondary }
 
 function ItemIcon({ id, size, color }: { id: string; size: number; color: string }) {
   if (id === 'nt') return <BellyMark size={size} color={color} />
   if (id === 'anatomy') return <Ionicons name="body-outline" size={size} color={color} />
-  return <Ionicons name="flask-outline" size={size} color={color} />
+  if (id === 'nipt') return <Ionicons name="flask-outline" size={size} color={color} />
+  return <Ionicons name="calendar-outline" size={size} color={color} />
 }
 
 export default function PlanScreen() {
+  const router = useRouter()
   const [trackWidth, setTrackWidth] = useState(0)
+  const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const age = useMemo(() => gestationalAge(LMP, TODAY), [])
-  const computed = computedCareItems
+
+  useFocusEffect(useCallback(() => { loadCareItems().then(setItems) }, []))
+
+  const computed = useMemo(() => computeCareItems(items, LMP, TODAY), [items])
 
   const scheduled = computed.filter(i => i.status === 'scheduled')
   const upcoming = computed
@@ -76,8 +84,15 @@ export default function PlanScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.title}>Pregnancy plan</Text>
-        <Text style={styles.subtitle}>We help you book the right tests on time.</Text>
+        <View style={styles.titleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Pregnancy plan</Text>
+            <Text style={styles.subtitle}>We help you book the right tests on time.</Text>
+          </View>
+          <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/add-item')} accessibilityLabel="Add appointment">
+            <Ionicons name="add" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.summaryCard}>
           <View style={styles.summaryTopRow}>
@@ -110,9 +125,14 @@ export default function PlanScreen() {
             <Text style={styles.sectionTitle}>What needs your attention</Text>
             <View style={{ gap: spacing.xs, marginBottom: spacing.lg }}>
               {attention.map(item => {
-                const meta = ITEM_META[item.id]
+                const meta = ITEM_META[item.id] ?? DEFAULT_META
                 return (
-                  <View key={item.id} style={styles.attentionCard}>
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.attentionCard}
+                    activeOpacity={0.7}
+                    onPress={() => router.push(`/appointment/${item.id}`)}
+                  >
                     <View style={[styles.iconChip, { backgroundColor: meta.chipBg }]}>
                       <ItemIcon id={item.id} size={20} color={meta.iconColor} />
                     </View>
@@ -126,7 +146,11 @@ export default function PlanScreen() {
                       )}
                     </View>
                     {item.status === 'actionable' ? (
-                      <TouchableOpacity activeOpacity={0.85} style={styles.scheduleBtn}>
+                      <TouchableOpacity
+                        activeOpacity={0.85}
+                        style={styles.scheduleBtn}
+                        onPress={() => router.push({ pathname: '/add-item', params: { id: item.id, title: item.title, prepNote: item.prepNote ?? '' } })}
+                      >
                         <Text style={styles.scheduleBtnText}>Schedule now</Text>
                       </TouchableOpacity>
                     ) : (
@@ -134,7 +158,7 @@ export default function PlanScreen() {
                         <Text style={styles.laterPillText}>We'll remind you later</Text>
                       </View>
                     )}
-                  </View>
+                  </TouchableOpacity>
                 )
               })}
             </View>
@@ -146,12 +170,13 @@ export default function PlanScreen() {
             <Text style={styles.sectionTitle}>Next up</Text>
             <View style={styles.listCard}>
               {scheduled.map((item, i) => {
-                const meta = ITEM_META[item.id]
+                const meta = ITEM_META[item.id] ?? DEFAULT_META
                 return (
                   <TouchableOpacity
                     key={item.id}
                     style={[styles.nextUpRow, i > 0 && styles.listRowDivider]}
                     activeOpacity={0.7}
+                    onPress={() => router.push(`/appointment/${item.id}`)}
                   >
                     <View style={[styles.iconChip, { backgroundColor: meta.chipBg }]}>
                       <ItemIcon id={item.id} size={18} color={meta.iconColor} />
@@ -159,7 +184,7 @@ export default function PlanScreen() {
                     <View style={{ flex: 1 }}>
                       <Text style={styles.attentionTitle}>{item.title}</Text>
                       <Text style={styles.attentionMeta}>
-                        {formatWeekday(item.scheduledAt!)} • {item.scheduledTimeLabel}
+                        {formatWeekday(item.scheduledAt!)}{item.scheduledTimeLabel ? ` • ${item.scheduledTimeLabel}` : ''}
                       </Text>
                       {!!item.prepNote && <Text style={styles.prepNote}>{item.prepNote}</Text>}
                     </View>
@@ -184,7 +209,7 @@ export default function PlanScreen() {
           <View style={styles.trackWrap} onLayout={(e: LayoutChangeEvent) => setTrackWidth(e.nativeEvent.layout.width)}>
             <View style={styles.trackLine} />
             {trackWidth > 0 && computed.map(item => {
-              const meta = ITEM_META[item.id]
+              const meta = ITEM_META[item.id] ?? DEFAULT_META
               if (item.status === 'scheduled' && item.scheduledAt) {
                 return (
                   <View
@@ -209,7 +234,7 @@ export default function PlanScreen() {
 
           <View style={styles.timelineList}>
             {timelineItems.map(item => {
-              const meta = ITEM_META[item.id]
+              const meta = ITEM_META[item.id] ?? DEFAULT_META
               const isScheduled = item.status === 'scheduled' && item.scheduledAt
               return (
                 <View key={item.id} style={styles.timelineListRow}>
@@ -265,8 +290,10 @@ const styles = StyleSheet.create({
   appName:    { fontSize: 24, fontWeight: '700', color: colors.textPrimary },
   bellBtn:    { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
 
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   title:    { fontSize: 28, fontWeight: '800', color: colors.textPrimary },
   subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 4, marginBottom: spacing.md },
+  addBtn:   { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
 
   summaryCard:      { backgroundColor: colors.sage, borderRadius: radius.xl, padding: spacing.md, marginBottom: spacing.lg },
   summaryTopRow:    { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },

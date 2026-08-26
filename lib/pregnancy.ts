@@ -42,7 +42,7 @@ export function gestationalAge(lmp: Date, today: Date) {
   return { weeks: Math.floor(totalDays / 7), days: totalDays % 7, totalDays }
 }
 
-export function computeCareItems(items: CareItem[], lmp: Date, today: Date): ComputedCareItem[] {
+export function computeCareItems<T extends CareItem>(items: T[], lmp: Date, today: Date): (T & Omit<ComputedCareItem, keyof CareItem>)[] {
   return items.map(item => {
     const windowStart = addWeeks(lmp, item.windowStartWeek)
     const windowEnd = addWeeks(lmp, item.windowEndWeek)

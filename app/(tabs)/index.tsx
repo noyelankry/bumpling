@@ -1,12 +1,12 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { colors, spacing, radius } from '../../lib/theme'
 import { BabyMark, FetusIllustration, MoodFace } from '../../components/illustrations'
 import { gestationalAge, formatDate, formatDateRange } from '../../lib/pregnancy'
-import { TODAY, LMP, computedCareItems } from '../../lib/carePlan'
+import { TODAY, LMP, DEFAULT_CARE_ITEMS, loadCareItems, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
 
 type Mood = 'happy' | 'calm' | 'okay' | 'tired' | 'anxious'
 
@@ -26,10 +26,14 @@ const QUICK_LINKS = [
 
 export default function HomeScreen() {
   const [mood, setMood] = useState<Mood | null>(null)
+  const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const router = useRouter()
   const age = gestationalAge(LMP, TODAY)
 
-  const nextItem = computedCareItems
+  useFocusEffect(useCallback(() => { loadCareItems().then(setItems) }, []))
+
+  const computed = computeCareItems(items, LMP, TODAY)
+  const nextItem = computed
     .filter(i => i.status !== 'scheduled')
     .sort((a, b) => a.bookBy.getTime() - b.bookBy.getTime())[0]
 
@@ -68,7 +72,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={styles.attentionCard}
               activeOpacity={0.7}
-              onPress={() => router.push('/(tabs)/plan')}
+              onPress={() => router.push(`/appointment/${nextItem.id}`)}
             >
               <View style={styles.iconChip}>
                 <Ionicons name="calendar-outline" size={20} color={colors.primaryDark} />
@@ -81,7 +85,7 @@ export default function HomeScreen() {
                     : `Target dates: ${formatDateRange(nextItem.windowStart, nextItem.windowEnd)}`}
                 </Text>
               </View>
-              <Text style={styles.viewPlan}>View plan</Text>
+              <Text style={styles.viewPlan}>View</Text>
               <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           </>
