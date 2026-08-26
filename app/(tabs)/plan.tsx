@@ -51,7 +51,7 @@ export default function PlanScreen() {
 
   const scheduled = computed.filter(i => i.status === 'scheduled')
   const upcoming = computed
-    .filter(i => i.status !== 'scheduled')
+    .filter(i => i.status !== 'scheduled' && i.status !== 'done')
     .sort((a, b) => a.bookBy.getTime() - b.bookBy.getTime())
   const attention = upcoming.slice(0, 2)
   const needsYouCount = attention.filter(i => i.status === 'actionable').length
@@ -230,6 +230,15 @@ export default function PlanScreen() {
             <View style={styles.trackLine} />
             {trackWidth > 0 && computed.map(item => {
               const meta = metaFor(item.windowStartWeek)
+              if (item.status === 'done') {
+                const mid = new Date((item.windowStart.getTime() + item.windowEnd.getTime()) / 2)
+                return (
+                  <View
+                    key={item.id}
+                    style={[styles.trackDoneDot, { left: `${pct(mid)}%` }]}
+                  />
+                )
+              }
               if (item.status === 'scheduled' && item.scheduledAt) {
                 return (
                   <View
@@ -256,18 +265,19 @@ export default function PlanScreen() {
             {timelineVisible.map(item => {
               const meta = metaFor(item.windowStartWeek)
               const isScheduled = item.status === 'scheduled' && item.scheduledAt
+              const isDone = item.status === 'done'
               return (
                 <View key={item.id} style={styles.timelineListRow}>
                   <View
                     style={[
                       styles.timelineSwatch,
-                      { backgroundColor: isScheduled ? colors.scheduledDot : meta.trackColor },
-                      isScheduled && styles.timelineSwatchDot,
+                      { backgroundColor: isDone ? colors.sageDeep : isScheduled ? colors.scheduledDot : meta.trackColor },
+                      (isScheduled || isDone) && styles.timelineSwatchDot,
                     ]}
                   />
-                  <Text style={styles.timelineListTitle}>{item.title}</Text>
-                  <Text style={styles.timelineListDate}>
-                    {isScheduled ? formatDate(item.scheduledAt!) : formatDateRange(item.windowStart, item.windowEnd)}
+                  <Text style={[styles.timelineListTitle, isDone && styles.timelineListTitleDone]}>{item.title}</Text>
+                  <Text style={[styles.timelineListDate, isDone && styles.timelineListDateDone]}>
+                    {isDone ? 'Done' : isScheduled ? formatDate(item.scheduledAt!) : formatDateRange(item.windowStart, item.windowEnd)}
                   </Text>
                 </View>
               )
@@ -285,6 +295,10 @@ export default function PlanScreen() {
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: colors.scheduledDot }]} />
               <Text style={styles.legendText}>Scheduled</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: colors.sageDeep }]} />
+              <Text style={styles.legendText}>Done</Text>
             </View>
           </View>
         </View>
@@ -356,13 +370,16 @@ const styles = StyleSheet.create({
   trackLine:  { height: 4, borderRadius: 2, backgroundColor: colors.border, width: '100%' },
   trackSegment: { position: 'absolute', height: 8, borderRadius: 4, opacity: 0.85 },
   trackDot: { position: 'absolute', width: 12, height: 12, borderRadius: 6, backgroundColor: colors.scheduledDot, marginLeft: -6, borderWidth: 2, borderColor: colors.card },
+  trackDoneDot: { position: 'absolute', width: 10, height: 10, borderRadius: 5, backgroundColor: colors.sageDeep, marginLeft: -5, borderWidth: 2, borderColor: colors.card },
 
   timelineList:    { gap: 8, marginBottom: spacing.sm },
   timelineListRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   timelineSwatch:  { width: 10, height: 10, borderRadius: 3 },
   timelineSwatchDot: { borderRadius: 5 },
   timelineListTitle: { flex: 1, fontSize: 13, fontWeight: '600', color: colors.textPrimary },
+  timelineListTitleDone: { color: colors.textSecondary, textDecorationLine: 'line-through' },
   timelineListDate:  { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
+  timelineListDateDone: { color: colors.sageDeep },
   timelineMore:      { fontSize: 12, color: colors.textSecondary, fontStyle: 'italic', marginTop: 2 },
 
   legendRow:  { flexDirection: 'row', gap: spacing.md, paddingTop: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border },

@@ -38,7 +38,7 @@ export default function HomeScreen() {
 
   const computed = computeCareItems(items, lmp, TODAY)
   const nextItem = computed
-    .filter(i => i.status !== 'scheduled')
+    .filter(i => i.status !== 'scheduled' && i.status !== 'done')
     .sort((a, b) => a.bookBy.getTime() - b.bookBy.getTime())[0]
 
   return (

@@ -39,16 +39,20 @@ export const DEFAULT_CARE_ITEMS: CareItem[] = [
   { id: 'post-term-monitoring', title: 'Post-term monitoring', windowStartWeek: 40, windowEndWeek: 41, bookingLeadDays: 3 },
 ]
 
-type StoredCareItem = Omit<CareItem, 'scheduledAt'> & { scheduledAt?: string; custom?: boolean }
+type StoredCareItem = Omit<CareItem, 'scheduledAt' | 'doneAt'> & { scheduledAt?: string; doneAt?: string; custom?: boolean }
 
 export type CareItemWithCustom = CareItem & { custom?: boolean }
 
 function serialize(items: CareItemWithCustom[]): StoredCareItem[] {
-  return items.map(i => ({ ...i, scheduledAt: i.scheduledAt?.toISOString() }))
+  return items.map(i => ({ ...i, scheduledAt: i.scheduledAt?.toISOString(), doneAt: i.doneAt?.toISOString() }))
 }
 
 function deserialize(stored: StoredCareItem[]): CareItemWithCustom[] {
-  return stored.map(i => ({ ...i, scheduledAt: i.scheduledAt ? new Date(i.scheduledAt) : undefined }))
+  return stored.map(i => ({
+    ...i,
+    scheduledAt: i.scheduledAt ? new Date(i.scheduledAt) : undefined,
+    doneAt: i.doneAt ? new Date(i.doneAt) : undefined,
+  }))
 }
 
 export async function loadCareItems(): Promise<CareItemWithCustom[]> {
@@ -115,6 +119,18 @@ export async function addCustomItem(
     custom: true,
   }
   const next = [...items, entry]
+  await saveCareItems(next)
+  return next
+}
+
+export async function markDone(items: CareItemWithCustom[], id: string): Promise<CareItemWithCustom[]> {
+  const next = items.map(i => i.id === id ? { ...i, done: true, doneAt: new Date() } : i)
+  await saveCareItems(next)
+  return next
+}
+
+export async function unmarkDone(items: CareItemWithCustom[], id: string): Promise<CareItemWithCustom[]> {
+  const next = items.map(i => i.id === id ? { ...i, done: false, doneAt: undefined } : i)
   await saveCareItems(next)
   return next
 }

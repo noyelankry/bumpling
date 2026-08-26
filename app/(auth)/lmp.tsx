@@ -53,6 +53,12 @@ export default function LmpScreen() {
             </View>
           )}
 
+          {preview && preview.weeks >= 13 && (
+            <Text style={styles.catchUpNote}>
+              Already had some of these tests done? You can mark them as done from your plan so we stop reminding you about them.
+            </Text>
+          )}
+
           <View style={styles.disclaimer}>
             <Ionicons name="information-circle-outline" size={16} color={colors.textSecondary} />
             <Text style={styles.disclaimerText}>
@@ -83,6 +89,7 @@ const styles = StyleSheet.create({
 
   previewCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: colors.sage, borderRadius: radius.md, padding: spacing.sm, marginTop: spacing.md },
   previewText: { fontSize: 13.5, fontWeight: '600', color: colors.textPrimary },
+  catchUpNote: { fontSize: 12, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.sm, lineHeight: 17 },
 
   disclaimer:     { flexDirection: 'row', gap: 8, alignItems: 'flex-start', marginTop: spacing.md },
   disclaimerText: { flex: 1, fontSize: 12, color: colors.textSecondary, lineHeight: 17 },

@@ -1,7 +1,7 @@
 // Gestational-age and care-window math: the app's "external brain" for
 // converting fuzzy pregnancy-week language into real calendar dates.
 
-export type CareStatus = 'scheduled' | 'actionable' | 'future'
+export type CareStatus = 'done' | 'scheduled' | 'actionable' | 'future'
 
 export type CareItem = {
   id: string
@@ -15,6 +15,10 @@ export type CareItem = {
   scheduledAt?: Date
   scheduledTimeLabel?: string
   prepNote?: string
+  /** Set when the user tells us they'd already done this before adding it to the app. */
+  done?: boolean
+  /** When they told us, not when the test itself happened — informational only. */
+  doneAt?: Date
 }
 
 export type ComputedCareItem = CareItem & {
@@ -49,7 +53,9 @@ export function computeCareItems<T extends CareItem>(items: T[], lmp: Date, toda
     const bookBy = addDays(windowEnd, -item.bookingLeadDays)
 
     let status: CareStatus
-    if (item.scheduledAt) {
+    if (item.done) {
+      status = 'done'
+    } else if (item.scheduledAt) {
       status = 'scheduled'
     } else {
       const daysUntilBookBy = Math.floor((bookBy.getTime() - today.getTime()) / DAY_MS)

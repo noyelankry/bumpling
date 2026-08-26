@@ -5,7 +5,7 @@ import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { colors, spacing, radius } from '../../lib/theme'
 import { formatDate, formatDateRange, formatWeekday } from '../../lib/pregnancy'
-import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, removeItem, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, removeItem, markDone, unmarkDone, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
 
 export default function AppointmentDetailScreen() {
   const router = useRouter()
@@ -48,29 +48,56 @@ export default function AppointmentDetailScreen() {
     ])
   }
 
+  async function handleMarkDone() {
+    const next = await markDone(items, item!.id)
+    setItems(next)
+  }
+
+  async function handleUnmarkDone() {
+    const next = await unmarkDone(items, item!.id)
+    setItems(next)
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <Header router={router} title={item.title} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        <View style={[styles.statusPill, item.status === 'actionable' && styles.statusPillUrgent]}>
+        <View style={[
+          styles.statusPill,
+          item.status === 'actionable' && styles.statusPillUrgent,
+          item.status === 'done' && styles.statusPillDone,
+        ]}>
           <Ionicons
-            name={item.status === 'scheduled' ? 'checkmark-circle-outline' : item.status === 'actionable' ? 'alert-circle-outline' : 'time-outline'}
+            name={item.status === 'done' ? 'checkmark-circle' : item.status === 'scheduled' ? 'checkmark-circle-outline' : item.status === 'actionable' ? 'alert-circle-outline' : 'time-outline'}
             size={14}
-            color={item.status === 'scheduled' ? colors.sageDeep : item.status === 'actionable' ? colors.urgent : colors.neutralChipDeep}
+            color={item.status === 'done' || item.status === 'scheduled' ? colors.sageDeep : item.status === 'actionable' ? colors.urgent : colors.neutralChipDeep}
           />
           <Text style={[
             styles.statusPillText,
             item.status === 'actionable' && styles.statusPillTextUrgent,
             item.status === 'future' && styles.statusPillTextNeutral,
           ]}>
-            {item.status === 'scheduled' ? 'Scheduled' : item.status === 'actionable' ? 'Needs scheduling' : "We'll remind you later"}
+            {item.status === 'done' ? 'Already done' : item.status === 'scheduled' ? 'Scheduled' : item.status === 'actionable' ? 'Needs scheduling' : "We'll remind you later"}
           </Text>
         </View>
 
         <View style={styles.card}>
-          {item.status === 'scheduled' && item.scheduledAt ? (
+          {item.status === 'done' ? (
+            <>
+              <View style={styles.doneRow}>
+                <Ionicons name="checkmark-circle" size={22} color={colors.sageDeep} />
+                <Text style={styles.bigDate}>You already did this</Text>
+              </View>
+              {!!item.doneAt && (
+                <Text style={styles.timeLabel}>Marked done on {formatDate(item.doneAt)}</Text>
+              )}
+              <TouchableOpacity style={styles.secondaryBtn} onPress={handleUnmarkDone}>
+                <Text style={styles.secondaryBtnText}>Undo</Text>
+              </TouchableOpacity>
+            </>
+          ) : item.status === 'scheduled' && item.scheduledAt ? (
             <>
               <Text style={styles.bigDate}>{formatWeekday(item.scheduledAt)}</Text>
               {!!item.scheduledTimeLabel && <Text style={styles.timeLabel}>{item.scheduledTimeLabel}</Text>}
@@ -111,6 +138,9 @@ export default function AppointmentDetailScreen() {
                 onPress={() => router.push({ pathname: '/add-item', params: { id: item.id, title: item.title, prepNote: item.prepNote ?? '' } })}
               >
                 <Text style={styles.primaryBtnText}>Schedule now</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.secondaryBtn} onPress={handleMarkDone}>
+                <Text style={styles.secondaryBtnText}>I already did this</Text>
               </TouchableOpacity>
             </>
           )}
@@ -162,12 +192,14 @@ const styles = StyleSheet.create({
 
   statusPill:       { flexDirection: 'row', alignSelf: 'flex-start', alignItems: 'center', gap: 4, backgroundColor: colors.sage, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill, marginBottom: spacing.md },
   statusPillUrgent: { backgroundColor: colors.urgentBg },
+  statusPillDone:   { backgroundColor: colors.sage },
   statusPillText:   { fontSize: 12, fontWeight: '700', color: colors.sageDeep },
   statusPillTextUrgent: { color: colors.urgent },
   statusPillTextNeutral: { color: colors.neutralChipDeep },
 
   card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.lg },
 
+  doneRow:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
   bigDate:   { fontSize: 20, fontWeight: '800', color: colors.textPrimary },
   timeLabel: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
   prepRow:   { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: colors.sage + '55', borderRadius: radius.sm, padding: spacing.sm, marginTop: spacing.sm },
