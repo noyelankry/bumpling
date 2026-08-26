@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
-import { LinearGradient } from 'expo-linear-gradient'
+import { useRouter } from 'expo-router'
 import { colors, spacing, radius } from '../../lib/theme'
-import { BabyMark, BellyMark, FetusIllustration, MoodFace } from '../../components/illustrations'
+import { BabyMark, FetusIllustration, MoodFace } from '../../components/illustrations'
+import { gestationalAge, formatDate, formatDateRange } from '../../lib/pregnancy'
+import { TODAY, LMP, computedCareItems } from '../../lib/carePlan'
 
 type Mood = 'happy' | 'calm' | 'okay' | 'tired' | 'anxious'
 
@@ -16,19 +18,20 @@ const MOODS: { key: Mood; label: string; color: string }[] = [
   { key: 'anxious', label: 'Anxious', color: colors.moodAnxious },
 ]
 
-const UPCOMING = [
-  { id: 'nipt', title: 'NIPT', date: 'May 22, 2025', icon: 'flask-outline' as const, chip: colors.lavender, iconColor: colors.lavenderDeep },
-  { id: 'nuchal', title: 'Nuchal translucency', date: 'May 29, 2025', icon: 'gift-outline' as const, chip: colors.cream, iconColor: colors.creamDeep },
-]
-
 const QUICK_LINKS = [
-  { id: 'weekly', title: 'Weekly\npregnancy', bg: colors.peach, kind: 'belly' as const },
-  { id: 'health', title: 'Health &\nwellness', bg: colors.sage, kind: 'leaf' as const },
-  { id: 'appointments', title: 'Appointments\n& tests', bg: colors.lavender, kind: 'calendar' as const },
-]
+  { id: 'braindump', title: 'Brain\ndump', bg: colors.cream, kind: 'bulb' as const, route: '/brain-dump' },
+  { id: 'health', title: 'Health &\nwellness', bg: colors.sage, kind: 'leaf' as const, route: '/(tabs)/health' },
+  { id: 'appointments', title: 'Appointments\n& tests', bg: colors.lavender, kind: 'calendar' as const, route: '/(tabs)/plan' },
+] as const
 
 export default function HomeScreen() {
   const [mood, setMood] = useState<Mood | null>(null)
+  const router = useRouter()
+  const age = gestationalAge(LMP, TODAY)
+
+  const nextItem = computedCareItems
+    .filter(i => i.status !== 'scheduled')
+    .sort((a, b) => a.bookBy.getTime() - b.bookBy.getTime())[0]
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -46,7 +49,7 @@ export default function HomeScreen() {
 
         <View style={styles.weekCard}>
           <View style={styles.weekCardLeft}>
-            <Text style={styles.weekTitle}>Week 11 • Day 3</Text>
+            <Text style={styles.weekTitle}>Week {age.weeks} • Day {age.days}</Text>
             <Text style={styles.weekSubtitle}>Your little bumpling is growing beautifully this week.</Text>
             <View style={styles.divider} />
             <View style={styles.tipRow}>
@@ -55,42 +58,34 @@ export default function HomeScreen() {
                 This week: tiny fingers are forming and movement is increasing.
               </Text>
             </View>
-            <TouchableOpacity activeOpacity={0.85}>
-              <LinearGradient
-                colors={[colors.primary, colors.primaryDark]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.weekBtn}
-              >
-                <Text style={styles.weekBtnText}>See this week</Text>
-              </LinearGradient>
-            </TouchableOpacity>
           </View>
           <FetusIllustration size={108} />
         </View>
 
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Coming up</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeAll}>See all</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.listCard}>
-          {UPCOMING.map((item, i) => (
+        {nextItem && (
+          <>
+            <Text style={styles.sectionTitle}>Needs your attention</Text>
             <TouchableOpacity
-              key={item.id}
-              style={[styles.listRow, i > 0 && styles.listRowDivider]}
+              style={styles.attentionCard}
               activeOpacity={0.7}
+              onPress={() => router.push('/(tabs)/plan')}
             >
-              <View style={[styles.iconChip, { backgroundColor: item.chip }]}>
-                <Ionicons name={item.icon} size={18} color={item.iconColor} />
+              <View style={styles.iconChip}>
+                <Ionicons name="calendar-outline" size={20} color={colors.primaryDark} />
               </View>
-              <Text style={styles.listRowTitle}>{item.title}</Text>
-              <Text style={styles.listRowDate}>{item.date}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.attentionTitle}>{nextItem.title}</Text>
+                <Text style={styles.attentionMeta}>
+                  {nextItem.status === 'actionable'
+                    ? `Book by ${formatDate(nextItem.bookBy)}`
+                    : `Target dates: ${formatDateRange(nextItem.windowStart, nextItem.windowEnd)}`}
+                </Text>
+              </View>
+              <Text style={styles.viewPlan}>View plan</Text>
               <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
-          ))}
-        </View>
+          </>
+        )}
 
         <Text style={[styles.sectionTitle, styles.moodHeading]}>How are you feeling today?</Text>
         <View style={styles.moodRow}>
@@ -112,8 +107,13 @@ export default function HomeScreen() {
 
         <View style={styles.quickRow}>
           {QUICK_LINKS.map(q => (
-            <TouchableOpacity key={q.id} style={[styles.quickCard, { backgroundColor: q.bg }]} activeOpacity={0.8}>
-              {q.kind === 'belly' && <BellyMark size={22} color={colors.primaryDark} />}
+            <TouchableOpacity
+              key={q.id}
+              style={[styles.quickCard, { backgroundColor: q.bg }]}
+              activeOpacity={0.8}
+              onPress={() => router.push(q.route as any)}
+            >
+              {q.kind === 'bulb' && <Ionicons name="bulb-outline" size={22} color={colors.creamDeep} />}
               {q.kind === 'leaf' && <Ionicons name="leaf-outline" size={22} color={colors.sageDeep} />}
               {q.kind === 'calendar' && <Ionicons name="calendar-outline" size={22} color={colors.lavenderDeep} />}
               <View style={styles.quickCardBottom}>
@@ -143,21 +143,16 @@ const styles = StyleSheet.create({
   weekTitle:    { fontSize: 22, fontWeight: '800', color: colors.textPrimary },
   weekSubtitle: { fontSize: 13.5, color: colors.textPrimary, opacity: 0.7, marginTop: 6, lineHeight: 19 },
   divider:      { width: 36, height: 3, borderRadius: 2, backgroundColor: colors.primary, marginVertical: spacing.sm },
-  tipRow:       { flexDirection: 'row', gap: 6, marginBottom: spacing.sm },
+  tipRow:       { flexDirection: 'row', gap: 6 },
   tipText:      { flex: 1, fontSize: 12.5, color: colors.textPrimary, opacity: 0.75, lineHeight: 18 },
-  weekBtn:      { alignSelf: 'flex-start', paddingHorizontal: spacing.md, paddingVertical: 10, borderRadius: radius.pill },
-  weekBtnText:  { color: colors.textOnPrimary, fontWeight: '700', fontSize: 13.5 },
 
-  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs },
-  sectionTitle:     { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
-  seeAll:           { fontSize: 13, fontWeight: '600', color: colors.primary },
+  sectionTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs },
 
-  listCard:        { backgroundColor: colors.card, borderRadius: radius.lg, marginBottom: spacing.lg, overflow: 'hidden' },
-  listRow:          { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.sm },
-  listRowDivider:   { borderTopWidth: 1, borderTopColor: colors.border },
-  iconChip:         { width: 38, height: 38, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
-  listRowTitle:     { flex: 1, fontSize: 15, fontWeight: '600', color: colors.textPrimary },
-  listRowDate:      { fontSize: 12.5, color: colors.textSecondary, marginRight: 2 },
+  attentionCard:  { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg },
+  iconChip:       { width: 40, height: 40, borderRadius: radius.sm, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center' },
+  attentionTitle: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
+  attentionMeta:  { fontSize: 12.5, color: colors.textSecondary, marginTop: 2 },
+  viewPlan:       { fontSize: 12.5, fontWeight: '600', color: colors.primary },
 
   moodHeading: { marginBottom: spacing.sm },
   moodRow:     { flexDirection: 'row', gap: 8, marginBottom: spacing.lg },

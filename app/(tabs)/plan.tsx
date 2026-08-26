@@ -4,49 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { colors, spacing, radius } from '../../lib/theme'
 import { BabyMark, BellyMark } from '../../components/illustrations'
-import {
-  addDays,
-  computeCareItems,
-  formatDate,
-  formatDateRange,
-  formatWeekday,
-  gestationalAge,
-  type CareItem,
-  type ComputedCareItem,
-} from '../../lib/pregnancy'
-
-// Seeded from "today", so gestational age and every window below stay
-// accurate no matter when the app is opened — the user never converts
-// "week 12" into a real date herself.
-const TODAY = new Date()
-const LMP = addDays(TODAY, -(11 * 7 + 3))
-
-const CARE_ITEMS: CareItem[] = [
-  {
-    id: 'nipt',
-    title: 'NIPT',
-    windowStartWeek: 10,
-    windowEndWeek: 13,
-    bookingLeadDays: 5,
-    scheduledAt: addDays(TODAY, 5),
-    scheduledTimeLabel: '10:30 AM',
-    prepNote: 'No fasting needed',
-  },
-  {
-    id: 'nt',
-    title: 'Nuchal translucency',
-    windowStartWeek: 11,
-    windowEndWeek: 14,
-    bookingLeadDays: 12,
-  },
-  {
-    id: 'anatomy',
-    title: 'Early anatomy scan',
-    windowStartWeek: 18,
-    windowEndWeek: 20,
-    bookingLeadDays: 10,
-  },
-]
+import { addDays, formatDate, formatDateRange, formatWeekday, gestationalAge } from '../../lib/pregnancy'
+import { TODAY, LMP, computedCareItems } from '../../lib/carePlan'
 
 const ITEM_META: Record<string, { chipBg: string; iconColor: string; trackColor: string; dateColor: string }> = {
   nipt: { chipBg: colors.sage, iconColor: colors.sageDeep, trackColor: colors.sageDeep, dateColor: colors.textSecondary },
@@ -63,7 +22,7 @@ function ItemIcon({ id, size, color }: { id: string; size: number; color: string
 export default function PlanScreen() {
   const [trackWidth, setTrackWidth] = useState(0)
   const age = useMemo(() => gestationalAge(LMP, TODAY), [])
-  const computed = useMemo(() => computeCareItems(CARE_ITEMS, LMP, TODAY), [])
+  const computed = computedCareItems
 
   const scheduled = computed.filter(i => i.status === 'scheduled')
   const upcoming = computed
