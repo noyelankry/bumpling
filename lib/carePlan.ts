@@ -6,6 +6,7 @@ import { addDays, computeCareItems, type CareItem } from './pregnancy'
 const ITEMS_KEY = 'bumpling_care_items'
 const LMP_KEY = 'bumpling_lmp'
 const CATCHUP_KEY = 'bumpling_catchup_done'
+const BOOKED_KEY = 'bumpling_booked_done'
 
 export const TODAY = new Date()
 
@@ -91,6 +92,14 @@ export async function markCatchUpDone(): Promise<void> {
   await AsyncStorage.setItem(CATCHUP_KEY, 'true')
 }
 
+export async function hasCompletedBooked(): Promise<boolean> {
+  return (await AsyncStorage.getItem(BOOKED_KEY)) === 'true'
+}
+
+export async function markBookedDone(): Promise<void> {
+  await AsyncStorage.setItem(BOOKED_KEY, 'true')
+}
+
 /** Weeks-since-LMP for a plain calendar date — lets a user-picked date slot into the same window math. */
 function weeksSinceLMP(date: Date, lmp: Date): number {
   return (date.getTime() - lmp.getTime()) / (7 * 24 * 60 * 60 * 1000)
@@ -99,11 +108,11 @@ function weeksSinceLMP(date: Date, lmp: Date): number {
 export async function scheduleItem(
   items: CareItemWithCustom[],
   id: string,
-  details: { title: string; date: Date; timeLabel?: string; prepNote?: string }
+  details: { title: string; date: Date; timeLabel?: string; location?: string; prepNote?: string }
 ): Promise<CareItemWithCustom[]> {
   const next = items.map(i =>
     i.id === id
-      ? { ...i, title: details.title, scheduledAt: details.date, scheduledTimeLabel: details.timeLabel, prepNote: details.prepNote }
+      ? { ...i, title: details.title, scheduledAt: details.date, scheduledTimeLabel: details.timeLabel, location: details.location, prepNote: details.prepNote }
       : i
   )
   await saveCareItems(next)
@@ -113,7 +122,7 @@ export async function scheduleItem(
 export async function addCustomItem(
   items: CareItemWithCustom[],
   lmp: Date,
-  details: { title: string; date: Date; timeLabel?: string; prepNote?: string }
+  details: { title: string; date: Date; timeLabel?: string; location?: string; prepNote?: string }
 ): Promise<CareItemWithCustom[]> {
   const week = weeksSinceLMP(details.date, lmp)
   const entry: CareItemWithCustom = {
@@ -124,6 +133,7 @@ export async function addCustomItem(
     bookingLeadDays: 0,
     scheduledAt: details.date,
     scheduledTimeLabel: details.timeLabel,
+    location: details.location,
     prepNote: details.prepNote,
     custom: true,
   }

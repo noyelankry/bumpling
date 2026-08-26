@@ -9,12 +9,13 @@ import { loadCareItems, loadLMP, scheduleItem, addCustomItem } from '../lib/care
 
 export default function AddItemScreen() {
   const router = useRouter()
-  const params = useLocalSearchParams<{ id?: string; title?: string; date?: string; time?: string; prepNote?: string }>()
+  const params = useLocalSearchParams<{ id?: string; title?: string; date?: string; time?: string; location?: string; prepNote?: string }>()
   const isEditing = !!params.id
 
   const [title, setTitle] = useState(params.title ?? '')
   const [date, setDate] = useState<Date | null>(params.date ? new Date(params.date) : null)
   const [time, setTime] = useState(params.time ?? '')
+  const [location, setLocation] = useState(params.location ?? '')
   const [prepNote, setPrepNote] = useState(params.prepNote ?? '')
   const [saving, setSaving] = useState(false)
 
@@ -24,11 +25,12 @@ export default function AddItemScreen() {
 
     setSaving(true)
     const current = await loadCareItems()
+    const details = { title: title.trim(), date, timeLabel: time.trim() || undefined, location: location.trim() || undefined, prepNote: prepNote.trim() || undefined }
     if (isEditing && params.id) {
-      await scheduleItem(current, params.id, { title: title.trim(), date, timeLabel: time.trim() || undefined, prepNote: prepNote.trim() || undefined })
+      await scheduleItem(current, params.id, details)
     } else {
       const lmp = await loadLMP()
-      await addCustomItem(current, lmp, { title: title.trim(), date, timeLabel: time.trim() || undefined, prepNote: prepNote.trim() || undefined })
+      await addCustomItem(current, lmp, details)
     }
     setSaving(false)
     router.back()
@@ -73,6 +75,16 @@ export default function AddItemScreen() {
               />
             </Field>
           </View>
+
+          <Field label="Doctor / location (optional)">
+            <TextInput
+              style={styles.input}
+              value={location}
+              onChangeText={setLocation}
+              placeholder="e.g. Dr. Cohen, Sunshine Clinic"
+              placeholderTextColor={colors.textSecondary}
+            />
+          </Field>
 
           <Field label="Notes (optional)">
             <TextInput

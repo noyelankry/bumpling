@@ -3,7 +3,7 @@ import { Slot, useRouter, useSegments } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
 import { DEV_BYPASS_KEY } from '../lib/devBypass'
-import { hasLMP, hasCompletedCatchUp } from '../lib/carePlan'
+import { hasLMP, hasCompletedCatchUp, hasCompletedBooked } from '../lib/carePlan'
 
 const ONBOARDING_KEY = 'bumpling_onboarding_seen'
 
@@ -39,10 +39,8 @@ export default function RootLayout() {
         if (cancelled) return
 
         const path = (segments as string[]).join('/')
-        const onLmpScreen = path === '(auth)/lmp'
-        const onCatchUpScreen = path === '(auth)/catch-up'
 
-        if (!lmpSet && !onLmpScreen) {
+        if (!lmpSet && path !== '(auth)/lmp') {
           router.replace('/(auth)/lmp')
           return
         }
@@ -51,11 +49,21 @@ export default function RootLayout() {
           const catchUpDone = await hasCompletedCatchUp()
           if (cancelled) return
 
-          if (!catchUpDone && !onCatchUpScreen) {
+          if (!catchUpDone && path !== '(auth)/catch-up') {
             router.replace('/(auth)/catch-up')
             return
           }
-          if (catchUpDone && inAuth) router.replace('/(tabs)')
+
+          if (catchUpDone) {
+            const bookedDone = await hasCompletedBooked()
+            if (cancelled) return
+
+            if (!bookedDone && path !== '(auth)/booked' && path !== 'add-item') {
+              router.replace('/(auth)/booked')
+              return
+            }
+            if (bookedDone && inAuth) router.replace('/(tabs)')
+          }
         }
         return
       }

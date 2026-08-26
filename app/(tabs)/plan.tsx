@@ -206,6 +206,7 @@ export default function PlanScreen() {
                       <Text style={styles.attentionMeta}>
                         {formatWeekday(item.scheduledAt!)}{item.scheduledTimeLabel ? ` • ${item.scheduledTimeLabel}` : ''}
                       </Text>
+                      {!!item.location && <Text style={styles.attentionMeta}>{item.location}</Text>}
                       {!!item.prepNote && <Text style={styles.prepNote}>{item.prepNote}</Text>}
                     </View>
                     <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />

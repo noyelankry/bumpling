@@ -101,6 +101,12 @@ export default function AppointmentDetailScreen() {
             <>
               <Text style={styles.bigDate}>{formatWeekday(item.scheduledAt)}</Text>
               {!!item.scheduledTimeLabel && <Text style={styles.timeLabel}>{item.scheduledTimeLabel}</Text>}
+              {!!item.location && (
+                <View style={styles.locationRow}>
+                  <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
+                  <Text style={styles.locationText}>{item.location}</Text>
+                </View>
+              )}
               {!!item.prepNote && (
                 <View style={styles.prepRow}>
                   <Ionicons name="information-circle-outline" size={16} color={colors.sageDeep} />
@@ -116,6 +122,7 @@ export default function AppointmentDetailScreen() {
                     title: item.title,
                     date: item.scheduledAt!.toISOString(),
                     time: item.scheduledTimeLabel ?? '',
+                    location: item.location ?? '',
                     prepNote: item.prepNote ?? '',
                   },
                 })}
@@ -202,6 +209,8 @@ const styles = StyleSheet.create({
   doneRow:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
   bigDate:   { fontSize: 20, fontWeight: '800', color: colors.textPrimary },
   timeLabel: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
+  locationRow:  { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  locationText: { fontSize: 13, color: colors.textSecondary },
   prepRow:   { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: colors.sage + '55', borderRadius: radius.sm, padding: spacing.sm, marginTop: spacing.sm },
   prepText:  { flex: 1, fontSize: 12.5, color: colors.textPrimary, lineHeight: 18 },
 

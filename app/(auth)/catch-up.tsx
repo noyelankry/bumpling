@@ -43,7 +43,7 @@ export default function CatchUpScreen() {
       await markManyDone(current, Array.from(selected))
     }
     await markCatchUpDone()
-    router.replace('/(tabs)')
+    router.replace('/(auth)/booked')
   }
 
   return (
