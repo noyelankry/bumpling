@@ -23,27 +23,20 @@ export default function TabLayout() {
     >
       <Tabs.Screen
         name="index"
-        options={{ title: 'Home', tabBarIcon: tabIcon('home-outline', 'home') }}
+        options={{ title: 'Today', tabBarIcon: tabIcon('home-outline', 'home') }}
       />
       <Tabs.Screen
-        name="diary"
-        options={{ title: 'Diary', tabBarIcon: tabIcon('book-outline', 'book') }}
+        name="plan"
+        options={{ title: 'Plan', tabBarIcon: tabIcon('calendar-outline', 'calendar') }}
       />
       <Tabs.Screen
-        name="goals"
-        options={{ title: 'Goals', tabBarIcon: tabIcon('flag-outline', 'flag') }}
-      />
-      <Tabs.Screen
-        name="recipes"
-        options={{ title: 'Recipes', tabBarIcon: tabIcon('restaurant-outline', 'restaurant') }}
+        name="health"
+        options={{ title: 'Health', tabBarIcon: tabIcon('leaf-outline', 'leaf') }}
       />
       <Tabs.Screen
         name="more"
-        options={{ title: 'More', tabBarIcon: tabIcon('ellipsis-horizontal-outline', 'ellipsis-horizontal') }}
+        options={{ title: 'Profile', tabBarIcon: tabIcon('person-outline', 'person') }}
       />
-      <Tabs.Screen name="feed"     options={{ href: null }} />
-      <Tabs.Screen name="shopping" options={{ href: null }} />
-      <Tabs.Screen name="profile"  options={{ href: null }} />
     </Tabs>
   )
 }

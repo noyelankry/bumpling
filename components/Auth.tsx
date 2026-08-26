@@ -2,8 +2,11 @@ import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
 import { colors, spacing, radius } from '../lib/theme'
+import { DEV_BYPASS_KEY } from '../lib/devBypass'
 
 export default function Auth() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
@@ -11,6 +14,7 @@ export default function Auth() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
   async function submit() {
     setLoading(true)
@@ -20,6 +24,11 @@ export default function Auth() {
     const { error } = await fn
     if (error) Alert.alert(error.message)
     setLoading(false)
+  }
+
+  async function devSkip() {
+    await AsyncStorage.setItem(DEV_BYPASS_KEY, 'true')
+    router.replace('/(tabs)')
   }
 
   return (
@@ -95,6 +104,12 @@ export default function Auth() {
           </TouchableOpacity>
         </View>
 
+        {__DEV__ && (
+          <TouchableOpacity style={styles.devSkip} onPress={devSkip}>
+            <Text style={styles.devSkipText}>Skip sign-in (dev only)</Text>
+          </TouchableOpacity>
+        )}
+
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
@@ -120,4 +135,6 @@ const styles = StyleSheet.create({
   switchMode:         { alignItems: 'center', paddingVertical: spacing.xs },
   switchModeText:     { fontSize: 14, color: colors.textSecondary },
   switchModeLink:     { color: colors.primary, fontWeight: '700' },
+  devSkip:            { alignItems: 'center', marginTop: spacing.lg },
+  devSkipText:        { fontSize: 12, color: colors.textSecondary, textDecorationLine: 'underline' },
 })

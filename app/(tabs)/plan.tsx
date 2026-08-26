@@ -1,0 +1,368 @@
+import { useMemo, useState } from 'react'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, LayoutChangeEvent } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { Ionicons } from '@expo/vector-icons'
+import { colors, spacing, radius } from '../../lib/theme'
+import { BabyMark, BellyMark } from '../../components/illustrations'
+import {
+  addDays,
+  computeCareItems,
+  formatDate,
+  formatDateRange,
+  formatWeekday,
+  gestationalAge,
+  type CareItem,
+  type ComputedCareItem,
+} from '../../lib/pregnancy'
+
+// Seeded from "today", so gestational age and every window below stay
+// accurate no matter when the app is opened — the user never converts
+// "week 12" into a real date herself.
+const TODAY = new Date()
+const LMP = addDays(TODAY, -(11 * 7 + 3))
+
+const CARE_ITEMS: CareItem[] = [
+  {
+    id: 'nipt',
+    title: 'NIPT',
+    windowStartWeek: 10,
+    windowEndWeek: 13,
+    bookingLeadDays: 5,
+    scheduledAt: addDays(TODAY, 5),
+    scheduledTimeLabel: '10:30 AM',
+    prepNote: 'No fasting needed',
+  },
+  {
+    id: 'nt',
+    title: 'Nuchal translucency',
+    windowStartWeek: 11,
+    windowEndWeek: 14,
+    bookingLeadDays: 12,
+  },
+  {
+    id: 'anatomy',
+    title: 'Early anatomy scan',
+    windowStartWeek: 18,
+    windowEndWeek: 20,
+    bookingLeadDays: 10,
+  },
+]
+
+const ITEM_META: Record<string, { chipBg: string; iconColor: string; trackColor: string; dateColor: string }> = {
+  nipt: { chipBg: colors.sage, iconColor: colors.sageDeep, trackColor: colors.sageDeep, dateColor: colors.textSecondary },
+  nt: { chipBg: colors.peach, iconColor: colors.primaryDark, trackColor: colors.sageDeep, dateColor: colors.textSecondary },
+  anatomy: { chipBg: colors.neutralChip, iconColor: colors.neutralChipDeep, trackColor: colors.peachDeep, dateColor: colors.urgent },
+}
+
+function ItemIcon({ id, size, color }: { id: string; size: number; color: string }) {
+  if (id === 'nt') return <BellyMark size={size} color={color} />
+  if (id === 'anatomy') return <Ionicons name="body-outline" size={size} color={color} />
+  return <Ionicons name="flask-outline" size={size} color={color} />
+}
+
+export default function PlanScreen() {
+  const [trackWidth, setTrackWidth] = useState(0)
+  const age = useMemo(() => gestationalAge(LMP, TODAY), [])
+  const computed = useMemo(() => computeCareItems(CARE_ITEMS, LMP, TODAY), [])
+
+  const scheduled = computed.filter(i => i.status === 'scheduled')
+  const upcoming = computed
+    .filter(i => i.status !== 'scheduled')
+    .sort((a, b) => a.bookBy.getTime() - b.bookBy.getTime())
+  const attention = upcoming.slice(0, 2)
+  const needsYouCount = attention.filter(i => i.status === 'actionable').length
+  const hasOverdue = attention.some(i => i.status === 'actionable' && i.bookBy.getTime() < TODAY.getTime())
+
+  const timelineRange = useMemo(() => {
+    const dates: Date[] = [TODAY]
+    computed.forEach(i => {
+      if (i.status === 'scheduled' && i.scheduledAt) dates.push(i.scheduledAt)
+      else dates.push(i.windowStart, i.windowEnd)
+    })
+    const start = addDays(new Date(Math.min(...dates.map(d => d.getTime()))), -3)
+    const end = addDays(new Date(Math.max(...dates.map(d => d.getTime()))), 4)
+    return { start, end, span: end.getTime() - start.getTime() }
+  }, [computed])
+
+  const pct = (d: Date) =>
+    Math.max(0, Math.min(100, ((d.getTime() - timelineRange.start.getTime()) / timelineRange.span) * 100))
+
+  const months = useMemo(() => {
+    const list: Date[] = []
+    const cursor = new Date(timelineRange.start.getFullYear(), timelineRange.start.getMonth(), 1)
+    while (cursor.getTime() <= timelineRange.end.getTime()) {
+      list.push(new Date(cursor))
+      cursor.setMonth(cursor.getMonth() + 1)
+    }
+    return list
+  }, [timelineRange])
+
+  const timelineItems = [...computed].sort((a, b) => {
+    const da = a.status === 'scheduled' && a.scheduledAt ? a.scheduledAt : a.windowStart
+    const db = b.status === 'scheduled' && b.scheduledAt ? b.scheduledAt : b.windowStart
+    return da.getTime() - db.getTime()
+  })
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <BabyMark size={34} />
+            <Text style={styles.appName}>Bumpling</Text>
+          </View>
+          <TouchableOpacity style={styles.bellBtn}>
+            <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.title}>Pregnancy plan</Text>
+        <Text style={styles.subtitle}>We help you book the right tests on time.</Text>
+
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryTopRow}>
+            <View style={styles.summaryIconChip}>
+              <Ionicons name="calendar-outline" size={22} color={colors.sageDeep} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.summaryWeek}>Week {age.weeks} + {age.days}</Text>
+              <Text style={styles.summarySub}>Based on your dates</Text>
+            </View>
+            <View style={[styles.statusPill, hasOverdue && styles.statusPillUrgent]}>
+              <Ionicons
+                name={hasOverdue ? 'alert-circle-outline' : 'checkmark-circle-outline'}
+                size={14}
+                color={hasOverdue ? colors.urgent : colors.sageDeep}
+              />
+              <Text style={[styles.statusPillText, hasOverdue && styles.statusPillTextUrgent]}>
+                {hasOverdue ? 'Needs attention' : "You're on track"}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.needsYouTitle}>
+            {needsYouCount > 0 ? `${needsYouCount} thing${needsYouCount > 1 ? 's' : ''} needs you` : 'Nothing needs you right now'}
+          </Text>
+          <Text style={styles.needsYouSub}>We'll remind you before booking windows close.</Text>
+        </View>
+
+        {attention.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>What needs your attention</Text>
+            <View style={{ gap: spacing.xs, marginBottom: spacing.lg }}>
+              {attention.map(item => {
+                const meta = ITEM_META[item.id]
+                return (
+                  <View key={item.id} style={styles.attentionCard}>
+                    <View style={[styles.iconChip, { backgroundColor: meta.chipBg }]}>
+                      <ItemIcon id={item.id} size={20} color={meta.iconColor} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.attentionTitle}>{item.title}</Text>
+                      <Text style={styles.attentionMeta}>
+                        Target dates: {formatDateRange(item.windowStart, item.windowEnd)}
+                      </Text>
+                      {item.status === 'actionable' && (
+                        <Text style={styles.bookBy}>Book by {formatDate(item.bookBy)}</Text>
+                      )}
+                    </View>
+                    {item.status === 'actionable' ? (
+                      <TouchableOpacity activeOpacity={0.85} style={styles.scheduleBtn}>
+                        <Text style={styles.scheduleBtnText}>Schedule now</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <View style={styles.laterPill}>
+                        <Text style={styles.laterPillText}>We'll remind you later</Text>
+                      </View>
+                    )}
+                  </View>
+                )
+              })}
+            </View>
+          </>
+        )}
+
+        {scheduled.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Next up</Text>
+            <View style={styles.listCard}>
+              {scheduled.map((item, i) => {
+                const meta = ITEM_META[item.id]
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[styles.nextUpRow, i > 0 && styles.listRowDivider]}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.iconChip, { backgroundColor: meta.chipBg }]}>
+                      <ItemIcon id={item.id} size={18} color={meta.iconColor} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.attentionTitle}>{item.title}</Text>
+                      <Text style={styles.attentionMeta}>
+                        {formatWeekday(item.scheduledAt!)} • {item.scheduledTimeLabel}
+                      </Text>
+                      {!!item.prepNote && <Text style={styles.prepNote}>{item.prepNote}</Text>}
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                )
+              })}
+            </View>
+          </>
+        )}
+
+        <Text style={styles.sectionTitle}>Your timeline</Text>
+        <View style={styles.timelineCard}>
+          <View style={styles.monthRow}>
+            {months.map(m => (
+              <Text key={m.toISOString()} style={styles.monthLabel}>
+                {m.toLocaleDateString('en-US', { month: 'short' })}
+              </Text>
+            ))}
+          </View>
+
+          <View style={styles.trackWrap} onLayout={(e: LayoutChangeEvent) => setTrackWidth(e.nativeEvent.layout.width)}>
+            <View style={styles.trackLine} />
+            {trackWidth > 0 && computed.map(item => {
+              const meta = ITEM_META[item.id]
+              if (item.status === 'scheduled' && item.scheduledAt) {
+                return (
+                  <View
+                    key={item.id}
+                    style={[styles.trackDot, { left: `${pct(item.scheduledAt)}%` }]}
+                  />
+                )
+              }
+              const left = pct(item.windowStart)
+              const width = Math.max(pct(item.windowEnd) - left, 3)
+              return (
+                <View
+                  key={item.id}
+                  style={[
+                    styles.trackSegment,
+                    { left: `${left}%`, width: `${width}%`, backgroundColor: meta.trackColor },
+                  ]}
+                />
+              )
+            })}
+          </View>
+
+          <View style={styles.timelineList}>
+            {timelineItems.map(item => {
+              const meta = ITEM_META[item.id]
+              const isScheduled = item.status === 'scheduled' && item.scheduledAt
+              return (
+                <View key={item.id} style={styles.timelineListRow}>
+                  <View
+                    style={[
+                      styles.timelineSwatch,
+                      { backgroundColor: isScheduled ? colors.scheduledDot : meta.trackColor },
+                      isScheduled && styles.timelineSwatchDot,
+                    ]}
+                  />
+                  <Text style={styles.timelineListTitle}>{item.title}</Text>
+                  <Text style={[styles.timelineListDate, { color: isScheduled ? colors.textSecondary : meta.dateColor }]}>
+                    {isScheduled ? formatDate(item.scheduledAt!) : formatDateRange(item.windowStart, item.windowEnd)}
+                  </Text>
+                </View>
+              )
+            })}
+          </View>
+
+          <View style={styles.legendRow}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendPill, { backgroundColor: colors.sageDeep }]} />
+              <Text style={styles.legendText}>Target window</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: colors.scheduledDot }]} />
+              <Text style={styles.legendText}>Scheduled</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.reassuranceCard}>
+          <View style={styles.reassuranceIconChip}>
+            <Ionicons name="heart-outline" size={20} color={colors.sageDeep} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.reassuranceTitle}>Everything else can wait</Text>
+            <Text style={styles.reassuranceSub}>We'll bring things back when they become relevant.</Text>
+          </View>
+        </View>
+
+      </ScrollView>
+    </SafeAreaView>
+  )
+}
+
+const styles = StyleSheet.create({
+  safe:   { flex: 1, backgroundColor: colors.background },
+  scroll: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, paddingBottom: 40 },
+
+  header:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  appName:    { fontSize: 24, fontWeight: '700', color: colors.textPrimary },
+  bellBtn:    { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+
+  title:    { fontSize: 28, fontWeight: '800', color: colors.textPrimary },
+  subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 4, marginBottom: spacing.md },
+
+  summaryCard:      { backgroundColor: colors.sage, borderRadius: radius.xl, padding: spacing.md, marginBottom: spacing.lg },
+  summaryTopRow:    { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  summaryIconChip:  { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+  summaryWeek:      { fontSize: 19, fontWeight: '800', color: colors.textPrimary },
+  summarySub:       { fontSize: 12.5, color: colors.textPrimary, opacity: 0.65, marginTop: 1 },
+  statusPill:       { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.card, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill },
+  statusPillUrgent: { backgroundColor: colors.urgentBg },
+  statusPillText:      { fontSize: 12, fontWeight: '700', color: colors.sageDeep },
+  statusPillTextUrgent: { color: colors.urgent },
+  needsYouTitle: { fontSize: 17, fontWeight: '800', color: colors.textPrimary },
+  needsYouSub:   { fontSize: 12.5, color: colors.textPrimary, opacity: 0.65, marginTop: 3, lineHeight: 18 },
+
+  sectionTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs },
+
+  attentionCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm },
+  iconChip:      { width: 44, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  attentionTitle: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
+  attentionMeta:  { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
+  bookBy:         { fontSize: 12, fontWeight: '700', color: colors.urgent, marginTop: 3 },
+  prepNote:       { fontSize: 11.5, color: colors.sageDeep, marginTop: 2, fontWeight: '600' },
+
+  scheduleBtn:     { backgroundColor: colors.urgentBg, paddingHorizontal: spacing.sm, paddingVertical: 9, borderRadius: radius.pill },
+  scheduleBtnText: { fontSize: 12.5, fontWeight: '700', color: colors.urgent },
+  laterPill:       { backgroundColor: colors.neutralChip, paddingHorizontal: 10, paddingVertical: 8, borderRadius: radius.pill, maxWidth: 96 },
+  laterPillText:   { fontSize: 10.5, fontWeight: '600', color: colors.neutralChipDeep, textAlign: 'center' },
+
+  listCard:       { backgroundColor: colors.card, borderRadius: radius.lg, marginBottom: spacing.lg, overflow: 'hidden' },
+  nextUpRow:       { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.sm },
+  listRowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
+
+  timelineCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
+  monthRow:     { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, paddingHorizontal: 2 },
+  monthLabel:   { fontSize: 12.5, fontWeight: '700', color: colors.textPrimary },
+
+  trackWrap:  { height: 22, justifyContent: 'center', marginBottom: spacing.sm },
+  trackLine:  { height: 4, borderRadius: 2, backgroundColor: colors.border, width: '100%' },
+  trackSegment: { position: 'absolute', height: 8, borderRadius: 4, opacity: 0.85 },
+  trackDot: { position: 'absolute', width: 12, height: 12, borderRadius: 6, backgroundColor: colors.scheduledDot, marginLeft: -6, borderWidth: 2, borderColor: colors.card },
+
+  timelineList:    { gap: 8, marginBottom: spacing.sm },
+  timelineListRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  timelineSwatch:  { width: 10, height: 10, borderRadius: 3 },
+  timelineSwatchDot: { borderRadius: 5 },
+  timelineListTitle: { flex: 1, fontSize: 13, fontWeight: '600', color: colors.textPrimary },
+  timelineListDate:  { fontSize: 12, fontWeight: '600' },
+
+  legendRow:  { flexDirection: 'row', gap: spacing.md, paddingTop: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendPill: { width: 16, height: 8, borderRadius: 4 },
+  legendDot:  { width: 8, height: 8, borderRadius: 4 },
+  legendText: { fontSize: 11.5, color: colors.textSecondary, fontWeight: '600' },
+
+  reassuranceCard:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.sage, borderRadius: radius.lg, padding: spacing.sm },
+  reassuranceIconChip: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+  reassuranceTitle:    { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
+  reassuranceSub:      { fontSize: 12, color: colors.textPrimary, opacity: 0.65, marginTop: 2, lineHeight: 17 },
+})
