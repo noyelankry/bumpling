@@ -1,26 +1,25 @@
 import { useState } from 'react'
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { colors, spacing, radius } from '../../lib/theme'
 import { BabyMark } from '../../components/illustrations'
-import { parseDate, gestationalAge } from '../../lib/pregnancy'
+import DateField from '../../components/DateField'
+import { gestationalAge } from '../../lib/pregnancy'
 import { saveLMP } from '../../lib/carePlan'
 
 export default function LmpScreen() {
   const router = useRouter()
-  const [dateText, setDateText] = useState('')
+  const [date, setDate] = useState<Date | null>(null)
   const [error, setError] = useState(false)
 
   const today = new Date()
-  const parsed = parseDate(dateText.trim())
-  const valid = !!parsed && parsed.getTime() <= today.getTime()
-  const preview = valid ? gestationalAge(parsed!, today) : null
+  const preview = date ? gestationalAge(date, today) : null
 
   function continueOn() {
-    if (!valid || !parsed) { setError(true); return }
-    saveLMP(parsed).then(() => router.replace('/(tabs)'))
+    if (!date) { setError(true); return }
+    saveLMP(date).then(() => router.replace('/(tabs)'))
   }
 
   return (
@@ -37,16 +36,14 @@ export default function LmpScreen() {
             We use the first day of your last period to estimate your due date and suggest the right test windows for you.
           </Text>
 
-          <TextInput
-            style={[styles.input, error && !valid && styles.inputError]}
-            value={dateText}
-            onChangeText={t => { setDateText(t); setError(false) }}
-            placeholder="e.g. Jun 7, 2026"
-            placeholderTextColor={colors.textSecondary}
-            autoFocus
+          <DateField
+            value={date}
+            onChange={d => { setDate(d); setError(false) }}
+            placeholder="Select a date"
+            maximumDate={today}
           />
-          {error && !valid && (
-            <Text style={styles.errorText}>Enter a valid past date, like "Jun 7, 2026".</Text>
+          {error && (
+            <Text style={styles.errorText}>Pick the date your last period started.</Text>
           )}
 
           {preview && (
@@ -82,9 +79,7 @@ const styles = StyleSheet.create({
   title:    { fontSize: 24, fontWeight: '800', color: colors.textPrimary, textAlign: 'center', lineHeight: 30 },
   subtitle: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs, marginBottom: spacing.lg, lineHeight: 20 },
 
-  input:      { backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: colors.textPrimary, textAlign: 'center' },
-  inputError: { borderColor: colors.urgent },
-  errorText:  { fontSize: 12.5, color: colors.urgent, marginTop: 6, textAlign: 'center' },
+  errorText: { fontSize: 12.5, color: colors.urgent, marginTop: 6, textAlign: 'center' },
 
   previewCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: colors.sage, borderRadius: radius.md, padding: spacing.sm, marginTop: spacing.md },
   previewText: { fontSize: 13.5, fontWeight: '600', color: colors.textPrimary },

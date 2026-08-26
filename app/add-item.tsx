@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { colors, spacing, radius } from '../lib/theme'
-import { parseDate } from '../lib/pregnancy'
+import DateField from '../components/DateField'
 import { loadCareItems, loadLMP, scheduleItem, addCustomItem } from '../lib/carePlan'
 
 export default function AddItemScreen() {
@@ -13,19 +13,14 @@ export default function AddItemScreen() {
   const isEditing = !!params.id
 
   const [title, setTitle] = useState(params.title ?? '')
-  const [dateText, setDateText] = useState(params.date ? formatForInput(new Date(params.date)) : '')
+  const [date, setDate] = useState<Date | null>(params.date ? new Date(params.date) : null)
   const [time, setTime] = useState(params.time ?? '')
   const [prepNote, setPrepNote] = useState(params.prepNote ?? '')
   const [saving, setSaving] = useState(false)
 
-  function formatForInput(d: Date) {
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  }
-
   async function save() {
     if (!title.trim()) return Alert.alert('Add a title', 'What is this appointment for?')
-    const date = parseDate(dateText.trim())
-    if (!date) return Alert.alert('Add a date', 'Try something like "Sep 12".')
+    if (!date) return Alert.alert('Add a date', 'Pick a date for this appointment.')
 
     setSaving(true)
     const current = await loadCareItems()
@@ -66,13 +61,7 @@ export default function AddItemScreen() {
 
           <View style={styles.row}>
             <Field label="Date" style={{ flex: 1 }}>
-              <TextInput
-                style={styles.input}
-                value={dateText}
-                onChangeText={setDateText}
-                placeholder="e.g. Sep 12"
-                placeholderTextColor={colors.textSecondary}
-              />
+              <DateField value={date} onChange={setDate} placeholder="Select a date" />
             </Field>
             <Field label="Time (optional)" style={{ flex: 1 }}>
               <TextInput
