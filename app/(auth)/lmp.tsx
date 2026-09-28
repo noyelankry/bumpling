@@ -6,24 +6,39 @@ import { Ionicons } from '@expo/vector-icons'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark } from '../../components/illustrations'
 import DateField from '../../components/DateField'
-import { gestationalAge } from '../../lib/pregnancy'
+import { addDays, gestationalAge } from '../../lib/pregnancy'
 import { saveLMP } from '../../lib/carePlan'
+
+// Care-plan chart tracks post-term monitoring out to week 41; 43 gives a bit of slack.
+const MAX_WEEKS_BACK = 43
+
+type ErrorKind = 'missing' | 'tooOld'
 
 export default function LmpScreen() {
   const router = useRouter()
   const [date, setDate] = useState<Date | null>(null)
-  const [error, setError] = useState(false)
+  const [error, setError] = useState<ErrorKind | null>(null)
 
   const today = new Date()
+  const earliestLmp = addDays(today, -MAX_WEEKS_BACK * 7)
   const preview = date ? gestationalAge(date, today) : null
 
+  function handleChange(d: Date) {
+    setDate(d)
+    setError(d < earliestLmp ? 'tooOld' : null)
+  }
+
   function continueOn() {
-    if (!date) { setError(true); return }
+    if (!date) { setError('missing'); return }
+    if (date < earliestLmp) { setError('tooOld'); return }
     saveLMP(date).then(() => router.replace('/(auth)/catch-up'))
   }
 
   return (
     <SafeAreaView style={styles.container}>
+      <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
+        <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+      </TouchableOpacity>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, justifyContent: 'center' }}>
         <View style={styles.inner}>
 
@@ -38,12 +53,16 @@ export default function LmpScreen() {
 
           <DateField
             value={date}
-            onChange={d => { setDate(d); setError(false) }}
+            onChange={handleChange}
             placeholder="Select a date"
             maximumDate={today}
+            minimumDate={earliestLmp}
           />
-          {error && (
+          {error === 'missing' && (
             <Text style={styles.errorText}>Pick the date your last period started.</Text>
+          )}
+          {error === 'tooOld' && (
+            <Text style={styles.errorText}>That's more than {MAX_WEEKS_BACK} weeks ago — outside a typical pregnancy. Double-check the date.</Text>
           )}
 
           {preview && (
@@ -73,6 +92,7 @@ export default function LmpScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   inner:     { paddingHorizontal: spacing.md },
+  backBtn:   { position: 'absolute', top: spacing.xs, left: spacing.xs, width: 36, height: 36, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
 
   logoArea: { alignItems: 'center', marginBottom: spacing.lg },
 

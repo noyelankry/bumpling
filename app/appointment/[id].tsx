@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   rangeText:  { fontFamily: fonts.headline, fontSize: 18, color: colors.textPrimary, marginTop: 2 },
   bookByText: { fontFamily: fonts.headline, fontSize: 18, color: colors.urgent, marginTop: 2 },
 
-  primaryBtn:     { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 13, alignItems: 'center', marginTop: spacing.md },
+  primaryBtn:     { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 13, alignItems: 'center', marginTop: spacing.md },
   primaryBtnText: { color: '#fff', fontWeight: '700', fontSize: 14.5 },
   secondaryBtn:     { alignItems: 'center', paddingVertical: 10, marginTop: spacing.sm },
   secondaryBtnText: { color: colors.primary, fontWeight: '700', fontSize: 13.5 },
@@ -250,5 +250,5 @@ const styles = StyleSheet.create({
   doctorSub:      { fontSize: 12, color: colors.textSecondary, marginTop: 2, lineHeight: 16 },
 
   removeBtn:     { alignItems: 'center', paddingVertical: spacing.sm },
-  removeBtnText: { fontSize: 13.5, fontWeight: '600', color: '#EF4444' },
+  removeBtnText: { fontSize: 13.5, fontWeight: '600', color: colors.urgent },
 })

@@ -13,6 +13,10 @@ import { TODAY, loadLMP } from '../../lib/carePlan'
 
 const STORAGE_KEY = 'bumpling_health_checkins'
 
+export async function clearHealthData(): Promise<void> {
+  await AsyncStorage.removeItem(STORAGE_KEY)
+}
+
 const SYMPTOMS = [
   'Nausea', 'Fatigue', 'Headache', 'Backache',
   'Heartburn', 'Swelling', 'Cramping', 'Insomnia',

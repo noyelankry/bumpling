@@ -175,16 +175,16 @@ const styles = StyleSheet.create({
 
   fieldGroup: { marginBottom: spacing.md },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: colors.textPrimary, marginBottom: 6 },
-  input:      { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: colors.textPrimary },
+  input:      { backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: colors.textPrimary },
   multiline:  { minHeight: 70, textAlignVertical: 'top' },
 
-  warningRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: colors.urgentBg, borderRadius: radius.sm, padding: spacing.sm, marginTop: -4, marginBottom: spacing.md },
+  warningRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: colors.urgentBg, borderRadius: radius.md, padding: spacing.sm, marginTop: -4, marginBottom: spacing.md },
   warningText: { flex: 1, fontSize: 12.5, color: colors.urgent, lineHeight: 18 },
 
   calendarRow:     { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.md },
   calendarRowText: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
 
-  saveBtn:     { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', marginTop: spacing.xs },
+  saveBtn:     { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', marginTop: spacing.xs },
   saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   skipBtn:     { alignItems: 'center', paddingVertical: spacing.sm, marginTop: spacing.xs },
   skipBtnText: { color: colors.textSecondary, fontWeight: '600', fontSize: 13.5 },

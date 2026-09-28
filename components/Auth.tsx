@@ -5,8 +5,9 @@ import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
-import { colors, spacing, radius } from '../lib/theme'
+import { colors, spacing, radius, fonts } from '../lib/theme'
 import { DEV_BYPASS_KEY } from '../lib/devBypass'
+import { BabyMark } from './illustrations'
 
 export default function Auth() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
@@ -35,10 +36,9 @@ export default function Auth() {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.inner}>
 
-        {/* Logo */}
         <View style={styles.logoArea}>
           <View style={styles.logoIcon}>
-            <Ionicons name="leaf" size={28} color={colors.primary} />
+            <BabyMark size={36} />
           </View>
           <Text style={styles.logoText}>BUMPLING</Text>
           <Text style={styles.logoSub}>
@@ -84,6 +84,7 @@ export default function Auth() {
           </View>
 
           <TouchableOpacity
+            activeOpacity={0.85}
             style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
             onPress={submit}
             disabled={loading}
@@ -119,17 +120,17 @@ const styles = StyleSheet.create({
   container:          { flex: 1, backgroundColor: colors.background },
   inner:              { flex: 1, paddingHorizontal: spacing.md, justifyContent: 'center' },
   logoArea:           { alignItems: 'center', marginBottom: spacing.lg * 1.5 },
-  logoIcon:           { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.primary + '15', alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
-  logoText:           { fontSize: 32, fontWeight: '900', color: colors.primary, letterSpacing: 2 },
+  logoIcon:           { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
+  logoText:           { fontFamily: fonts.headline, fontSize: 28, color: colors.primary, letterSpacing: 2 },
   logoSub:            { fontSize: 15, color: colors.textSecondary, marginTop: 4 },
   form:               { gap: spacing.md },
   inputGroup:         { gap: 6 },
   label:              { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  input:              { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15, color: colors.textPrimary },
+  input:              { backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15, color: colors.textPrimary },
   passwordRow:        { position: 'relative' },
   passwordInput:      { paddingRight: 48 },
   eyeBtn:             { position: 'absolute', right: 14, top: 0, bottom: 0, justifyContent: 'center' },
-  primaryBtn:         { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 15, alignItems: 'center', marginTop: spacing.xs },
+  primaryBtn:         { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', marginTop: spacing.xs },
   primaryBtnDisabled: { opacity: 0.6 },
   primaryBtnText:     { color: '#fff', fontSize: 16, fontWeight: '700' },
   switchMode:         { alignItems: 'center', paddingVertical: spacing.xs },

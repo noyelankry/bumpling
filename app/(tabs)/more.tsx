@@ -3,21 +3,22 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark } from '../../components/illustrations'
 import { supabase } from '../../lib/supabase'
+import { clearCarePlanData } from '../../lib/carePlan'
+import { DEV_BYPASS_KEY } from '../../lib/devBypass'
 import { useNavVisibility } from '../../lib/navVisibility'
 import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
+import { clearHealthData } from './health'
+import { clearBrainDumpData } from '../brain-dump'
 
 type Profile = { full_name: string; username: string }
 
 export default function MoreScreen() {
   const router = useRouter()
-  // The nav's scroll-collapse behavior is Plan-only (see RadialTabBar) — this
-  // screen has editable TextInputs, and wiring the collapse handlers into its
-  // ScrollView caused the same jank/lost-focus issues Health hit before it
-  // dropped them. Force-expand on focus instead so a collapsed state carried
-  // over from Plan doesn't linger when the user switches tabs.
+  // Nav scroll-collapse is Plan-only; this screen force-expands instead (see health.tsx).
   const { expand } = useNavVisibility()
   const autoScroll = useAutoScrollEnabled()
   const [form, setForm] = useState<Profile>({ full_name: '', username: '' })
@@ -62,7 +63,16 @@ export default function MoreScreen() {
   }
 
   function signOut() {
-    const doSignOut = () => supabase.auth.signOut()
+    const doSignOut = async () => {
+      await supabase.auth.signOut()
+      await Promise.all([
+        clearCarePlanData(),
+        clearHealthData(),
+        clearBrainDumpData(),
+        AsyncStorage.removeItem(DEV_BYPASS_KEY),
+      ])
+      router.replace('/(auth)/login')
+    }
     if (Platform.OS === 'web') {
       if (window.confirm('Sign out of Bumpling?')) doSignOut()
     } else {

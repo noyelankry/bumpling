@@ -8,6 +8,10 @@ import { colors, spacing, radius, fonts } from '../lib/theme'
 
 const STORAGE_KEY = 'bumpling_brain_dump'
 
+export async function clearBrainDumpData(): Promise<void> {
+  await AsyncStorage.removeItem(STORAGE_KEY)
+}
+
 type EntryType = 'doctor' | 'thought'
 
 type Entry = {
@@ -130,9 +134,9 @@ function Section({ title, items, onToggle, onDelete, emptyText }: {
       {items.length === 0 ? (
         <Text style={styles.emptyText}>{emptyText}</Text>
       ) : (
-        <View style={{ gap: 8 }}>
-          {items.map(item => (
-            <View key={item.id} style={styles.row}>
+        <View style={styles.listCard}>
+          {items.map((item, i) => (
+            <View key={item.id} style={[styles.row, i > 0 && styles.rowDivider]}>
               <TouchableOpacity onPress={() => onToggle(item.id)} hitSlop={6} accessibilityLabel={item.done ? 'Mark not done' : 'Mark done'}>
                 <Ionicons
                   name={item.done ? 'checkmark-circle' : 'ellipse-outline'}
@@ -177,7 +181,9 @@ const styles = StyleSheet.create({
   sectionLabel: { fontFamily: fonts.headline, fontSize: 16, color: colors.textPrimary, marginBottom: spacing.xs },
   emptyText:    { fontSize: 13, color: colors.textSecondary, lineHeight: 18 },
 
-  row:      { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.sm, borderWidth: 1, borderColor: colors.border },
+  listCard: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
+  row:      { flexDirection: 'row', alignItems: 'center', gap: 10, padding: spacing.sm },
+  rowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
   rowText:  { flex: 1, fontSize: 14.5, color: colors.textPrimary, lineHeight: 20 },
   rowTextDone: { color: colors.textSecondary, textDecorationLine: 'line-through' },
 })

@@ -100,6 +100,11 @@ export async function markBookedDone(): Promise<void> {
   await AsyncStorage.setItem(BOOKED_KEY, 'true')
 }
 
+// Called on sign-out so the next login redoes LMP/catch-up/booked setup.
+export async function clearCarePlanData(): Promise<void> {
+  await AsyncStorage.multiRemove([ITEMS_KEY, LMP_KEY, CATCHUP_KEY, BOOKED_KEY])
+}
+
 /** Weeks-since-LMP for a plain calendar date — lets a user-picked date slot into the same window math. */
 function weeksSinceLMP(date: Date, lmp: Date): number {
   return (date.getTime() - lmp.getTime()) / (7 * 24 * 60 * 60 * 1000)
