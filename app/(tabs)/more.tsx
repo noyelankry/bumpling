@@ -5,6 +5,8 @@ import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { supabase } from '../../lib/supabase'
+import { useNavVisibility } from '../../lib/navVisibility'
+import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 
 type Profile = { full_name: string; username: string }
 
@@ -14,6 +16,8 @@ function initials(name: string) {
 
 export default function MoreScreen() {
   const router = useRouter()
+  const { onScroll, expand } = useNavVisibility()
+  const autoScroll = useAutoScrollEnabled()
   const [email, setEmail] = useState('')
   const [form, setForm] = useState<Profile>({ full_name: '', username: '' })
   const [saving, setSaving] = useState(false)
@@ -60,7 +64,16 @@ export default function MoreScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={autoScroll.scrollEnabled}
+        onLayout={autoScroll.onLayout}
+        onContentSizeChange={autoScroll.onContentSizeChange}
+        onScroll={onScroll}
+        scrollEventThrottle={80}
+        onTouchStart={expand}
+      >
 
         <Text style={styles.title}>Profile</Text>
 

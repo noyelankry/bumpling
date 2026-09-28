@@ -7,6 +7,8 @@ import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark, BellyMark } from '../../components/illustrations'
 import { addDays, formatDate, formatDateRange, formatWeekday, gestationalAge } from '../../lib/pregnancy'
 import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
+import { useNavVisibility } from '../../lib/navVisibility'
+import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 
 // Grouped by trimester (derived from the item's own window) rather than a
 // per-id table, since the real test chart has 18+ items — a fixed table
@@ -37,6 +39,8 @@ function ItemIcon({ title, size, color }: { title: string; size: number; color: 
 
 export default function PlanScreen() {
   const router = useRouter()
+  const { onScroll, expand } = useNavVisibility()
+  const autoScroll = useAutoScrollEnabled()
   const [trackWidth, setTrackWidth] = useState(0)
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date>(TODAY)
@@ -92,7 +96,16 @@ export default function PlanScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={autoScroll.scrollEnabled}
+        onLayout={autoScroll.onLayout}
+        onContentSizeChange={autoScroll.onContentSizeChange}
+        onScroll={onScroll}
+        scrollEventThrottle={80}
+        onTouchStart={expand}
+      >
 
         <View style={styles.header}>
           <View style={styles.headerLeft}>

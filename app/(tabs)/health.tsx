@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { MoodFace } from '../../components/illustrations'
+import { useNavVisibility } from '../../lib/navVisibility'
+import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 
 const STORAGE_KEY = 'bumpling_health_checkins'
 
@@ -47,6 +49,8 @@ function formatTime(iso: string) {
 }
 
 export default function HealthScreen() {
+  const { expand } = useNavVisibility()
+  const autoScroll = useAutoScrollEnabled()
   const [checkIns, setCheckIns] = useState<CheckIn[]>([])
   const [mood, setMood] = useState<Mood | null>(null)
   const [symptoms, setSymptoms] = useState<string[]>([])
@@ -55,7 +59,11 @@ export default function HealthScreen() {
   const [bloodPressure, setBloodPressure] = useState('')
   const [savedAt, setSavedAt] = useState<string | null>(null)
 
-  useFocusEffect(useCallback(() => { load() }, []))
+  // The nav's scroll-collapse behavior is Plan-only (see RadialTabBar) — this
+  // screen rarely has enough content to benefit, and forcing it here caused
+  // persistent jank. Force-expand on focus so a collapsed state carried over
+  // from Plan doesn't linger when the user switches tabs.
+  useFocusEffect(useCallback(() => { load(); expand() }, [expand]))
 
   async function load() {
     const raw = await AsyncStorage.getItem(STORAGE_KEY)
@@ -97,7 +105,13 @@ export default function HealthScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={autoScroll.scrollEnabled}
+        onLayout={autoScroll.onLayout}
+        onContentSizeChange={autoScroll.onContentSizeChange}
+      >
 
         <Text style={styles.title}>Health</Text>
         <Text style={styles.subtitle}>A quick way to track how you're feeling for your next appointment.</Text>

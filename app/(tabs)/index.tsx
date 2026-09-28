@@ -7,11 +7,15 @@ import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark, FetusIllustration } from '../../components/illustrations'
 import { gestationalAge, formatDate } from '../../lib/pregnancy'
 import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
+import { useNavVisibility } from '../../lib/navVisibility'
+import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 
 export default function HomeScreen() {
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date>(TODAY)
   const router = useRouter()
+  const { onScroll, expand } = useNavVisibility()
+  const autoScroll = useAutoScrollEnabled()
   const age = gestationalAge(lmp, TODAY)
 
   useFocusEffect(useCallback(() => {
@@ -26,7 +30,16 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={autoScroll.scrollEnabled}
+        onLayout={autoScroll.onLayout}
+        onContentSizeChange={autoScroll.onContentSizeChange}
+        onScroll={onScroll}
+        scrollEventThrottle={80}
+        onTouchStart={expand}
+      >
 
         <View style={styles.header}>
           <View style={styles.headerLeft}>
