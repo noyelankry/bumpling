@@ -321,7 +321,7 @@ export default function PlanScreen() {
 
 const styles = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, paddingBottom: 40 },
+  scroll: { paddingHorizontal: spacing.md, paddingTop: 28, paddingBottom: 56 },
 
   header:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },

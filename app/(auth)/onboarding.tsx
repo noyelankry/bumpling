@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   logoIcon:          { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primary + '15', alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xs },
   logoText:          { fontSize: 36, fontWeight: '900', color: colors.primary, letterSpacing: 2 },
   tagline:           { fontSize: 16, color: colors.textSecondary, marginTop: 4 },
-  welcomeBottom:     { padding: spacing.md, paddingBottom: 40, gap: spacing.sm },
+  welcomeBottom:     { padding: spacing.md, paddingBottom: 56, gap: spacing.sm },
   ctaBtn:            { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 16, alignItems: 'center' },
   ctaBtnText:        { color: '#fff', fontSize: 16, fontWeight: '700' },
   loginLink:         { alignItems: 'center', paddingVertical: spacing.xs },

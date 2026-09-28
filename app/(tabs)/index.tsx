@@ -3,29 +3,12 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter, useFocusEffect } from 'expo-router'
-import { colors, spacing, radius } from '../../lib/theme'
-import { BabyMark, FetusIllustration, MoodFace } from '../../components/illustrations'
-import { gestationalAge, formatDate, formatDateRange } from '../../lib/pregnancy'
+import { colors, spacing, radius, fonts } from '../../lib/theme'
+import { BabyMark, FetusIllustration } from '../../components/illustrations'
+import { gestationalAge, formatDate } from '../../lib/pregnancy'
 import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
 
-type Mood = 'happy' | 'calm' | 'okay' | 'tired' | 'anxious'
-
-const MOODS: { key: Mood; label: string; color: string }[] = [
-  { key: 'happy', label: 'Happy', color: colors.moodHappy },
-  { key: 'calm', label: 'Calm', color: colors.moodCalm },
-  { key: 'okay', label: 'Okay', color: colors.moodOkay },
-  { key: 'tired', label: 'Tired', color: colors.moodTired },
-  { key: 'anxious', label: 'Anxious', color: colors.moodAnxious },
-]
-
-const QUICK_LINKS = [
-  { id: 'braindump', title: 'Brain\ndump', bg: colors.cream, kind: 'bulb' as const, route: '/brain-dump' },
-  { id: 'health', title: 'Health &\nwellness', bg: colors.sage, kind: 'leaf' as const, route: '/(tabs)/health' },
-  { id: 'appointments', title: 'Appointments\n& tests', bg: colors.lavender, kind: 'calendar' as const, route: '/(tabs)/plan' },
-] as const
-
 export default function HomeScreen() {
-  const [mood, setMood] = useState<Mood | null>(null)
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date>(TODAY)
   const router = useRouter()
@@ -52,85 +35,73 @@ export default function HomeScreen() {
           </View>
           <TouchableOpacity style={styles.bellBtn}>
             <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
+            <View style={styles.bellDot} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.weekCard}>
-          <View style={styles.weekCardLeft}>
-            <Text style={styles.weekTitle}>Week {age.weeks} • Day {age.days}</Text>
-            <Text style={styles.weekSubtitle}>Your little bumpling is growing beautifully this week.</Text>
-            <View style={styles.divider} />
-            <View style={styles.tipRow}>
-              <Ionicons name="sparkles-outline" size={16} color={colors.primary} style={{ marginTop: 2 }} />
-              <Text style={styles.tipText}>
-                This week: tiny fingers are forming and movement is increasing.
+        <View style={styles.weekRow}>
+          <View style={styles.weekTextCol}>
+            <Text style={styles.eyebrow}>You're pregnant</Text>
+            <Text style={styles.heroNumber}>{age.weeks}</Text>
+            <Text style={styles.heroWeeksLabel}>{age.weeks === 1 ? 'week' : 'weeks'}</Text>
+            <View style={styles.heroDaysLine}>
+              <Text>
+                <Text style={styles.heroDaysAccent}>+{age.days}</Text>
+                <Text style={styles.heroDaysText}> {age.days === 1 ? 'day' : 'days'}</Text>
               </Text>
             </View>
           </View>
-          <FetusIllustration size={108} />
+          <FetusIllustration size={190} />
+        </View>
+
+        <View style={styles.tipCard}>
+          <Ionicons name="sparkles-outline" size={16} color={colors.lavenderDeep} style={{ marginTop: 2 }} />
+          <Text style={styles.tipText}>
+            <Text style={styles.tipTextBold}>This week: </Text>
+            tiny fingers are forming and movement is increasing.
+          </Text>
         </View>
 
         {nextItem && (
-          <>
-            <Text style={styles.sectionTitle}>Needs your attention</Text>
-            <TouchableOpacity
-              style={styles.attentionCard}
-              activeOpacity={0.7}
-              onPress={() => router.push(`/appointment/${nextItem.id}`)}
-            >
+          <TouchableOpacity
+            style={styles.nextUpCard}
+            activeOpacity={0.7}
+            onPress={() => router.push(`/appointment/${nextItem.id}`)}
+          >
+            <View style={styles.nextUpTopRow}>
               <View style={styles.iconChip}>
                 <Ionicons name="calendar-outline" size={20} color={colors.primaryDark} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.attentionTitle}>{nextItem.title}</Text>
-                <Text style={styles.attentionMeta}>
-                  {nextItem.status === 'actionable'
-                    ? `Book by ${formatDate(nextItem.bookBy)}`
-                    : `Target dates: ${formatDateRange(nextItem.windowStart, nextItem.windowEnd)}`}
+                <Text style={styles.eyebrow}>Next up</Text>
+                <Text style={styles.nextUpTitle}>{nextItem.title}</Text>
+                {nextItem.status === 'actionable' && (
+                  <Text style={styles.bookBy}>Book by {formatDate(nextItem.bookBy)}</Text>
+                )}
+              </View>
+              <View style={styles.chevronBtn}>
+                <Ionicons name="chevron-forward" size={18} color={colors.textPrimary} />
+              </View>
+            </View>
+
+            <View style={styles.nextUpDivider} />
+
+            <View style={styles.nextUpMetaRow}>
+              <View style={styles.metaItem}>
+                <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
+                <Text style={styles.metaText}>
+                  {(nextItem.status === 'scheduled' && nextItem.scheduledAt ? nextItem.scheduledAt : nextItem.bookBy)
+                    .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </Text>
               </View>
-              <Text style={styles.viewPlan}>View</Text>
-              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </>
-        )}
-
-        <Text style={[styles.sectionTitle, styles.moodHeading]}>How are you feeling today?</Text>
-        <View style={styles.moodRow}>
-          {MOODS.map(m => {
-            const selected = mood === m.key
-            return (
-              <TouchableOpacity
-                key={m.key}
-                style={[styles.moodBtn, selected && { borderColor: m.color, backgroundColor: `${m.color}1A` }]}
-                onPress={() => setMood(m.key)}
-                activeOpacity={0.8}
-              >
-                <MoodFace mood={m.key} size={24} color={m.color} />
-                <Text style={styles.moodLabel}>{m.label}</Text>
-              </TouchableOpacity>
-            )
-          })}
-        </View>
-
-        <View style={styles.quickRow}>
-          {QUICK_LINKS.map(q => (
-            <TouchableOpacity
-              key={q.id}
-              style={[styles.quickCard, { backgroundColor: q.bg }]}
-              activeOpacity={0.8}
-              onPress={() => router.push(q.route as any)}
-            >
-              {q.kind === 'bulb' && <Ionicons name="bulb-outline" size={22} color={colors.creamDeep} />}
-              {q.kind === 'leaf' && <Ionicons name="leaf-outline" size={22} color={colors.sageDeep} />}
-              {q.kind === 'calendar' && <Ionicons name="calendar-outline" size={22} color={colors.lavenderDeep} />}
-              <View style={styles.quickCardBottom}>
-                <Text style={styles.quickCardTitle}>{q.title}</Text>
-                <Ionicons name="chevron-forward" size={16} color={colors.textPrimary} />
+              <View style={styles.metaDivider} />
+              <View style={styles.metaItem}>
+                <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
+                <Text style={styles.metaText}>{nextItem.location || 'Your care provider'}</Text>
               </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+            </View>
+          </TouchableOpacity>
+        )}
 
       </ScrollView>
     </SafeAreaView>
@@ -139,36 +110,42 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, paddingBottom: 40 },
+  scroll: { paddingHorizontal: spacing.md, paddingTop: 28, paddingBottom: 56 },
 
   header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   headerLeft:  { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   appName:     { fontSize: 24, fontWeight: '700', color: colors.textPrimary },
-  bellBtn:     { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  bellBtn:     { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  bellDot:     { position: 'absolute', top: 6, right: 6, width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.background },
 
-  weekCard:     { flexDirection: 'row', backgroundColor: colors.peach, borderRadius: radius.xl, padding: spacing.md, marginBottom: spacing.lg, alignItems: 'center', gap: spacing.xs },
-  weekCardLeft: { flex: 1 },
-  weekTitle:    { fontSize: 22, fontWeight: '800', color: colors.textPrimary },
-  weekSubtitle: { fontSize: 13.5, color: colors.textPrimary, opacity: 0.7, marginTop: 6, lineHeight: 19 },
-  divider:      { width: 36, height: 3, borderRadius: 2, backgroundColor: colors.primary, marginVertical: spacing.sm },
-  tipRow:       { flexDirection: 'row', gap: 6 },
-  tipText:      { flex: 1, fontSize: 12.5, color: colors.textPrimary, opacity: 0.75, lineHeight: 18 },
+  eyebrow:       { fontSize: 12, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1 },
 
-  sectionTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs },
+  weekRow:       { flexDirection: 'row', alignItems: 'center', gap: 2, marginBottom: spacing.md },
+  weekTextCol:   { flex: 1 },
 
-  attentionCard:  { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg },
-  iconChip:       { width: 40, height: 40, borderRadius: radius.sm, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center' },
-  attentionTitle: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
-  attentionMeta:  { fontSize: 12.5, color: colors.textSecondary, marginTop: 2 },
-  viewPlan:       { fontSize: 12.5, fontWeight: '600', color: colors.primary },
+  heroNumber:     { fontFamily: fonts.headline, fontSize: 96, color: colors.textPrimary, lineHeight: 92, marginTop: 4 },
+  heroWeeksLabel: { fontFamily: fonts.headline, fontSize: 20, color: colors.textPrimary, marginTop: -10 },
+  heroDaysLine:   { marginTop: 4, alignSelf: 'flex-start', marginLeft: 30 },
+  heroDaysAccent: { fontFamily: fonts.headline, fontSize: 23, color: colors.primaryDark },
+  heroDaysText:   { fontFamily: fonts.headline, fontSize: 20, color: colors.primaryDark },
 
-  moodHeading: { marginBottom: spacing.sm },
-  moodRow:     { flexDirection: 'row', gap: 8, marginBottom: spacing.lg },
-  moodBtn:     { flex: 1, alignItems: 'center', gap: 6, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.card },
-  moodLabel:   { fontSize: 11, fontWeight: '600', color: colors.textPrimary },
 
-  quickRow:         { flexDirection: 'row', gap: spacing.sm },
-  quickCard:        { flex: 1, borderRadius: radius.lg, padding: spacing.sm, minHeight: 96, justifyContent: 'space-between' },
-  quickCardBottom:  { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
-  quickCardTitle:   { fontSize: 13.5, fontWeight: '700', color: colors.textPrimary, lineHeight: 17 },
+  tipCard: { flexDirection: 'row', gap: 10, backgroundColor: colors.lavender, borderRadius: radius.xl, padding: spacing.sm, marginBottom: spacing.sm, alignItems: 'flex-start' },
+  tipText: { flex: 1, fontSize: 13.5, color: colors.textPrimary, opacity: 0.8, lineHeight: 19 },
+  tipTextBold: { fontWeight: '700', opacity: 1 },
+
+  iconChip: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center' },
+
+  nextUpCard:    { backgroundColor: colors.card, borderRadius: radius.xl, padding: spacing.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
+  nextUpTopRow:  { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  nextUpTitle:   { fontFamily: fonts.headline, fontSize: 18, color: colors.textPrimary, marginTop: 3, lineHeight: 22 },
+  bookBy:        { fontSize: 12.5, fontWeight: '600', color: colors.urgent, marginTop: 4 },
+  chevronBtn:    { width: 34, height: 34, borderRadius: radius.pill, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center' },
+
+  nextUpDivider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.sm },
+
+  nextUpMetaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  metaItem:      { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  metaDivider:   { width: 1, height: 12, backgroundColor: colors.border },
+  metaText:      { fontSize: 12.5, fontWeight: '600', color: colors.textSecondary },
 })

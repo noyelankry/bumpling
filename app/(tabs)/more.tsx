@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useFocusEffect } from 'expo-router'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { colors, spacing, radius } from '../../lib/theme'
 import { supabase } from '../../lib/supabase'
@@ -13,6 +13,7 @@ function initials(name: string) {
 }
 
 export default function MoreScreen() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [form, setForm] = useState<Profile>({ full_name: '', username: '' })
   const [saving, setSaving] = useState(false)
@@ -102,6 +103,14 @@ export default function MoreScreen() {
           }
         </TouchableOpacity>
 
+        <TouchableOpacity style={[styles.row, styles.rowSpaced]} onPress={() => router.push('/brain-dump')} activeOpacity={0.7}>
+          <View style={[styles.rowIcon, styles.braindumpIcon]}>
+            <Ionicons name="bulb-outline" size={20} color={colors.creamDeep} />
+          </View>
+          <Text style={styles.rowText}>Brain dump</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.row} onPress={signOut} activeOpacity={0.7}>
           <View style={[styles.rowIcon, styles.signOutIcon]}>
             <Ionicons name="log-out-outline" size={20} color="#EF4444" />
@@ -116,7 +125,7 @@ export default function MoreScreen() {
 
 const styles = StyleSheet.create({
   container:    { flex: 1, backgroundColor: colors.background },
-  scroll:       { paddingHorizontal: spacing.md, paddingBottom: 40 },
+  scroll:       { paddingHorizontal: spacing.md, paddingBottom: 56 },
 
   title:        { fontSize: 28, fontWeight: '800', color: colors.textPrimary, marginTop: spacing.md, marginBottom: spacing.sm },
 
@@ -137,7 +146,10 @@ const styles = StyleSheet.create({
   saveBtnText:  { color: '#fff', fontWeight: '700', fontSize: 15 },
 
   row:          { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.sm, gap: 12 },
+  rowSpaced:    { marginBottom: spacing.xs },
   rowIcon:      { width: 36, height: 36, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
+  braindumpIcon:{ backgroundColor: colors.cream },
+  rowText:      { flex: 1, fontSize: 15, fontWeight: '600', color: colors.textPrimary },
   signOutIcon:  { backgroundColor: '#FEE2E2' },
   signOutText:  { flex: 1, fontSize: 15, fontWeight: '600', color: '#EF4444' },
 })

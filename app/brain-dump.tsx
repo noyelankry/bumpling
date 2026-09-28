@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   headerTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
 
-  scroll:   { paddingHorizontal: spacing.md, paddingBottom: 40 },
+  scroll:   { paddingHorizontal: spacing.md, paddingBottom: 56 },
   subtitle: { fontSize: 14, color: colors.textSecondary, marginBottom: spacing.md, lineHeight: 19 },
 
   addCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg },

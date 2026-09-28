@@ -5,6 +5,7 @@ import { useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { colors, spacing, radius } from '../../lib/theme'
+import { MoodFace } from '../../components/illustrations'
 
 const STORAGE_KEY = 'bumpling_health_checkins'
 
@@ -13,8 +14,19 @@ const SYMPTOMS = [
   'Heartburn', 'Swelling', 'Cramping', 'Insomnia',
 ] as const
 
+type Mood = 'happy' | 'calm' | 'okay' | 'tired' | 'anxious'
+
+const MOODS: { key: Mood; label: string; color: string }[] = [
+  { key: 'happy', label: 'Happy', color: colors.moodHappy },
+  { key: 'calm', label: 'Calm', color: colors.moodCalm },
+  { key: 'okay', label: 'Okay', color: colors.moodOkay },
+  { key: 'tired', label: 'Tired', color: colors.moodTired },
+  { key: 'anxious', label: 'Anxious', color: colors.moodAnxious },
+]
+
 type CheckIn = {
   date: string // yyyy-mm-dd
+  mood: Mood | null
   symptoms: string[]
   note: string
   weight: string
@@ -36,6 +48,7 @@ function formatTime(iso: string) {
 
 export default function HealthScreen() {
   const [checkIns, setCheckIns] = useState<CheckIn[]>([])
+  const [mood, setMood] = useState<Mood | null>(null)
   const [symptoms, setSymptoms] = useState<string[]>([])
   const [note, setNote] = useState('')
   const [weight, setWeight] = useState('')
@@ -50,6 +63,7 @@ export default function HealthScreen() {
     setCheckIns(all)
     const today = all.find(c => c.date === todayKey())
     if (today) {
+      setMood(today.mood ?? null)
       setSymptoms(today.symptoms)
       setNote(today.note)
       setWeight(today.weight)
@@ -65,6 +79,7 @@ export default function HealthScreen() {
   async function save() {
     const entry: CheckIn = {
       date: todayKey(),
+      mood,
       symptoms,
       note: note.trim(),
       weight: weight.trim(),
@@ -93,6 +108,24 @@ export default function HealthScreen() {
             {savedAt && <Text style={styles.loggedText}>Logged at {formatTime(savedAt)}</Text>}
           </View>
 
+          <View style={styles.moodRow}>
+            {MOODS.map(m => {
+              const selected = mood === m.key
+              return (
+                <TouchableOpacity
+                  key={m.key}
+                  style={[styles.moodBtn, selected && { borderColor: m.color, backgroundColor: `${m.color}1A` }]}
+                  onPress={() => setMood(m.key)}
+                  activeOpacity={0.8}
+                >
+                  <MoodFace mood={m.key} size={22} color={m.color} />
+                  <Text style={styles.moodLabel}>{m.label}</Text>
+                </TouchableOpacity>
+              )
+            })}
+          </View>
+
+          <Text style={styles.subLabel}>Any symptoms?</Text>
           <View style={styles.chipRow}>
             {SYMPTOMS.map(s => {
               const active = symptoms.includes(s)
@@ -156,6 +189,11 @@ export default function HealthScreen() {
                 <View style={styles.historyDateChip}>
                   <Text style={styles.historyDateText}>{formatDay(c.date)}</Text>
                 </View>
+                {!!c.mood && (
+                  <View style={styles.historyMoodChip}>
+                    <MoodFace mood={c.mood} size={16} color={MOODS.find(m => m.key === c.mood)?.color ?? colors.textSecondary} />
+                  </View>
+                )}
                 <View style={{ flex: 1 }}>
                   {c.symptoms.length > 0 && (
                     <Text style={styles.historySymptoms}>{c.symptoms.join(', ')}</Text>
@@ -166,7 +204,7 @@ export default function HealthScreen() {
                     </Text>
                   )}
                   {!!c.note && <Text style={styles.historyNote} numberOfLines={1}>{c.note}</Text>}
-                  {c.symptoms.length === 0 && !c.weight && !c.bloodPressure && !c.note && (
+                  {c.symptoms.length === 0 && !c.weight && !c.bloodPressure && !c.note && !c.mood && (
                     <Text style={styles.historySymptoms}>Feeling good</Text>
                   )}
                 </View>
@@ -182,7 +220,7 @@ export default function HealthScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scroll:    { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: 40 },
+  scroll:    { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: 56 },
 
   title:    { fontSize: 28, fontWeight: '800', color: colors.textPrimary },
   subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 4, marginBottom: spacing.md, lineHeight: 19 },
@@ -191,6 +229,12 @@ const styles = StyleSheet.create({
   cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs },
   cardLabel:     { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
   loggedText:    { fontSize: 11.5, color: colors.sageDeep, fontWeight: '600' },
+
+  moodRow:   { flexDirection: 'row', gap: 8, marginBottom: spacing.sm },
+  moodBtn:   { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 10, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.background },
+  moodLabel: { fontSize: 10.5, fontWeight: '600', color: colors.textPrimary },
+
+  subLabel: { fontSize: 12, fontWeight: '600', color: colors.textSecondary, marginBottom: spacing.xs },
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.sm },
   chip:          { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.background },
@@ -214,6 +258,7 @@ const styles = StyleSheet.create({
   historyRow:      { flexDirection: 'row', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.sm, alignItems: 'center' },
   historyDateChip: { width: 56, paddingVertical: 6, borderRadius: radius.sm, backgroundColor: colors.background, alignItems: 'center' },
   historyDateText: { fontSize: 12, fontWeight: '700', color: colors.textPrimary },
+  historyMoodChip: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
   historySymptoms: { fontSize: 13.5, fontWeight: '600', color: colors.textPrimary },
   historyVitals:   { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   historyNote:     { fontSize: 12, color: colors.textSecondary, marginTop: 2, fontStyle: 'italic' },

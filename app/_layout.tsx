@@ -1,13 +1,31 @@
 import { useEffect, useState } from 'react'
+import { View } from 'react-native'
 import { Slot, useRouter, useSegments } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useFonts as usePoppinsFonts, Poppins_600SemiBold } from '@expo-google-fonts/poppins'
+import { useFonts as useDMSansFonts, DM_Sans_400Regular } from '@expo-google-fonts/dm-sans'
 import { supabase } from '../lib/supabase'
 import { DEV_BYPASS_KEY } from '../lib/devBypass'
 import { hasLMP, hasCompletedCatchUp, hasCompletedBooked } from '../lib/carePlan'
+import { fonts } from '../lib/theme'
+
+// Sets the bundled body font once at the root. On web this relies on real DOM
+// font-family inheritance to reach every Text without touching each screen's
+// styles; on native it only covers Text nodes that don't set their own
+// fontFamily, since RN Text (unlike web) doesn't inherit font-family from an
+// ancestor View.
+const rootFontStyle = { fontFamily: fonts.sans } as any
 
 const ONBOARDING_KEY = 'bumpling_onboarding_seen'
 
 export default function RootLayout() {
+  // Non-blocking: don't gate the whole app on font load. If it hangs or fails
+  // for any environmental reason (slow network, browser quirk), text still
+  // renders immediately on the fallback font and swaps in Poppins/DM Sans
+  // once ready — standard web font-loading behavior, and it means a font
+  // issue can never present as a fully blank app.
+  usePoppinsFonts({ Poppins_600SemiBold })
+  useDMSansFonts({ DM_Sans_400Regular })
   const [userId, setUserId] = useState<string | null | undefined>(undefined)
   const router = useRouter()
   const segments = useSegments()
@@ -84,5 +102,9 @@ export default function RootLayout() {
     return () => { cancelled = true }
   }, [userId, segments])
 
-  return <Slot />
+  return (
+    <View style={[{ flex: 1 }, rootFontStyle]}>
+      <Slot />
+    </View>
+  )
 }

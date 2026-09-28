@@ -2,7 +2,7 @@ export const colors = {
   primary: '#E8927C',
   primaryDark: '#DD7C63',
   primaryLight: '#F3B7A4',
-  background: '#FBF5EE',
+  background: '#FDFBF8',
   card: '#FFFFFF',
   textPrimary: '#2B2420',
   textSecondary: '#8C8078',
@@ -39,4 +39,12 @@ export const colors = {
 }
 
 export const radius = { sm: 10, md: 16, lg: 20, xl: 26, pill: 999 }
-export const spacing = { xs: 8, sm: 12, md: 20, lg: 28 }
+export const spacing = { xs: 8, sm: 12, md: 28, lg: 36 }
+
+// Body: DM Sans. Headline (week/day hero numbers, appointment titles): Poppins
+// SemiBold. Both bundled via @expo-google-fonts so they render identically on
+// every device rather than depending on the OS/browser having a match.
+export const fonts = {
+  sans:     'DM_Sans_400Regular',
+  headline: 'Poppins_600SemiBold',
+}

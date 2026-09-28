@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: colors.textPrimary, marginHorizontal: spacing.xs },
 
-  scroll: { paddingHorizontal: spacing.md, paddingBottom: 40 },
+  scroll: { paddingHorizontal: spacing.md, paddingBottom: 56 },
 
   notFound:     { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
   notFoundText: { fontSize: 14, color: colors.textSecondary },

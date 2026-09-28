@@ -101,7 +101,7 @@ export default function BookedScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scroll:    { paddingHorizontal: spacing.md, paddingTop: spacing.lg, paddingBottom: 40 },
+  scroll:    { paddingHorizontal: spacing.md, paddingTop: spacing.lg, paddingBottom: 56 },
 
   title:    { fontSize: 24, fontWeight: '800', color: colors.textPrimary, lineHeight: 30 },
   subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.lg, lineHeight: 20 },

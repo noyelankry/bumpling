@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   headerTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
 
-  scroll: { paddingHorizontal: spacing.md, paddingBottom: 40, paddingTop: spacing.xs },
+  scroll: { paddingHorizontal: spacing.md, paddingBottom: 56, paddingTop: 28 },
 
   row: { flexDirection: 'row', gap: spacing.sm },
 
