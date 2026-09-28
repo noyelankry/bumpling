@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -36,14 +36,20 @@ export default function LmpScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-        <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-      </TouchableOpacity>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, justifyContent: 'center' }}>
-        <View style={styles.inner}>
+      <View style={styles.blobTopLeft} />
+      <View style={styles.blobBottomLeft} />
+      <View style={styles.blobBottomRight} />
+
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
           <View style={styles.logoArea}>
-            <BabyMark size={44} />
+            <View style={styles.mascotWrap}>
+              <BabyMark size={110} />
+              <View style={styles.heartAccent}>
+                <Ionicons name="heart" size={18} color={colors.primary} />
+              </View>
+            </View>
           </View>
 
           <Text style={styles.title}>When did your last period start?</Text>
@@ -83,20 +89,27 @@ export default function LmpScreen() {
             <Text style={styles.continueBtnText}>Continue</Text>
           </TouchableOpacity>
 
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
 
+const BLOB = 240
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  inner:     { paddingHorizontal: spacing.md },
-  backBtn:   { position: 'absolute', top: spacing.xs, left: spacing.xs, width: 36, height: 36, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
+  container: { flex: 1, backgroundColor: colors.background, position: 'relative', overflow: 'hidden' },
+  scroll:    { flexGrow: 1, paddingHorizontal: spacing.md, justifyContent: 'center', paddingVertical: spacing.lg },
 
-  logoArea: { alignItems: 'center', marginBottom: spacing.lg },
+  blobTopLeft:     { position: 'absolute', top: -BLOB * 0.55, left: -BLOB * 0.55, width: BLOB, height: BLOB, borderRadius: BLOB / 2, backgroundColor: colors.peach },
+  blobBottomLeft:  { position: 'absolute', bottom: -BLOB * 0.5, left: -BLOB * 0.5, width: BLOB * 0.75, height: BLOB * 0.75, borderRadius: BLOB * 0.375, backgroundColor: colors.peach },
+  blobBottomRight: { position: 'absolute', bottom: -BLOB * 0.55, right: -BLOB * 0.55, width: BLOB, height: BLOB, borderRadius: BLOB / 2, backgroundColor: colors.peach },
 
-  title:    { fontFamily: fonts.headline, fontSize: 24, color: colors.textPrimary, textAlign: 'center', lineHeight: 30 },
+  logoArea:    { alignItems: 'center', marginBottom: spacing.md },
+  mascotWrap:  { width: 110, height: 110, alignItems: 'center', justifyContent: 'center' },
+  heartAccent: { position: 'absolute', top: 2, right: -4 },
+
+  title:    { fontFamily: fonts.headline, fontSize: 26, color: colors.textPrimary, textAlign: 'center', lineHeight: 32 },
   subtitle: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs, marginBottom: spacing.lg, lineHeight: 20 },
 
   errorText: { fontSize: 12.5, color: colors.urgent, marginTop: 6, textAlign: 'center' },
@@ -107,6 +120,6 @@ const styles = StyleSheet.create({
   disclaimer:     { flexDirection: 'row', gap: 8, alignItems: 'flex-start', marginTop: spacing.md },
   disclaimerText: { flex: 1, fontSize: 12, color: colors.textSecondary, lineHeight: 17 },
 
-  continueBtn:     { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 15, alignItems: 'center', marginTop: spacing.lg },
+  continueBtn:     { backgroundColor: colors.textPrimary, borderRadius: radius.pill, paddingVertical: 16, alignItems: 'center', marginTop: spacing.lg, shadowColor: colors.textPrimary, shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } },
   continueBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 })

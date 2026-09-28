@@ -60,9 +60,7 @@ export default function CatchUpScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-          </TouchableOpacity>
+          <View style={styles.backBtn} />
           <View style={styles.headerCenter}>
             <BabyMark size={28} />
             <Text style={styles.appName}>Bumpling</Text>

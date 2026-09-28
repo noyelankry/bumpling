@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, ScrollView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
@@ -34,103 +34,123 @@ export default function Auth() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.inner}>
+      <View style={styles.blobTopLeft} />
+      <View style={styles.blobBottomLeft} />
+      <View style={styles.blobBottomRight} />
 
-        <View style={styles.logoArea}>
-          <View style={styles.logoIcon}>
-            <BabyMark size={36} />
-          </View>
-          <Text style={styles.logoText}>BUMPLING</Text>
-          <Text style={styles.logoSub}>
-            {mode === 'signin' ? 'Welcome back' : 'Create your account'}
-          </Text>
-        </View>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
-        {/* Form */}
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="email@address.com"
-              placeholderTextColor={colors.textSecondary}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.passwordRow}>
-              <TextInput
-                style={[styles.input, styles.passwordInput]}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Password"
-                placeholderTextColor={colors.textSecondary}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(v => !v)}>
-                <Ionicons
-                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                  size={20}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
+          <View style={styles.logoArea}>
+            <View style={styles.mascotWrap}>
+              <BabyMark size={130} />
+              <View style={styles.heartAccent}>
+                <Ionicons name="heart" size={22} color={colors.primary} />
+              </View>
             </View>
+            <Text style={styles.logoText}>BUMPLING</Text>
+            <Text style={styles.logoSub}>
+              {mode === 'signin' ? 'Welcome back' : 'Create your account'}
+            </Text>
           </View>
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
-            onPress={submit}
-            disabled={loading}
-          >
-            {loading
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.primaryBtnText}>{mode === 'signin' ? 'Sign in' : 'Sign up'}</Text>
-            }
-          </TouchableOpacity>
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Email</Text>
+              <View style={styles.inputRow}>
+                <Ionicons name="mail-outline" size={18} color={colors.textSecondary} />
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="email@address.com"
+                  placeholderTextColor={colors.textSecondary}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+              </View>
+            </View>
 
-          <TouchableOpacity style={styles.switchMode} onPress={() => setMode(m => m === 'signin' ? 'signup' : 'signin')}>
-            <Text style={styles.switchModeText}>
-              {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
-              <Text style={styles.switchModeLink}>
-                {mode === 'signin' ? 'Sign up' : 'Sign in'}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Password</Text>
+              <View style={styles.inputRow}>
+                <Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
+                <TextInput
+                  style={styles.input}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Password"
+                  placeholderTextColor={colors.textSecondary}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity onPress={() => setShowPassword(v => !v)} hitSlop={8}>
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
+              onPress={submit}
+              disabled={loading}
+            >
+              {loading
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={styles.primaryBtnText}>{mode === 'signin' ? 'Sign in' : 'Sign up'}</Text>
+              }
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.switchMode} onPress={() => setMode(m => m === 'signin' ? 'signup' : 'signin')}>
+              <Text style={styles.switchModeText}>
+                {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
+                <Text style={styles.switchModeLink}>
+                  {mode === 'signin' ? 'Sign up' : 'Sign in'}
+                </Text>
               </Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
+            </TouchableOpacity>
+          </View>
 
-        {__DEV__ && (
-          <TouchableOpacity style={styles.devSkip} onPress={devSkip}>
-            <Text style={styles.devSkipText}>Skip sign-in (dev only)</Text>
-          </TouchableOpacity>
-        )}
+          {__DEV__ && (
+            <TouchableOpacity style={styles.devSkip} onPress={devSkip}>
+              <Text style={styles.devSkipText}>Skip sign-in (dev only).</Text>
+            </TouchableOpacity>
+          )}
 
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
 
+const BLOB = 240
+
 const styles = StyleSheet.create({
-  container:          { flex: 1, backgroundColor: colors.background },
-  inner:              { flex: 1, paddingHorizontal: spacing.md, justifyContent: 'center' },
-  logoArea:           { alignItems: 'center', marginBottom: spacing.lg * 1.5 },
-  logoIcon:           { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
-  logoText:           { fontFamily: fonts.headline, fontSize: 28, color: colors.primary, letterSpacing: 2 },
-  logoSub:            { fontSize: 15, color: colors.textSecondary, marginTop: 4 },
-  form:               { gap: spacing.md },
-  inputGroup:         { gap: 6 },
-  label:              { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  input:              { backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15, color: colors.textPrimary },
-  passwordRow:        { position: 'relative' },
-  passwordInput:      { paddingRight: 48 },
-  eyeBtn:             { position: 'absolute', right: 14, top: 0, bottom: 0, justifyContent: 'center' },
-  primaryBtn:         { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', marginTop: spacing.xs },
+  container: { flex: 1, backgroundColor: colors.background, position: 'relative', overflow: 'hidden' },
+  scroll:    { flexGrow: 1, paddingHorizontal: spacing.md, justifyContent: 'center', paddingVertical: spacing.lg },
+
+  blobTopLeft:     { position: 'absolute', top: -BLOB * 0.55, left: -BLOB * 0.55, width: BLOB, height: BLOB, borderRadius: BLOB / 2, backgroundColor: colors.peach },
+  blobBottomLeft:  { position: 'absolute', bottom: -BLOB * 0.5, left: -BLOB * 0.5, width: BLOB * 0.75, height: BLOB * 0.75, borderRadius: BLOB * 0.375, backgroundColor: colors.peach },
+  blobBottomRight: { position: 'absolute', bottom: -BLOB * 0.55, right: -BLOB * 0.55, width: BLOB, height: BLOB, borderRadius: BLOB / 2, backgroundColor: colors.peach },
+
+  logoArea:    { alignItems: 'center', marginBottom: spacing.lg },
+  mascotWrap:  { width: 130, height: 130, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
+  heartAccent: { position: 'absolute', top: 4, right: -6 },
+  logoText:    { fontFamily: fonts.headline, fontSize: 38, color: colors.primary, letterSpacing: 1 },
+  logoSub:     { fontFamily: fonts.headline, fontSize: 18, color: colors.textSecondary, marginTop: 4 },
+
+  form:       { gap: spacing.md },
+  inputGroup: { gap: 6 },
+  label:      { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
+  inputRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.xl, paddingHorizontal: 16, paddingVertical: 14 },
+  input:      { flex: 1, fontSize: 15, color: colors.textPrimary, padding: 0 },
+
+  primaryBtn:         { backgroundColor: colors.textPrimary, borderRadius: radius.pill, paddingVertical: 16, alignItems: 'center', marginTop: spacing.xs, shadowColor: colors.textPrimary, shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } },
   primaryBtnDisabled: { opacity: 0.6 },
   primaryBtnText:     { color: '#fff', fontSize: 16, fontWeight: '700' },
   switchMode:         { alignItems: 'center', paddingVertical: spacing.xs },

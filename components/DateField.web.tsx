@@ -82,12 +82,12 @@ export default function DateField({ value, onChange, placeholder, maximumDate, m
         onLayout={e => setFieldHeight(e.nativeEvent.layout.height)}
         activeOpacity={0.7}
       >
+        <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} />
         <Text style={value ? styles.valueText : styles.placeholderText}>
           {value
             ? value.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
             : placeholder}
         </Text>
-        <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} />
       </TouchableOpacity>
 
       {open && (
@@ -148,7 +148,7 @@ export default function DateField({ value, onChange, placeholder, maximumDate, m
 
 const styles = StyleSheet.create({
   wrap:  { position: 'relative' as const, zIndex: 10 },
-  field: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: 16, paddingVertical: 14 },
+  field: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.xl, paddingHorizontal: 16, paddingVertical: 14 },
   valueText: { fontSize: 16, color: colors.textPrimary, fontWeight: '600' },
   placeholderText: { fontSize: 16, color: colors.textSecondary },
 
