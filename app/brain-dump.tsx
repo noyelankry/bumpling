@@ -73,7 +73,15 @@ export default function BrainDumpScreen() {
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-          <Text style={styles.subtitle}>Get it out of your head. Sort it out later.</Text>
+          <View style={styles.heroRow}>
+            <View style={styles.heroIconChip}>
+              <Ionicons name="bulb-outline" size={20} color={colors.lavenderDeep} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.heroTitle}>Get it out of your head</Text>
+              <Text style={styles.heroSub}>Sort it out later.</Text>
+            </View>
+          </View>
 
           <View style={styles.addCard}>
             <TextInput
@@ -161,16 +169,20 @@ const styles = StyleSheet.create({
   header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   headerTitle: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary },
 
-  scroll:   { paddingHorizontal: spacing.md, paddingBottom: 56 },
-  subtitle: { fontSize: 14, color: colors.textSecondary, marginBottom: spacing.md, lineHeight: 19 },
+  scroll: { paddingHorizontal: spacing.md, paddingBottom: 56 },
 
-  addCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
+  heroRow:      { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
+  heroIconChip: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
+  heroTitle:    { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary },
+  heroSub:      { fontSize: 12.5, color: colors.textSecondary, marginTop: 1 },
+
+  addCard: { backgroundColor: colors.lavender, borderRadius: radius.xl, padding: spacing.sm, marginBottom: spacing.lg },
   input:   { fontSize: 15, color: colors.textPrimary, minHeight: 44, textAlignVertical: 'top', marginBottom: spacing.sm },
   addRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 
   typeToggle:      { flexDirection: 'row', gap: 8, flex: 1 },
-  typeChip:        { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.background },
-  typeChipActive:  { backgroundColor: colors.primary, borderColor: colors.primary },
+  typeChip:        { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: colors.card },
+  typeChipActive:  { backgroundColor: colors.primary },
   typeChipText:    { fontSize: 12.5, fontWeight: '600', color: colors.textSecondary },
   typeChipTextActive: { color: '#fff' },
 
