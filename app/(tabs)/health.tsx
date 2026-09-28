@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { colors, spacing, radius } from '../../lib/theme'
+import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { MoodFace } from '../../components/illustrations'
 
 const STORAGE_KEY = 'bumpling_health_checkins'
@@ -222,10 +222,10 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll:    { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: 56 },
 
-  title:    { fontSize: 28, fontWeight: '800', color: colors.textPrimary },
+  title:    { fontFamily: fonts.headline, fontSize: 28, color: colors.textPrimary },
   subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 4, marginBottom: spacing.md, lineHeight: 19 },
 
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg },
+  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
   cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs },
   cardLabel:     { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
   loggedText:    { fontSize: 11.5, color: colors.sageDeep, fontWeight: '600' },
@@ -252,10 +252,10 @@ const styles = StyleSheet.create({
   saveBtn:     { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 13, alignItems: 'center' },
   saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 14.5 },
 
-  sectionLabel: { fontSize: 17, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs },
+  sectionLabel: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary, marginBottom: spacing.xs },
   emptyText:    { fontSize: 13.5, color: colors.textSecondary },
 
-  historyRow:      { flexDirection: 'row', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.sm, alignItems: 'center' },
+  historyRow:      { flexDirection: 'row', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.sm, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
   historyDateChip: { width: 56, paddingVertical: 6, borderRadius: radius.sm, backgroundColor: colors.background, alignItems: 'center' },
   historyDateText: { fontSize: 12, fontWeight: '700', color: colors.textPrimary },
   historyMoodChip: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },

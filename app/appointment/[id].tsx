@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform }
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { colors, spacing, radius } from '../../lib/theme'
+import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { formatDate, formatDateRange, formatWeekday } from '../../lib/pregnancy'
 import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, removeItem, markDone, unmarkDone, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
 import { addAppointmentToCalendar } from '../../lib/calendar'
@@ -211,7 +211,7 @@ function Header({ router, title }: { router: ReturnType<typeof useRouter>; title
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: colors.textPrimary, marginHorizontal: spacing.xs },
+  headerTitle: { flex: 1, textAlign: 'center', fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary, marginHorizontal: spacing.xs },
 
   scroll: { paddingHorizontal: spacing.md, paddingBottom: 56 },
 
@@ -225,10 +225,10 @@ const styles = StyleSheet.create({
   statusPillTextUrgent: { color: colors.urgent },
   statusPillTextNeutral: { color: colors.neutralChipDeep },
 
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.lg },
+  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
 
   doneRow:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  bigDate:   { fontSize: 20, fontWeight: '800', color: colors.textPrimary },
+  bigDate:   { fontFamily: fonts.headline, fontSize: 20, color: colors.textPrimary },
   timeLabel: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
   locationRow:  { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   locationText: { fontSize: 13, color: colors.textSecondary },
@@ -236,17 +236,17 @@ const styles = StyleSheet.create({
   prepText:  { flex: 1, fontSize: 12.5, color: colors.textPrimary, lineHeight: 18 },
 
   fieldLabel: { fontSize: 12, fontWeight: '600', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
-  rangeText:  { fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginTop: 2 },
-  bookByText: { fontSize: 18, fontWeight: '700', color: colors.urgent, marginTop: 2 },
+  rangeText:  { fontFamily: fonts.headline, fontSize: 18, color: colors.textPrimary, marginTop: 2 },
+  bookByText: { fontFamily: fonts.headline, fontSize: 18, color: colors.urgent, marginTop: 2 },
 
   primaryBtn:     { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 13, alignItems: 'center', marginTop: spacing.md },
   primaryBtnText: { color: '#fff', fontWeight: '700', fontSize: 14.5 },
   secondaryBtn:     { alignItems: 'center', paddingVertical: 10, marginTop: spacing.sm },
   secondaryBtnText: { color: colors.primary, fontWeight: '700', fontSize: 13.5 },
 
-  doctorCard:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg },
+  doctorCard:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
   doctorIconChip: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center' },
-  doctorTitle:    { fontSize: 14.5, fontWeight: '700', color: colors.textPrimary },
+  doctorTitle:    { fontFamily: fonts.headline, fontSize: 14.5, color: colors.textPrimary },
   doctorSub:      { fontSize: 12, color: colors.textSecondary, marginTop: 2, lineHeight: 16 },
 
   removeBtn:     { alignItems: 'center', paddingVertical: spacing.sm },

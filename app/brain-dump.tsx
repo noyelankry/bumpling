@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { colors, spacing, radius } from '../lib/theme'
+import { colors, spacing, radius, fonts } from '../lib/theme'
 
 const STORAGE_KEY = 'bumpling_brain_dump'
 
@@ -155,12 +155,12 @@ function Section({ title, items, onToggle, onDelete, emptyText }: {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
+  headerTitle: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary },
 
   scroll:   { paddingHorizontal: spacing.md, paddingBottom: 56 },
   subtitle: { fontSize: 14, color: colors.textSecondary, marginBottom: spacing.md, lineHeight: 19 },
 
-  addCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg },
+  addCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
   input:   { fontSize: 15, color: colors.textPrimary, minHeight: 44, textAlignVertical: 'top', marginBottom: spacing.sm },
   addRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 
@@ -174,10 +174,10 @@ const styles = StyleSheet.create({
   addBtnDisabled: { opacity: 0.4 },
 
   section:      { marginBottom: spacing.lg },
-  sectionLabel: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs },
+  sectionLabel: { fontFamily: fonts.headline, fontSize: 16, color: colors.textPrimary, marginBottom: spacing.xs },
   emptyText:    { fontSize: 13, color: colors.textSecondary, lineHeight: 18 },
 
-  row:      { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.sm },
+  row:      { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.sm, borderWidth: 1, borderColor: colors.border },
   rowText:  { flex: 1, fontSize: 14.5, color: colors.textPrimary, lineHeight: 20 },
   rowTextDone: { color: colors.textSecondary, textDecorationLine: 'line-through' },
 })

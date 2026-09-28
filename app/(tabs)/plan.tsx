@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, LayoutChangeEvent
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter, useFocusEffect } from 'expo-router'
-import { colors, spacing, radius } from '../../lib/theme'
+import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark, BellyMark } from '../../components/illustrations'
 import { addDays, formatDate, formatDateRange, formatWeekday, gestationalAge } from '../../lib/pregnancy'
 import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
@@ -329,27 +329,27 @@ const styles = StyleSheet.create({
   bellBtn:    { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
 
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
-  title:    { fontSize: 28, fontWeight: '800', color: colors.textPrimary },
+  title:    { fontFamily: fonts.headline, fontSize: 28, color: colors.textPrimary },
   subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 4, marginBottom: spacing.md },
   addBtn:   { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
 
   summaryCard:      { backgroundColor: colors.sage, borderRadius: radius.xl, padding: spacing.md, marginBottom: spacing.lg },
   summaryTopRow:    { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
   summaryIconChip:  { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
-  summaryWeek:      { fontSize: 19, fontWeight: '800', color: colors.textPrimary },
+  summaryWeek:      { fontFamily: fonts.headline, fontSize: 19, color: colors.textPrimary },
   summarySub:       { fontSize: 12.5, color: colors.textPrimary, opacity: 0.65, marginTop: 1 },
   statusPill:       { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.card, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill },
   statusPillUrgent: { backgroundColor: colors.urgentBg },
   statusPillText:      { fontSize: 12, fontWeight: '700', color: colors.sageDeep },
   statusPillTextUrgent: { color: colors.urgent },
-  needsYouTitle: { fontSize: 17, fontWeight: '800', color: colors.textPrimary },
+  needsYouTitle: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary },
   needsYouSub:   { fontSize: 12.5, color: colors.textPrimary, opacity: 0.65, marginTop: 3, lineHeight: 18 },
 
-  sectionTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.xs },
+  sectionTitle: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary, marginBottom: spacing.xs },
 
-  attentionCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm },
+  attentionCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
   iconChip:      { width: 44, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  attentionTitle: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
+  attentionTitle: { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary },
   attentionMeta:  { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   bookBy:         { fontSize: 12, fontWeight: '700', color: colors.urgent, marginTop: 3 },
   prepNote:       { fontSize: 11.5, color: colors.sageDeep, marginTop: 2, fontWeight: '600' },
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   laterPill:       { backgroundColor: colors.neutralChip, paddingHorizontal: 10, paddingVertical: 8, borderRadius: radius.pill, maxWidth: 96 },
   laterPillText:   { fontSize: 10.5, fontWeight: '600', color: colors.neutralChipDeep, textAlign: 'center' },
 
-  listCard:       { backgroundColor: colors.card, borderRadius: radius.lg, marginBottom: spacing.lg, overflow: 'hidden' },
+  listCard:       { backgroundColor: colors.card, borderRadius: radius.lg, marginBottom: spacing.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
   nextUpRow:       { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.sm },
   listRowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
 
@@ -391,6 +391,6 @@ const styles = StyleSheet.create({
 
   reassuranceCard:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.sage, borderRadius: radius.lg, padding: spacing.sm },
   reassuranceIconChip: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
-  reassuranceTitle:    { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
+  reassuranceTitle:    { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary },
   reassuranceSub:      { fontSize: 12, color: colors.textPrimary, opacity: 0.65, marginTop: 2, lineHeight: 17 },
 })

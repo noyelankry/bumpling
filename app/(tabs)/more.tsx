@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { colors, spacing, radius } from '../../lib/theme'
+import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { supabase } from '../../lib/supabase'
 
 type Profile = { full_name: string; username: string }
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   container:    { flex: 1, backgroundColor: colors.background },
   scroll:       { paddingHorizontal: spacing.md, paddingBottom: 56 },
 
-  title:        { fontSize: 28, fontWeight: '800', color: colors.textPrimary, marginTop: spacing.md, marginBottom: spacing.sm },
+  title:        { fontFamily: fonts.headline, fontSize: 28, color: colors.textPrimary, marginTop: spacing.md, marginBottom: spacing.sm },
 
   avatarSection: { alignItems: 'center', paddingVertical: spacing.md },
   avatar:        { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xs },
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
 
   sectionLabel: { fontSize: 12, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: spacing.xs, marginTop: spacing.xs },
 
-  card:             { backgroundColor: colors.card, borderRadius: radius.md, paddingHorizontal: spacing.sm, marginBottom: spacing.sm },
+  card:             { backgroundColor: colors.card, borderRadius: radius.md, paddingHorizontal: spacing.sm, marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border },
   fieldGroup:       { paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 4 },
   fieldGroupLast:   { borderBottomWidth: 0 },
   fieldLabel:       { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   saveBtn:      { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', marginBottom: spacing.lg },
   saveBtnText:  { color: '#fff', fontWeight: '700', fontSize: 15 },
 
-  row:          { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.sm, gap: 12 },
+  row:          { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.sm, gap: 12, borderWidth: 1, borderColor: colors.border },
   rowSpaced:    { marginBottom: spacing.xs },
   rowIcon:      { width: 36, height: 36, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
   braindumpIcon:{ backgroundColor: colors.cream },

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Keyboa
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { colors, spacing, radius } from '../lib/theme'
+import { colors, spacing, radius, fonts } from '../lib/theme'
 import DateField from '../components/DateField'
 import { formatDateRange } from '../lib/pregnancy'
 import { loadCareItems, loadLMP, scheduleItem, addCustomItem } from '../lib/carePlan'
@@ -167,7 +167,7 @@ function Field({ label, children, style }: { label: string; children: React.Reac
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary },
+  headerTitle: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary },
 
   scroll: { paddingHorizontal: spacing.md, paddingBottom: 56, paddingTop: 28 },
 

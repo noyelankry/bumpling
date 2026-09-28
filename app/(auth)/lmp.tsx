@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platfor
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { colors, spacing, radius } from '../../lib/theme'
+import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark } from '../../components/illustrations'
 import DateField from '../../components/DateField'
 import { gestationalAge } from '../../lib/pregnancy'
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
 
   logoArea: { alignItems: 'center', marginBottom: spacing.lg },
 
-  title:    { fontSize: 24, fontWeight: '800', color: colors.textPrimary, textAlign: 'center', lineHeight: 30 },
+  title:    { fontFamily: fonts.headline, fontSize: 24, color: colors.textPrimary, textAlign: 'center', lineHeight: 30 },
   subtitle: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs, marginBottom: spacing.lg, lineHeight: 20 },
 
   errorText: { fontSize: 12.5, color: colors.urgent, marginTop: 6, textAlign: 'center' },

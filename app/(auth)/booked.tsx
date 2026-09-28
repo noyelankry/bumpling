@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { colors, spacing, radius } from '../../lib/theme'
+import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { formatDateRange, formatWeekday, computeCareItems } from '../../lib/pregnancy'
 import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, markBookedDone, type CareItemWithCustom } from '../../lib/carePlan'
 
@@ -103,10 +103,10 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll:    { paddingHorizontal: spacing.md, paddingTop: spacing.lg, paddingBottom: 56 },
 
-  title:    { fontSize: 24, fontWeight: '800', color: colors.textPrimary, lineHeight: 30 },
+  title:    { fontFamily: fonts.headline, fontSize: 24, color: colors.textPrimary, lineHeight: 30 },
   subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.lg, lineHeight: 20 },
 
-  row:      { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.sm },
+  row:      { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.sm, borderWidth: 1, borderColor: colors.border },
   rowTitle: { fontSize: 14.5, fontWeight: '600', color: colors.textPrimary },
   rowMeta:  { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   rowMetaBooked: { fontSize: 12, color: colors.sageDeep, fontWeight: '600', marginTop: 2 },
