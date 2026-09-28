@@ -59,7 +59,6 @@ export default function PlanScreen() {
     .sort((a, b) => a.bookBy.getTime() - b.bookBy.getTime())
   const attention = upcoming.slice(0, 2)
   const needsYouCount = attention.filter(i => i.status === 'actionable').length
-  const hasOverdue = attention.some(i => i.status === 'actionable' && i.bookBy.getTime() < TODAY.getTime())
 
   const timelineRange = useMemo(() => {
     const dates: Date[] = [TODAY]
@@ -136,19 +135,18 @@ export default function PlanScreen() {
               <Text style={styles.summaryWeek}>Week {age.weeks} + {age.days}</Text>
               <Text style={styles.summarySub}>Based on your dates</Text>
             </View>
-            <View style={[styles.statusPill, hasOverdue && styles.statusPillUrgent]}>
-              <Ionicons
-                name={hasOverdue ? 'alert-circle-outline' : 'checkmark-circle-outline'}
-                size={14}
-                color={hasOverdue ? colors.urgent : colors.sageDeep}
-              />
-              <Text style={[styles.statusPillText, hasOverdue && styles.statusPillTextUrgent]}>
-                {hasOverdue ? 'Needs attention' : "You're on track"}
-              </Text>
+            <View style={styles.summaryIllustration}>
+              <BabyMark size={52} />
+              <View style={styles.summaryHeart}>
+                <Ionicons name="heart" size={13} color={colors.lavenderDeep} />
+              </View>
             </View>
           </View>
+
+          <View style={styles.summaryDivider} />
+
           <Text style={styles.needsYouTitle}>
-            {needsYouCount > 0 ? `${needsYouCount} thing${needsYouCount > 1 ? 's' : ''} needs you` : 'Nothing needs you right now'}
+            {needsYouCount > 0 ? `${needsYouCount} thing${needsYouCount > 1 ? 's' : ''} need your attention` : 'Nothing needs your attention right now'}
           </Text>
           <Text style={styles.needsYouSub}>We'll remind you before booking windows close.</Text>
         </View>
@@ -347,14 +345,13 @@ const styles = StyleSheet.create({
   addBtn:   { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
 
   summaryCard:      { backgroundColor: colors.sage, borderRadius: radius.xl, padding: spacing.md, marginBottom: spacing.lg },
-  summaryTopRow:    { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  summaryTopRow:    { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   summaryIconChip:  { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
   summaryWeek:      { fontFamily: fonts.headline, fontSize: 19, color: colors.textPrimary },
   summarySub:       { fontSize: 12.5, color: colors.textPrimary, opacity: 0.65, marginTop: 1 },
-  statusPill:       { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.card, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.pill },
-  statusPillUrgent: { backgroundColor: colors.urgentBg },
-  statusPillText:      { fontSize: 12, fontWeight: '700', color: colors.sageDeep },
-  statusPillTextUrgent: { color: colors.urgent },
+  summaryIllustration: { width: 56, height: 56, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  summaryHeart:      { position: 'absolute', top: -2, right: 0 },
+  summaryDivider:    { height: 1, backgroundColor: 'rgba(43,36,32,0.08)', marginVertical: spacing.sm },
   needsYouTitle: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary },
   needsYouSub:   { fontSize: 12.5, color: colors.textPrimary, opacity: 0.65, marginTop: 3, lineHeight: 18 },
 
