@@ -75,30 +75,22 @@ export default function AddItemScreen() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
           <Field label="Title">
-            <TextInput
-              style={styles.input}
-              value={title}
-              onChangeText={setTitle}
-              placeholder="e.g. Dentist checkup"
-              placeholderTextColor={colors.textSecondary}
-              editable={!isEditing}
-            />
-          </Field>
-
-          <View style={styles.row}>
-            <Field label="Date" style={{ flex: 1 }}>
-              <DateField value={date} onChange={setDate} placeholder="Select a date" />
-            </Field>
-            <Field label="Time (optional)" style={{ flex: 1 }}>
+            <View style={styles.inputRow}>
+              <Ionicons name="document-text-outline" size={18} color={colors.textSecondary} />
               <TextInput
                 style={styles.input}
-                value={time}
-                onChangeText={setTime}
-                placeholder="e.g. 10:30 AM"
+                value={title}
+                onChangeText={setTitle}
+                placeholder="e.g. Dentist checkup"
                 placeholderTextColor={colors.textSecondary}
+                editable={!isEditing}
               />
-            </Field>
-          </View>
+            </View>
+          </Field>
+
+          <Field label="Date" style={{ zIndex: 10 }}>
+            <DateField value={date} onChange={setDate} placeholder="Select a date" />
+          </Field>
 
           {outsideWindow && windowStart && windowEnd && (
             <View style={styles.warningRow}>
@@ -109,34 +101,51 @@ export default function AddItemScreen() {
             </View>
           )}
 
+          <Field label="Time (optional)">
+            <View style={styles.inputRow}>
+              <Ionicons name="time-outline" size={18} color={colors.textSecondary} />
+              <TextInput
+                style={styles.input}
+                value={time}
+                onChangeText={setTime}
+                placeholder="e.g. 10:30 AM"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </View>
+          </Field>
+
           <Field label="Doctor / location (optional)">
-            <TextInput
-              style={styles.input}
-              value={location}
-              onChangeText={setLocation}
-              placeholder="e.g. Dr. Cohen, Sunshine Clinic"
-              placeholderTextColor={colors.textSecondary}
-            />
+            <View style={styles.inputRow}>
+              <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
+              <TextInput
+                style={styles.input}
+                value={location}
+                onChangeText={setLocation}
+                placeholder="e.g. Dr. Cohen, Sunshine Clinic"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </View>
           </Field>
 
           <Field label="Notes (optional)">
-            <TextInput
-              style={[styles.input, styles.multiline]}
-              value={prepNote}
-              onChangeText={setPrepNote}
-              placeholder="e.g. No fasting needed, bring insurance card"
-              placeholderTextColor={colors.textSecondary}
-              multiline
-            />
+            <View style={[styles.inputRow, styles.multilineRow]}>
+              <Ionicons name="reader-outline" size={18} color={colors.textSecondary} style={{ marginTop: 2 }} />
+              <TextInput
+                style={[styles.input, styles.multiline]}
+                value={prepNote}
+                onChangeText={setPrepNote}
+                placeholder="e.g. No fasting needed, bring insurance card"
+                placeholderTextColor={colors.textSecondary}
+                multiline
+              />
+            </View>
           </Field>
 
           {Platform.OS !== 'web' && (
             <TouchableOpacity style={styles.calendarRow} onPress={() => setAddToCalendar(v => !v)} activeOpacity={0.7}>
-              <Ionicons
-                name={addToCalendar ? 'checkbox' : 'square-outline'}
-                size={20}
-                color={addToCalendar ? colors.primary : colors.textSecondary}
-              />
+              <View style={[styles.checkbox, addToCalendar && styles.checkboxChecked]}>
+                {addToCalendar && <Ionicons name="checkmark" size={14} color="#fff" />}
+              </View>
               <Text style={styles.calendarRowText}>Add to my calendar</Text>
             </TouchableOpacity>
           )}
@@ -169,23 +178,26 @@ const styles = StyleSheet.create({
   header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   headerTitle: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary },
 
-  scroll: { paddingHorizontal: spacing.md, paddingBottom: 56, paddingTop: 28 },
-
-  row: { flexDirection: 'row', gap: spacing.sm },
+  scroll: { paddingHorizontal: spacing.md, paddingBottom: 56, paddingTop: 20 },
 
   fieldGroup: { marginBottom: spacing.md },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: colors.textPrimary, marginBottom: 6 },
-  input:      { backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: colors.textPrimary },
-  multiline:  { minHeight: 70, textAlignVertical: 'top' },
+
+  inputRow:     { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.xl, paddingHorizontal: 16, paddingVertical: 14 },
+  multilineRow: { alignItems: 'flex-start' },
+  input:        { flex: 1, fontSize: 15, color: colors.textPrimary, padding: 0 },
+  multiline:    { minHeight: 60, textAlignVertical: 'top' },
 
   warningRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: colors.urgentBg, borderRadius: radius.md, padding: spacing.sm, marginTop: -4, marginBottom: spacing.md },
   warningText: { flex: 1, fontSize: 12.5, color: colors.urgent, lineHeight: 18 },
 
-  calendarRow:     { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.md },
+  calendarRow:     { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: spacing.md },
+  checkbox:        { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
   calendarRowText: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
 
-  saveBtn:     { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', marginTop: spacing.xs },
-  saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  saveBtn:     { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 16, alignItems: 'center', marginTop: spacing.xs },
+  saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   skipBtn:     { alignItems: 'center', paddingVertical: spacing.sm, marginTop: spacing.xs },
   skipBtnText: { color: colors.textSecondary, fontWeight: '600', fontSize: 13.5 },
 })
