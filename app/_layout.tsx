@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { View } from 'react-native'
-import { Slot, useRouter, useSegments } from 'expo-router'
+import { Stack, useRouter, useSegments } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useFonts as usePoppinsFonts, Poppins_600SemiBold } from '@expo-google-fonts/poppins'
 import { useFonts as useDMSansFonts, DM_Sans_400Regular } from '@expo-google-fonts/dm-sans'
@@ -106,7 +106,7 @@ export default function RootLayout() {
   return (
     <View style={[{ flex: 1 }, rootFontStyle]}>
       <NavVisibilityProvider>
-        <Slot />
+        <Stack screenOptions={{ headerShown: false }} />
       </NavVisibilityProvider>
     </View>
   )
