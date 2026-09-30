@@ -7,9 +7,11 @@ import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { formatDate, formatDateRange, formatWeekday } from '../../lib/pregnancy'
 import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, removeItem, markDone, unmarkDone, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
 import { addAppointmentToCalendar } from '../../lib/calendar'
+import { goBack } from '../../lib/navigation'
 
 export default function AppointmentDetailScreen() {
   const router = useRouter()
+  const back = () => goBack(router, '/(tabs)/plan')
   const { id } = useLocalSearchParams<{ id: string }>()
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date>(TODAY)
@@ -25,7 +27,7 @@ export default function AppointmentDetailScreen() {
   if (!item) {
     return (
       <SafeAreaView style={styles.container}>
-        <Header router={router} title="Appointment" />
+        <Header onBack={back} title="Appointment" />
         <View style={styles.notFound}>
           <Text style={styles.notFoundText}>This item isn't on your plan anymore.</Text>
         </View>
@@ -37,7 +39,7 @@ export default function AppointmentDetailScreen() {
     const doRemove = async () => {
       const next = await removeItem(items, item!.id)
       setItems(next)
-      router.back()
+      back()
     }
     if (Platform.OS === 'web') {
       if (window.confirm('Remove this from your plan?')) doRemove()
@@ -76,7 +78,7 @@ export default function AppointmentDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header router={router} title={item.title} />
+      <Header onBack={back} title={item.title} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
@@ -196,10 +198,10 @@ export default function AppointmentDetailScreen() {
   )
 }
 
-function Header({ router, title }: { router: ReturnType<typeof useRouter>; title: string }) {
+function Header({ onBack, title }: { onBack: () => void; title: string }) {
   return (
     <View style={styles.header}>
-      <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+      <TouchableOpacity onPress={onBack} hitSlop={8}>
         <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
       </TouchableOpacity>
       <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>

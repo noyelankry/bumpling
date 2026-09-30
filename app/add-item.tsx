@@ -8,9 +8,11 @@ import DateField from '../components/DateField'
 import { formatDateRange } from '../lib/pregnancy'
 import { loadCareItems, loadLMP, scheduleItem, addCustomItem } from '../lib/carePlan'
 import { addAppointmentToCalendar } from '../lib/calendar'
+import { goBack } from '../lib/navigation'
 
 export default function AddItemScreen() {
   const router = useRouter()
+  const back = () => goBack(router, '/(tabs)/plan')
   const params = useLocalSearchParams<{ id?: string; title?: string; date?: string; time?: string; location?: string; prepNote?: string; windowStart?: string; windowEnd?: string }>()
   const isEditing = !!params.id
   const windowStart = params.windowStart ? new Date(params.windowStart) : null
@@ -51,13 +53,13 @@ export default function AddItemScreen() {
       if (!result.ok) {
         setSaving(false)
         // The appointment itself is already saved — only the calendar step failed.
-        Alert.alert("Couldn't add to calendar", result.message, [{ text: 'OK', onPress: () => router.back() }])
+        Alert.alert("Couldn't add to calendar", result.message, [{ text: 'OK', onPress: back }])
         return
       }
     }
 
     setSaving(false)
-    router.back()
+    back()
   }
 
   return (
@@ -65,7 +67,7 @@ export default function AddItemScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
 
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+          <TouchableOpacity onPress={back} hitSlop={8}>
             <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{isEditing ? 'Schedule appointment' : 'Add appointment'}</Text>
@@ -154,7 +156,7 @@ export default function AddItemScreen() {
             <Text style={styles.saveBtnText}>{isEditing ? 'Save' : 'Add to plan'}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.skipBtn} onPress={() => router.back()} disabled={saving}>
+          <TouchableOpacity style={styles.skipBtn} onPress={back} disabled={saving}>
             <Text style={styles.skipBtnText}>Skip for now</Text>
           </TouchableOpacity>
 

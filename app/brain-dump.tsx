@@ -5,6 +5,7 @@ import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { colors, spacing, radius, fonts } from '../lib/theme'
+import { goBack } from '../lib/navigation'
 
 const STORAGE_KEY = 'bumpling_brain_dump'
 
@@ -24,6 +25,7 @@ type Entry = {
 
 export default function BrainDumpScreen() {
   const router = useRouter()
+  const back = () => goBack(router, '/(tabs)/more')
   const [entries, setEntries] = useState<Entry[]>([])
   const [text, setText] = useState('')
   const [type, setType] = useState<EntryType>('thought')
@@ -64,7 +66,7 @@ export default function BrainDumpScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
 
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+          <TouchableOpacity onPress={back} hitSlop={8}>
             <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Brain dump</Text>
