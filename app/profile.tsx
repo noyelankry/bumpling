@@ -12,6 +12,7 @@ import { DEV_BYPASS_KEY } from '../lib/devBypass'
 import { goBack } from '../lib/navigation'
 import { clearHealthData } from './(tabs)/health'
 import { clearBrainDumpData } from '../lib/brainDump'
+import { type Partner, loadPartner, savePartner, clearPartnerData } from '../lib/partner'
 
 type Profile = { full_name: string; username: string }
 
@@ -19,11 +20,12 @@ export default function ProfileScreen() {
   const router = useRouter()
   const back = () => goBack(router, '/(tabs)')
   const [form, setForm] = useState<Profile>({ full_name: '', username: '' })
+  const [partner, setPartner] = useState<Partner>({ name: '', email: '' })
   const [saving, setSaving] = useState(false)
   const [editing, setEditing] = useState(false)
-  const [snapshot, setSnapshot] = useState<Profile | null>(null)
+  const [snapshot, setSnapshot] = useState<{ form: Profile; partner: Partner } | null>(null)
 
-  useFocusEffect(useCallback(() => { loadProfile() }, []))
+  useFocusEffect(useCallback(() => { loadProfile(); loadPartner().then(setPartner) }, []))
 
   async function loadProfile() {
     const { data } = await supabase.auth.getClaims()
@@ -37,24 +39,29 @@ export default function ProfileScreen() {
 
   async function save() {
     setSaving(true)
+    // Partner info is local-only (AsyncStorage, see lib/partner.ts) — it
+    // saves regardless of Supabase session state, unlike the profile fields
+    // below which need a signed-in user to write to.
+    await savePartner(partner)
     const { data } = await supabase.auth.getClaims()
-    if (!data?.claims) { setSaving(false); return }
-    const { error } = await supabase.from('profiles').update({
-      full_name:  form.full_name || null,
-      username:   form.username || null,
-      updated_at: new Date().toISOString(),
-    }).eq('id', data.claims.sub)
+    if (data?.claims) {
+      const { error } = await supabase.from('profiles').update({
+        full_name:  form.full_name || null,
+        username:   form.username || null,
+        updated_at: new Date().toISOString(),
+      }).eq('id', data.claims.sub)
+      if (error) { setSaving(false); Alert.alert('Error', error.message); return }
+    }
     setSaving(false)
-    if (error) { Alert.alert('Error', error.message); return }
     setEditing(false)
   }
 
   function toggleEdit() {
     if (editing) {
-      if (snapshot) setForm(snapshot)
+      if (snapshot) { setForm(snapshot.form); setPartner(snapshot.partner) }
       setEditing(false)
     } else {
-      setSnapshot(form)
+      setSnapshot({ form, partner })
       setEditing(true)
     }
   }
@@ -66,6 +73,7 @@ export default function ProfileScreen() {
         clearCarePlanData(),
         clearHealthData(),
         clearBrainDumpData(),
+        clearPartnerData(),
         AsyncStorage.removeItem(DEV_BYPASS_KEY),
       ])
       router.replace('/(auth)/login')
@@ -81,6 +89,7 @@ export default function ProfileScreen() {
   }
 
   const set = (k: keyof Profile) => (v: string) => setForm(f => ({ ...f, [k]: v }))
+  const setPartnerField = (k: keyof Partner) => (v: string) => setPartner(p => ({ ...p, [k]: v }))
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -156,6 +165,39 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        <Text style={styles.sectionLabel}>Partner</Text>
+        <Text style={styles.sectionHint}>Used to share appointment details — add their email to invite them along.</Text>
+
+        <View style={[styles.fieldsCard, editing && styles.fieldsCardEditing]}>
+          <View style={styles.fieldRow}>
+            <Text style={styles.fieldLabel}>Partner's name</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={partner.name}
+              onChangeText={setPartnerField('name')}
+              placeholder="Their name"
+              placeholderTextColor={colors.textSecondary}
+              editable={editing}
+            />
+          </View>
+
+          <View style={styles.fieldDivider} />
+
+          <View style={styles.fieldRow}>
+            <Text style={styles.fieldLabel}>Partner's email</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={partner.email}
+              onChangeText={setPartnerField('email')}
+              placeholder="their@email.com"
+              placeholderTextColor={colors.textSecondary}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              editable={editing}
+            />
+          </View>
+        </View>
+
         {editing && (
           <TouchableOpacity style={styles.saveBtn} onPress={save} disabled={saving}>
             {saving
@@ -191,6 +233,7 @@ const styles = StyleSheet.create({
   heroHeart:   { position: 'absolute', top: -3, right: -5 },
 
   sectionLabel:    { fontSize: 12, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: spacing.xs, marginTop: spacing.xs },
+  sectionHint:     { fontSize: 12, color: colors.textSecondary, marginTop: -4, marginBottom: spacing.xs, lineHeight: 16 },
   sectionLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   editBtn:         { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.neutralChip, alignItems: 'center', justifyContent: 'center' },
 

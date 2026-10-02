@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -7,17 +7,25 @@ import { colors, spacing, radius, fonts } from '../lib/theme'
 import { goBack } from '../lib/navigation'
 import { formatDate } from '../lib/pregnancy'
 import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, type CareItemWithCustom } from '../lib/carePlan'
-import { type EntryCategory, loadEntries, addEntry, SUGGESTED_TAGS } from '../lib/brainDump'
+import { type Entry, type EntryKind, loadEntries, updateEntry, removeEntry, SUGGESTED_TAGS } from '../lib/brainDump'
 
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name']
 type Section = 'details' | 'appointment' | 'tags' | null
 
-export default function AddBrainDumpScreen() {
+const KIND_OPTIONS: { kind: EntryKind; icon: IoniconsName; label: string }[] = [
+  { kind: 'thought', icon: 'bulb-outline', label: 'Thought' },
+  { kind: 'doctor', icon: 'medical-outline', label: 'Ask doctor' },
+]
+
+export default function EditBrainDumpScreen() {
   const router = useRouter()
   const back = () => goBack(router, '/(tabs)/brain-dump')
-  const params = useLocalSearchParams<{ text?: string; category?: string }>()
+  const { id } = useLocalSearchParams<{ id: string }>()
 
-  const [text, setText] = useState(params.text ?? '')
-  const [category, setCategory] = useState<EntryCategory>(params.category === 'doctor' ? 'doctor' : 'personal')
+  const [entries, setEntries] = useState<Entry[]>([])
+  const [loaded, setLoaded] = useState(false)
+  const [text, setText] = useState('')
+  const [kind, setKind] = useState<EntryKind>('thought')
   const [details, setDetails] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [appointmentId, setAppointmentId] = useState<string | undefined>()
@@ -31,7 +39,20 @@ export default function AddBrainDumpScreen() {
   useFocusEffect(useCallback(() => {
     loadCareItems().then(setCareItems)
     loadLMP().then(setLmp)
-  }, []))
+    loadEntries().then(all => {
+      setEntries(all)
+      const entry = all.find(e => e.id === id)
+      if (entry) {
+        setText(entry.text)
+        setKind(entry.kind)
+        setDetails(entry.details ?? '')
+        setTags(entry.tags)
+        setAppointmentId(entry.linkedAppointmentId)
+        setAppointmentTitle(entry.linkedAppointmentTitle)
+      }
+      setLoaded(true)
+    })
+  }, [id]))
 
   const upcomingAppointments = useMemo(() => {
     return computeCareItems(careItems, lmp, TODAY)
@@ -48,24 +69,23 @@ export default function AddBrainDumpScreen() {
     setTags(t => t.includes(tag) ? t.filter(x => x !== tag) : [...t, tag])
   }
 
-  function pickAppointment(id: string, title: string) {
-    if (appointmentId === id) {
+  function pickAppointment(appId: string, title: string) {
+    if (appointmentId === appId) {
       setAppointmentId(undefined)
       setAppointmentTitle(undefined)
     } else {
-      setAppointmentId(id)
+      setAppointmentId(appId)
       setAppointmentTitle(title)
     }
   }
 
   async function save() {
     const trimmed = text.trim()
-    if (!trimmed || saving) return
+    if (!trimmed || saving || !id) return
     setSaving(true)
-    const entries = await loadEntries()
-    await addEntry(entries, {
+    await updateEntry(entries, id, {
       text: trimmed,
-      category,
+      kind,
       details,
       tags,
       linkedAppointmentId: appointmentId,
@@ -73,6 +93,35 @@ export default function AddBrainDumpScreen() {
     })
     setSaving(false)
     back()
+  }
+
+  function confirmDelete() {
+    if (!id) return
+    const doDelete = async () => { await removeEntry(entries, id); back() }
+    if (Platform.OS === 'web') {
+      if (window.confirm('Delete this entry?')) doDelete()
+      return
+    }
+    Alert.alert('Delete entry?', '', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: doDelete },
+    ])
+  }
+
+  if (loaded && !entries.some(e => e.id === id)) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={back} hitSlop={8}>
+            <Text style={styles.cancelText}>Close</Text>
+          </TouchableOpacity>
+          <View />
+        </View>
+        <View style={styles.notFound}>
+          <Text style={styles.notFoundText}>This entry isn't around anymore.</Text>
+        </View>
+      </SafeAreaView>
+    )
   }
 
   return (
@@ -83,6 +132,7 @@ export default function AddBrainDumpScreen() {
           <TouchableOpacity onPress={back} hitSlop={8}>
             <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
+          <Text style={styles.headerTitle}>Edit entry</Text>
           <TouchableOpacity onPress={save} hitSlop={8} disabled={!text.trim() || saving}>
             <Text style={[styles.saveText, !text.trim() && styles.saveTextDisabled]}>Save</Text>
           </TouchableOpacity>
@@ -98,33 +148,21 @@ export default function AddBrainDumpScreen() {
               placeholder="What's on your mind?"
               placeholderTextColor={colors.textSecondary}
               multiline
-              autoFocus={!params.text}
             />
-            <View style={styles.addRow}>
-              <View style={styles.typeToggle}>
-                <TouchableOpacity
-                  style={[styles.typeChip, category === 'personal' && styles.typeChipActive]}
-                  onPress={() => setCategory('personal')}
-                >
-                  <Ionicons name="bulb-outline" size={14} color={category === 'personal' ? '#fff' : colors.textSecondary} />
-                  <Text style={[styles.typeChipText, category === 'personal' && styles.typeChipTextActive]}>Thought</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.typeChip, category === 'doctor' && styles.typeChipActive]}
-                  onPress={() => setCategory('doctor')}
-                >
-                  <Ionicons name="medical-outline" size={14} color={category === 'doctor' ? '#fff' : colors.textSecondary} />
-                  <Text style={[styles.typeChipText, category === 'doctor' && styles.typeChipTextActive]}>Ask doctor</Text>
-                </TouchableOpacity>
-              </View>
-              <TouchableOpacity
-                style={[styles.addBtn, !text.trim() && styles.addBtnDisabled]}
-                onPress={save}
-                disabled={!text.trim() || saving}
-                accessibilityLabel="Save entry"
-              >
-                <Ionicons name="add" size={20} color="#fff" />
-              </TouchableOpacity>
+            <View style={styles.typeToggle}>
+              {KIND_OPTIONS.map(opt => {
+                const active = kind === opt.kind
+                return (
+                  <TouchableOpacity
+                    key={opt.kind}
+                    style={[styles.typeChip, active && styles.typeChipActive]}
+                    onPress={() => setKind(opt.kind)}
+                  >
+                    <Ionicons name={opt.icon} size={14} color={active ? '#fff' : colors.textSecondary} />
+                    <Text style={[styles.typeChipText, active && styles.typeChipTextActive]}>{opt.label}</Text>
+                  </TouchableOpacity>
+                )
+              })}
             </View>
           </View>
 
@@ -201,6 +239,11 @@ export default function AddBrainDumpScreen() {
             </View>
           </OptionRow>
 
+          <TouchableOpacity style={styles.deleteBtn} onPress={confirmDelete}>
+            <Ionicons name="trash-outline" size={15} color={colors.urgent} />
+            <Text style={styles.deleteBtnText}>Delete entry</Text>
+          </TouchableOpacity>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -208,7 +251,7 @@ export default function AddBrainDumpScreen() {
 }
 
 function OptionRow({ icon, label, open, summary, onPress, children }: {
-  icon: React.ComponentProps<typeof Ionicons>['name']
+  icon: IoniconsName
   label: string
   open: boolean
   summary?: string
@@ -234,23 +277,23 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   cancelText: { fontSize: 15, color: colors.textSecondary, fontWeight: '600' },
+  headerTitle: { fontFamily: fonts.headline, fontSize: 16, color: colors.textPrimary },
   saveText:   { fontSize: 15, color: colors.primary, fontWeight: '700' },
   saveTextDisabled: { opacity: 0.4 },
+
+  notFound:     { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
+  notFoundText: { fontSize: 14, color: colors.textSecondary },
 
   scroll: { paddingHorizontal: spacing.md, paddingBottom: 56, paddingTop: spacing.xs },
 
   addCard: { backgroundColor: colors.lavender, borderRadius: radius.xl, padding: spacing.sm, marginBottom: spacing.md },
   input:   { fontSize: 17, color: colors.textPrimary, minHeight: 90, textAlignVertical: 'top', marginBottom: spacing.sm },
-  addRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 
-  typeToggle:      { flexDirection: 'row', gap: 8, flex: 1 },
+  typeToggle:      { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   typeChip:        { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: colors.card },
   typeChipActive:  { backgroundColor: colors.primary },
   typeChipText:    { fontSize: 12.5, fontWeight: '600', color: colors.textSecondary },
   typeChipTextActive: { color: '#fff' },
-
-  addBtn:         { width: 36, height: 36, borderRadius: radius.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginLeft: spacing.xs },
-  addBtnDisabled: { opacity: 0.4 },
 
   optionWrap: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.sm, overflow: 'hidden' },
   optionRow:  { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm },
@@ -273,4 +316,7 @@ const styles = StyleSheet.create({
   tagChipActive:  { backgroundColor: colors.primary, borderColor: colors.primary },
   tagChipText:        { fontSize: 12.5, fontWeight: '600', color: colors.textSecondary },
   tagChipTextActive:  { color: '#fff' },
+
+  deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: spacing.sm, marginTop: spacing.xs },
+  deleteBtnText: { fontSize: 13.5, fontWeight: '700', color: colors.urgent },
 })

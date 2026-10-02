@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, LayoutChangeEvent } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark, BellyMark } from '../../components/illustrations'
-import { addDays, formatDate, formatDateRange, formatWeekday, gestationalAge } from '../../lib/pregnancy'
+import { formatDate, formatDateRange, formatWeekday, gestationalAge } from '../../lib/pregnancy'
 import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
 import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 
@@ -36,10 +36,40 @@ function ItemIcon({ title, size, color }: { title: string; size: number; color: 
   return <Ionicons name="calendar-outline" size={size} color={color} />
 }
 
+type JourneyNodeState = 'done' | 'current' | 'upcoming' | 'milestone'
+type JourneyNode = {
+  key: string
+  label: string
+  /** Untruncated title, for ItemIcon's keyword matching — `label` may be shortened for display. */
+  iconTitle: string
+  weekLabel: string
+  weekValue: number
+  state: JourneyNodeState
+  linkId?: string
+}
+
+function trimesterName(weeks: number) {
+  return weeks < 14 ? 'First trimester' : weeks < 28 ? 'Second trimester' : 'Third trimester'
+}
+
+// Word-boundary-safe shortener for the journey stepper's tight columns —
+// RN Web's native numberOfLines ellipsis truncates mid-word there, which
+// reads badly for longer care-item titles like a biochemical screening.
+function shortLabel(title: string, maxChars = 16): string {
+  if (title.length <= maxChars) return title
+  const words = title.split(' ')
+  let out = ''
+  for (const w of words) {
+    const next = out ? `${out} ${w}` : w
+    if (next.length > maxChars) break
+    out = next
+  }
+  return (out || title.slice(0, maxChars)) + '…'
+}
+
 export default function PlanScreen() {
   const router = useRouter()
   const autoScroll = useAutoScrollEnabled()
-  const [trackWidth, setTrackWidth] = useState(0)
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date>(TODAY)
   const age = useMemo(() => gestationalAge(lmp, TODAY), [lmp])
@@ -58,38 +88,84 @@ export default function PlanScreen() {
   const attention = upcoming.slice(0, 2)
   const needsYouCount = attention.filter(i => i.status === 'actionable').length
 
-  const timelineRange = useMemo(() => {
-    const dates: Date[] = [TODAY]
-    computed.forEach(i => {
-      if (i.status === 'scheduled' && i.scheduledAt) dates.push(i.scheduledAt)
-      else dates.push(i.windowStart, i.windowEnd)
-    })
-    const start = addDays(new Date(Math.min(...dates.map(d => d.getTime()))), -3)
-    const end = addDays(new Date(Math.max(...dates.map(d => d.getTime()))), 4)
-    return { start, end, span: end.getTime() - start.getTime() }
-  }, [computed])
+  // Full chronological list for the "Upcoming appointments" preview below —
+  // distinct from `attention`/`scheduled` above, which are split by what
+  // action each one needs rather than ordered by when it's actually coming up.
+  const allUpcoming = [...scheduled, ...upcoming].sort((a, b) =>
+    (a.scheduledAt ?? a.windowStart).getTime() - (b.scheduledAt ?? b.windowStart).getTime()
+  )
 
-  const pct = (d: Date) =>
-    Math.max(0, Math.min(100, ((d.getTime() - timelineRange.start.getTime()) / timelineRange.span) * 100))
+  // A handful of recognizable milestones rather than every care item — the
+  // journey strip is meant as an at-a-glance "where am I" view, not a full
+  // list (that's what the sections above and the appointment detail are for).
+  const firstUltrasoundItem = computed.find(i => i.id === 'first-ultrasound')
+  const ntScanItem = computed.find(i => i.id === 'nuchal-translucency')
+  // Same ranking as "What needs your attention" above (by bookBy, most
+  // urgent first) rather than raw window order — the earliest *window*
+  // is often a long-overdue first-trimester item once further along.
+  const nextMajorItem = [...scheduled, ...upcoming]
+    .filter(i => i.id !== 'first-ultrasound' && i.id !== 'nuchal-translucency')
+    .sort((a, b) => (a.scheduledAt ?? a.bookBy).getTime() - (b.scheduledAt ?? b.bookBy).getTime())[0]
 
-  const months = useMemo(() => {
-    const list: Date[] = []
-    const cursor = new Date(timelineRange.start.getFullYear(), timelineRange.start.getMonth(), 1)
-    while (cursor.getTime() <= timelineRange.end.getTime()) {
-      list.push(new Date(cursor))
-      cursor.setMonth(cursor.getMonth() + 1)
+  const journeyNodes = useMemo(() => {
+    const nodes: JourneyNode[] = []
+    if (firstUltrasoundItem) {
+      nodes.push({
+        key: firstUltrasoundItem.id,
+        label: shortLabel(firstUltrasoundItem.title),
+        iconTitle: firstUltrasoundItem.title,
+        weekLabel: `W${Math.round(firstUltrasoundItem.windowStartWeek)}`,
+        weekValue: firstUltrasoundItem.windowStartWeek,
+        state: firstUltrasoundItem.status === 'done' ? 'done' : 'upcoming',
+        linkId: firstUltrasoundItem.id,
+      })
     }
-    return list
-  }, [timelineRange])
+    if (ntScanItem) {
+      nodes.push({
+        key: ntScanItem.id,
+        label: 'NT scan',
+        iconTitle: ntScanItem.title,
+        weekLabel: `W${Math.round(ntScanItem.windowStartWeek)}`,
+        weekValue: ntScanItem.windowStartWeek,
+        state: ntScanItem.status === 'done' ? 'done' : 'upcoming',
+        linkId: ntScanItem.id,
+      })
+    }
+    nodes.push({
+      key: 'current',
+      label: `Week ${age.weeks}`,
+      iconTitle: '',
+      weekLabel: 'Here now',
+      weekValue: age.weeks + age.days / 7,
+      state: 'current',
+    })
+    if (nextMajorItem) {
+      nodes.push({
+        key: nextMajorItem.id,
+        label: shortLabel(nextMajorItem.title),
+        iconTitle: nextMajorItem.title,
+        weekLabel: nextMajorItem.status === 'scheduled' && nextMajorItem.scheduledAt
+          ? formatDate(nextMajorItem.scheduledAt)
+          : `W${Math.round(nextMajorItem.windowStartWeek)}`,
+        weekValue: nextMajorItem.windowStartWeek,
+        state: 'upcoming',
+        linkId: nextMajorItem.id,
+      })
+    }
+    nodes.push({ key: 'meet-baby', label: 'Meet baby', iconTitle: '', weekLabel: 'W40', weekValue: 40, state: 'milestone' })
 
-  const timelineItems = [...computed].sort((a, b) => {
-    const da = a.status === 'scheduled' && a.scheduledAt ? a.scheduledAt : a.windowStart
-    const db = b.status === 'scheduled' && b.scheduledAt ? b.scheduledAt : b.windowStart
-    return da.getTime() - db.getTime()
-  })
-  const TIMELINE_LIST_LIMIT = 6
-  const timelineVisible = timelineItems.slice(0, TIMELINE_LIST_LIMIT)
-  const timelineHiddenCount = timelineItems.length - timelineVisible.length
+    return nodes.sort((a, b) => a.weekValue - b.weekValue)
+  }, [firstUltrasoundItem, ntScanItem, nextMajorItem, age])
+
+  const currentNodeIndex = journeyNodes.findIndex(n => n.state === 'current')
+
+  const nextUpMeta = (() => {
+    if (!nextMajorItem) return ''
+    if (nextMajorItem.status === 'scheduled' && nextMajorItem.scheduledAt) return formatDate(nextMajorItem.scheduledAt)
+    if (nextMajorItem.status === 'actionable') return `Book by ${formatDate(nextMajorItem.bookBy)}`
+    const days = Math.max(0, Math.round((nextMajorItem.windowStart.getTime() - TODAY.getTime()) / 86400000))
+    return `Week ${Math.round(nextMajorItem.windowStartWeek)} · in ${days} day${days === 1 ? '' : 's'}`
+  })()
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -196,6 +272,16 @@ export default function PlanScreen() {
           </>
         )}
 
+        <View style={styles.reassuranceCard}>
+          <View style={styles.reassuranceIconChip}>
+            <Ionicons name="heart-outline" size={20} color={colors.sageDeep} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.reassuranceTitle}>Everything else can wait</Text>
+            <Text style={styles.reassuranceSub}>We'll bring things back when they become relevant.</Text>
+          </View>
+        </View>
+
         {scheduled.length > 0 && (
           <>
             <Text style={styles.sectionTitle}>Next up</Text>
@@ -228,102 +314,137 @@ export default function PlanScreen() {
           </>
         )}
 
-        <Text style={styles.sectionTitle}>Your timeline</Text>
-        <View style={styles.timelineCard}>
-          <View style={styles.monthRow}>
-            {months.map(m => (
-              <Text key={m.toISOString()} style={styles.monthLabel}>
-                {m.toLocaleDateString('en-US', { month: 'short' })}
-              </Text>
-            ))}
+        <View style={styles.journeyCard}>
+          <View style={styles.journeyHeaderRow}>
+            <Text style={styles.journeyTitle}>Your journey</Text>
+            <View style={styles.weekChip}>
+              <Text style={styles.weekChipText}>Week {age.weeks}</Text>
+              <Ionicons name="chevron-down" size={13} color={colors.primaryDark} />
+            </View>
           </View>
 
-          <View style={styles.trackWrap} onLayout={(e: LayoutChangeEvent) => setTrackWidth(e.nativeEvent.layout.width)}>
-            <View style={styles.trackLine} />
-            {trackWidth > 0 && computed.map(item => {
-              const meta = metaFor(item.windowStartWeek)
-              if (item.status === 'done') {
-                const mid = new Date((item.windowStart.getTime() + item.windowEnd.getTime()) / 2)
-                return (
-                  <View
-                    key={item.id}
-                    style={[styles.trackDoneDot, { left: `${pct(mid)}%` }]}
-                  />
-                )
-              }
-              if (item.status === 'scheduled' && item.scheduledAt) {
-                return (
-                  <View
-                    key={item.id}
-                    style={[styles.trackDot, { left: `${pct(item.scheduledAt)}%` }]}
-                  />
-                )
-              }
-              const left = pct(item.windowStart)
-              const width = Math.max(pct(item.windowEnd) - left, 3)
-              return (
-                <View
-                  key={item.id}
-                  style={[
-                    styles.trackSegment,
-                    { left: `${left}%`, width: `${width}%`, backgroundColor: meta.trackColor },
-                  ]}
-                />
-              )
-            })}
+          <Text style={styles.trimesterTitle}>{trimesterName(age.weeks)}</Text>
+          <View style={styles.hereRow}>
+            <Text style={styles.hereText}>You're here</Text>
+            <Ionicons name="heart" size={13} color={colors.primary} />
           </View>
 
-          <View style={styles.timelineList}>
-            {timelineVisible.map(item => {
-              const meta = metaFor(item.windowStartWeek)
-              const isScheduled = item.status === 'scheduled' && item.scheduledAt
-              const isDone = item.status === 'done'
-              return (
-                <View key={item.id} style={styles.timelineListRow}>
-                  <View
-                    style={[
-                      styles.timelineSwatch,
-                      { backgroundColor: isDone ? colors.sageDeep : isScheduled ? colors.scheduledDot : meta.trackColor },
-                      (isScheduled || isDone) && styles.timelineSwatchDot,
-                    ]}
-                  />
-                  <Text style={[styles.timelineListTitle, isDone && styles.timelineListTitleDone]}>{item.title}</Text>
-                  <Text style={[styles.timelineListDate, isDone && styles.timelineListDateDone]}>
-                    {isDone ? 'Done' : isScheduled ? formatDate(item.scheduledAt!) : formatDateRange(item.windowStart, item.windowEnd)}
+          <View style={styles.journeyTrack}>
+            {journeyNodes.map((node, i) => {
+              const gapBeforeColor = i > 0 && i - 1 < currentNodeIndex ? colors.sageDeep : colors.border
+              const gapAfterColor = i < currentNodeIndex ? colors.sageDeep : colors.border
+              const content = (
+                <View key={node.key} style={styles.journeyNodeCol}>
+                  <View style={styles.journeyIconRow}>
+                    {i > 0 && <View style={[styles.journeyLine, { backgroundColor: gapBeforeColor }]} />}
+                    {node.state === 'current' ? (
+                      <View style={styles.journeyCurrentWrap}>
+                        <View style={styles.journeyGlow} />
+                        <View style={styles.journeyCircleCurrent} />
+                      </View>
+                    ) : (
+                      <View
+                        style={[
+                          styles.journeyCircle,
+                          node.state === 'done' && styles.journeyCircleDone,
+                          node.state === 'upcoming' && styles.journeyCircleUpcoming,
+                          node.state === 'milestone' && styles.journeyCircleMilestone,
+                        ]}
+                      >
+                        {node.state === 'done' ? (
+                          <Ionicons name="checkmark" size={15} color={colors.sageDeep} />
+                        ) : node.state === 'milestone' ? (
+                          <Ionicons name="gift-outline" size={14} color={colors.lavenderDeep} />
+                        ) : (
+                          <ItemIcon title={node.iconTitle} size={13} color={colors.textSecondary} />
+                        )}
+                      </View>
+                    )}
+                    {i < journeyNodes.length - 1 && <View style={[styles.journeyLine, { backgroundColor: gapAfterColor }]} />}
+                  </View>
+                  <Text style={styles.journeyLabel} numberOfLines={2}>{node.label}</Text>
+                  <Text style={[styles.journeyWeek, node.state === 'current' && styles.journeyWeekCurrent]} numberOfLines={1}>
+                    {node.weekLabel}
                   </Text>
                 </View>
               )
+              return node.linkId ? (
+                <TouchableOpacity key={node.key} style={styles.journeyNodeTouchable} activeOpacity={0.7} onPress={() => router.push(`/appointment/${node.linkId}`)}>
+                  {content}
+                </TouchableOpacity>
+              ) : content
             })}
-            {timelineHiddenCount > 0 && (
-              <Text style={styles.timelineMore}>+{timelineHiddenCount} more later</Text>
-            )}
           </View>
 
-          <View style={styles.legendRow}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendPill, { backgroundColor: colors.sageDeep }]} />
-              <Text style={styles.legendText}>Target window</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: colors.scheduledDot }]} />
-              <Text style={styles.legendText}>Scheduled</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: colors.sageDeep }]} />
-              <Text style={styles.legendText}>Done</Text>
-            </View>
-          </View>
+          {nextMajorItem && (
+            <TouchableOpacity style={styles.nextUpMiniCard} activeOpacity={0.7} onPress={() => router.push(`/appointment/${nextMajorItem.id}`)}>
+              <View style={styles.nextUpMiniIconChip}>
+                <ItemIcon title={nextMajorItem.title} size={18} color={colors.lavenderDeep} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.nextUpMiniEyebrow}>Next up</Text>
+                <Text style={styles.nextUpMiniTitle}>{nextMajorItem.title}</Text>
+                <Text style={styles.nextUpMiniMeta}>{nextUpMeta}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.lavenderDeep} />
+            </TouchableOpacity>
+          )}
         </View>
 
-        <View style={styles.reassuranceCard}>
-          <View style={styles.reassuranceIconChip}>
-            <Ionicons name="heart-outline" size={20} color={colors.sageDeep} />
+        {allUpcoming.length > 0 && (
+          <>
+            <View style={styles.sectionTitleRow}>
+              <Text style={styles.sectionTitle}>Upcoming appointments</Text>
+              <TouchableOpacity style={styles.viewAllBtn} onPress={() => router.push('/appointments')}>
+                <Text style={styles.viewAllText}>View all</Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.primaryDark} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.listCard}>
+              {allUpcoming.slice(0, 3).map((appt, i) => {
+                const meta = metaFor(appt.windowStartWeek)
+                return (
+                  <TouchableOpacity
+                    key={appt.id}
+                    style={[styles.nextUpRow, i > 0 && styles.listRowDivider]}
+                    activeOpacity={0.7}
+                    onPress={() => router.push(`/appointment/${appt.id}`)}
+                  >
+                    <View style={[styles.iconChip, { backgroundColor: meta.chipBg }]}>
+                      <ItemIcon title={appt.title} size={18} color={meta.iconColor} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.attentionTitle}>{appt.title}</Text>
+                      <Text style={styles.attentionMeta}>
+                        {appt.status === 'scheduled' && appt.scheduledAt ? formatWeekday(appt.scheduledAt) : `Week ${Math.round(appt.windowStartWeek)}`}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                )
+              })}
+            </View>
+          </>
+        )}
+
+        {/* TODO: placeholder only — see app/prepare-for-birth.tsx for the
+            full feature spec. Surfaces a couple weeks ahead of its week
+            30-32 window, same early-heads-up pattern as the journey card's
+            "Next up". */}
+        {age.weeks >= 26 && (
+          <View style={styles.birthPrepCard}>
+            <View style={styles.birthPrepIconChip}>
+              <Ionicons name="heart-outline" size={22} color={colors.lavenderDeep} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.birthPrepTitle}>Prepare for birth</Text>
+              <Text style={styles.birthPrepSub}>Birth preferences, hospital bag, and more — around week 30.</Text>
+            </View>
+            <TouchableOpacity style={styles.birthPrepBtn} onPress={() => router.push('/prepare-for-birth')}>
+              <Text style={styles.birthPrepBtnText}>Explore</Text>
+            </TouchableOpacity>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.reassuranceTitle}>Everything else can wait</Text>
-            <Text style={styles.reassuranceSub}>We'll bring things back when they become relevant.</Text>
-          </View>
-        </View>
+        )}
 
       </ScrollView>
     </SafeAreaView>
@@ -358,6 +479,9 @@ const styles = StyleSheet.create({
   needsYouSub:   { fontSize: 12.5, color: colors.textPrimary, opacity: 0.65, marginTop: 3, lineHeight: 18 },
 
   sectionTitle: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary, marginBottom: spacing.xs },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  viewAllBtn:  { flexDirection: 'row', alignItems: 'center', gap: 2, marginBottom: spacing.xs },
+  viewAllText: { fontSize: 13, fontWeight: '700', color: colors.primaryDark },
 
   attentionCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
   iconChip:      { width: 44, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
@@ -375,34 +499,50 @@ const styles = StyleSheet.create({
   nextUpRow:       { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.sm },
   listRowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
 
-  timelineCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
-  monthRow:     { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, paddingHorizontal: 2 },
-  monthLabel:   { fontSize: 12.5, fontWeight: '700', color: colors.textPrimary },
+  journeyCard: { backgroundColor: colors.card, borderRadius: radius.xl, padding: spacing.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
+  journeyHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
+  journeyTitle: { fontFamily: fonts.headline, fontSize: 24, color: colors.textPrimary },
+  weekChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.peach, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill },
+  weekChipText: { fontSize: 13, fontWeight: '700', color: colors.primaryDark },
 
-  trackWrap:  { height: 22, justifyContent: 'center', marginBottom: spacing.sm },
-  trackLine:  { height: 4, borderRadius: 2, backgroundColor: colors.border, width: '100%' },
-  trackSegment: { position: 'absolute', height: 8, borderRadius: 4, opacity: 0.85 },
-  trackDot: { position: 'absolute', width: 12, height: 12, borderRadius: 6, backgroundColor: colors.scheduledDot, marginLeft: -6, borderWidth: 2, borderColor: colors.card },
-  trackDoneDot: { position: 'absolute', width: 10, height: 10, borderRadius: 5, backgroundColor: colors.sageDeep, marginLeft: -5, borderWidth: 2, borderColor: colors.card },
+  trimesterTitle: { fontFamily: fonts.headline, fontSize: 18, color: colors.textPrimary, marginBottom: 2 },
+  hereRow:  { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: spacing.md },
+  hereText: { fontSize: 13.5, color: colors.textSecondary },
 
-  timelineList:    { gap: 8, marginBottom: spacing.sm },
-  timelineListRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  timelineSwatch:  { width: 10, height: 10, borderRadius: 3 },
-  timelineSwatchDot: { borderRadius: 5 },
-  timelineListTitle: { flex: 1, fontSize: 13, fontWeight: '600', color: colors.textPrimary },
-  timelineListTitleDone: { color: colors.textSecondary, textDecorationLine: 'line-through' },
-  timelineListDate:  { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
-  timelineListDateDone: { color: colors.sageDeep },
-  timelineMore:      { fontSize: 12, color: colors.textSecondary, fontStyle: 'italic', marginTop: 2 },
+  journeyTrack: { flexDirection: 'row', marginBottom: spacing.md },
+  journeyNodeTouchable: { flex: 1 },
+  journeyNodeCol: { flex: 1, alignItems: 'center' },
+  journeyIconRow: { flexDirection: 'row', alignItems: 'center', width: '100%', height: 40 },
+  journeyLine: { flex: 1, height: 1.5 },
 
-  legendRow:  { flexDirection: 'row', gap: spacing.md, paddingTop: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  legendPill: { width: 16, height: 8, borderRadius: 4 },
-  legendDot:  { width: 8, height: 8, borderRadius: 4 },
-  legendText: { fontSize: 11.5, color: colors.textSecondary, fontWeight: '600' },
+  journeyCircle: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
+  journeyCircleDone: { backgroundColor: colors.sage },
+  journeyCircleUpcoming: { backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border },
+  journeyCircleMilestone: { backgroundColor: colors.lavender },
 
-  reassuranceCard:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.sage, borderRadius: radius.lg, padding: spacing.sm },
+  journeyCurrentWrap: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  journeyGlow: { position: 'absolute', width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primary, opacity: 0.14 },
+  journeyCircleCurrent: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primary },
+
+  journeyLabel: { fontSize: 10.5, fontWeight: '700', color: colors.textPrimary, textAlign: 'center', marginTop: 6, lineHeight: 13 },
+  journeyWeek:  { fontSize: 9.5, color: colors.textSecondary, textAlign: 'center', marginTop: 2 },
+  journeyWeekCurrent: { color: colors.primaryDark, fontWeight: '700' },
+
+  nextUpMiniCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.lavender, borderRadius: radius.lg, padding: spacing.sm },
+  nextUpMiniIconChip: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+  nextUpMiniEyebrow: { fontSize: 11, fontWeight: '700', color: colors.lavenderDeep, textTransform: 'uppercase', letterSpacing: 0.5 },
+  nextUpMiniTitle: { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary, marginTop: 1 },
+  nextUpMiniMeta:  { fontSize: 12, color: colors.textPrimary, opacity: 0.65, marginTop: 2 },
+
+  reassuranceCard:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.sage, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg },
   reassuranceIconChip: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
   reassuranceTitle:    { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary },
   reassuranceSub:      { fontSize: 12, color: colors.textPrimary, opacity: 0.65, marginTop: 2, lineHeight: 17 },
+
+  birthPrepCard:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.lavender, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg },
+  birthPrepIconChip: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+  birthPrepTitle:    { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary },
+  birthPrepSub:      { fontSize: 12, color: colors.textPrimary, opacity: 0.65, marginTop: 2, lineHeight: 16 },
+  birthPrepBtn:      { backgroundColor: colors.card, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 8 },
+  birthPrepBtnText:  { fontSize: 12.5, fontWeight: '700', color: colors.lavenderDeep },
 })

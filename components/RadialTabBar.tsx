@@ -30,17 +30,6 @@ const FAN_OFFSETS = [
   { dx: 82, dy: -44 },
 ]
 
-function DotGrid({ color }: { color: string }) {
-  return (
-    <View style={styles.dotGrid}>
-      <View style={[styles.dot, { backgroundColor: color }]} />
-      <View style={[styles.dot, { backgroundColor: color }]} />
-      <View style={[styles.dot, { backgroundColor: color }]} />
-      <View style={[styles.dot, { backgroundColor: color }]} />
-    </View>
-  )
-}
-
 export default function RadialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets()
   const [width, setWidth] = useState(0)
@@ -104,7 +93,6 @@ export default function RadialTabBar({ state, descriptors, navigation }: BottomT
           activeOpacity={0.85}
           onPress={() => goTo(pillRoute.key, pillRoute.name)}
         >
-          <DotGrid color={activeKey === pillRoute.key ? '#fff' : colors.primary} />
           <Text style={[styles.pillText, activeKey === pillRoute.key ? styles.pillTextActive : styles.pillTextInactive]}>{pillTitle}</Text>
         </TouchableOpacity>
       </View>
@@ -142,7 +130,4 @@ const styles = StyleSheet.create({
   pillText:         { fontWeight: '700', fontSize: 13 },
   pillTextActive:   { color: colors.textOnPrimary },
   pillTextInactive: { color: colors.primary },
-
-  dotGrid: { width: 12, height: 12, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  dot: { width: 4, height: 4, borderRadius: 2 },
 })

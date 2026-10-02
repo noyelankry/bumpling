@@ -1,12 +1,14 @@
 import { useCallback, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { formatDate, formatDateRange, formatWeekday } from '../../lib/pregnancy'
-import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, removeItem, markDone, unmarkDone, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, removeItem, markDone, unmarkDone, saveVisitNotes, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
 import { addAppointmentToCalendar } from '../../lib/calendar'
+import { shareAppointmentWithPartner } from '../../lib/shareAppointment'
+import { type Partner, loadPartner } from '../../lib/partner'
 import { goBack } from '../../lib/navigation'
 
 export default function AppointmentDetailScreen() {
@@ -15,11 +17,20 @@ export default function AppointmentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date>(TODAY)
+  const [partner, setPartner] = useState<Partner>({ name: '', email: '' })
+  const [notesDraft, setNotesDraft] = useState('')
+  const [notesEditing, setNotesEditing] = useState(false)
+  const [savingNotes, setSavingNotes] = useState(false)
 
   useFocusEffect(useCallback(() => {
-    loadCareItems().then(setItems)
+    loadCareItems().then(all => {
+      setItems(all)
+      setNotesDraft(all.find(i => i.id === id)?.visitNotes ?? '')
+    })
     loadLMP().then(setLmp)
-  }, []))
+    loadPartner().then(setPartner)
+    setNotesEditing(false)
+  }, [id]))
 
   const computed = useMemo(() => computeCareItems(items, lmp, TODAY), [items, lmp])
   const item = computed.find(i => i.id === id)
@@ -76,6 +87,39 @@ export default function AppointmentDetailScreen() {
     }
   }
 
+  async function handleSaveNotes() {
+    setSavingNotes(true)
+    const next = await saveVisitNotes(items, item!.id, notesDraft)
+    setItems(next)
+    setSavingNotes(false)
+    setNotesEditing(false)
+  }
+
+  function cancelNotesEdit() {
+    setNotesDraft(item!.visitNotes ?? '')
+    setNotesEditing(false)
+  }
+
+  async function handleSharePartner() {
+    const dateLabel = item!.scheduledAt
+      ? formatWeekday(item!.scheduledAt)
+      : `Target dates: ${formatDateRange(item!.windowStart, item!.windowEnd)}`
+    const result = await shareAppointmentWithPartner({
+      title: item!.title,
+      dateLabel,
+      timeLabel: item!.scheduledTimeLabel,
+      location: item!.location,
+      notes: item!.visitNotes || item!.prepNote,
+      partnerEmail: partner.email || undefined,
+    })
+    if (!result.message) return
+    if (Platform.OS === 'web') {
+      window.alert(result.message)
+    } else {
+      Alert.alert(result.ok ? 'Shared' : "Couldn't share", result.message)
+    }
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <Header onBack={back} title={item.title} />
@@ -102,20 +146,7 @@ export default function AppointmentDetailScreen() {
         </View>
 
         <View style={styles.card}>
-          {item.status === 'done' ? (
-            <>
-              <View style={styles.doneRow}>
-                <Ionicons name="checkmark-circle" size={22} color={colors.sageDeep} />
-                <Text style={styles.bigDate}>You already did this</Text>
-              </View>
-              {!!item.doneAt && (
-                <Text style={styles.timeLabel}>Marked done on {formatDate(item.doneAt)}</Text>
-              )}
-              <TouchableOpacity style={styles.secondaryBtn} onPress={handleUnmarkDone}>
-                <Text style={styles.secondaryBtnText}>Undo</Text>
-              </TouchableOpacity>
-            </>
-          ) : item.status === 'scheduled' && item.scheduledAt ? (
+          {item.scheduledAt ? (
             <>
               <Text style={styles.bigDate}>{formatWeekday(item.scheduledAt)}</Text>
               {!!item.scheduledTimeLabel && <Text style={styles.timeLabel}>{item.scheduledTimeLabel}</Text>}
@@ -131,6 +162,35 @@ export default function AppointmentDetailScreen() {
                   <Text style={styles.prepText}>{item.prepNote}</Text>
                 </View>
               )}
+            </>
+          ) : item.status === 'done' ? (
+            <View style={styles.doneRow}>
+              <Ionicons name="checkmark-circle" size={22} color={colors.sageDeep} />
+              <Text style={styles.bigDate}>You already did this</Text>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.fieldLabel}>Target dates</Text>
+              <Text style={styles.rangeText}>{formatDateRange(item.windowStart, item.windowEnd)}</Text>
+              {item.status === 'actionable' && (
+                <>
+                  <Text style={[styles.fieldLabel, { marginTop: spacing.sm }]}>Book by</Text>
+                  <Text style={styles.bookByText}>{formatDate(item.bookBy)}</Text>
+                </>
+              )}
+            </>
+          )}
+
+          {item.status === 'done' && !!item.doneAt && (
+            <Text style={styles.timeLabel}>Marked done on {formatDate(item.doneAt)}</Text>
+          )}
+
+          {item.status === 'done' ? (
+            <TouchableOpacity style={styles.secondaryBtn} onPress={handleUnmarkDone}>
+              <Text style={styles.secondaryBtnText}>Undo</Text>
+            </TouchableOpacity>
+          ) : item.scheduledAt ? (
+            <>
               <TouchableOpacity
                 style={styles.secondaryBtn}
                 onPress={() => router.push({
@@ -155,14 +215,6 @@ export default function AppointmentDetailScreen() {
             </>
           ) : (
             <>
-              <Text style={styles.fieldLabel}>Target dates</Text>
-              <Text style={styles.rangeText}>{formatDateRange(item.windowStart, item.windowEnd)}</Text>
-              {item.status === 'actionable' && (
-                <>
-                  <Text style={[styles.fieldLabel, { marginTop: spacing.sm }]}>Book by</Text>
-                  <Text style={styles.bookByText}>{formatDate(item.bookBy)}</Text>
-                </>
-              )}
               <TouchableOpacity
                 style={styles.primaryBtn}
                 onPress={() => router.push({ pathname: '/add-item', params: { id: item.id, title: item.title, prepNote: item.prepNote ?? '', windowStart: item.windowStart.toISOString(), windowEnd: item.windowEnd.toISOString() } })}
@@ -175,6 +227,60 @@ export default function AppointmentDetailScreen() {
             </>
           )}
         </View>
+
+        <View style={styles.notesCard}>
+          <View style={styles.notesHeaderRow}>
+            <Text style={styles.notesTitle}>Notes & summary</Text>
+            {!notesEditing && (
+              <TouchableOpacity onPress={() => setNotesEditing(true)} hitSlop={6}>
+                <Ionicons name={item.visitNotes ? 'pencil' : 'add'} size={16} color={colors.primaryDark} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {notesEditing ? (
+            <>
+              <TextInput
+                style={styles.notesInput}
+                value={notesDraft}
+                onChangeText={setNotesDraft}
+                placeholder="What did the doctor say? Anything worth remembering for next time."
+                placeholderTextColor={colors.textSecondary}
+                multiline
+                autoFocus
+              />
+              <View style={styles.notesActionRow}>
+                <TouchableOpacity style={styles.notesCancelBtn} onPress={cancelNotesEdit} disabled={savingNotes}>
+                  <Text style={styles.notesCancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.notesSaveBtn} onPress={handleSaveNotes} disabled={savingNotes}>
+                  <Text style={styles.notesSaveBtnText}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : item.visitNotes ? (
+            <TouchableOpacity onPress={() => setNotesEditing(true)}>
+              <Text style={styles.notesText}>{item.visitNotes}</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={() => setNotesEditing(true)}>
+              <Text style={styles.notesEmptyText}>Add notes from the visit — what was said, what's next.</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <TouchableOpacity style={styles.shareCard} activeOpacity={0.7} onPress={handleSharePartner}>
+          <View style={styles.shareIconChip}>
+            <Ionicons name="heart-outline" size={20} color={colors.lavenderDeep} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.shareTitle}>{partner.name ? `Share with ${partner.name}` : 'Share with your partner'}</Text>
+            <Text style={styles.shareSub}>
+              {partner.email ? `Sends the details to ${partner.email}` : "Add their email in Profile to send it directly"}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.doctorCard} activeOpacity={0.7} onPress={() => router.push('/brain-dump')}>
           <View style={styles.doctorIconChip}>
@@ -227,7 +333,7 @@ const styles = StyleSheet.create({
   statusPillTextUrgent: { color: colors.urgent },
   statusPillTextNeutral: { color: colors.neutralChipDeep },
 
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
+  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
 
   doneRow:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
   bigDate:   { fontFamily: fonts.headline, fontSize: 20, color: colors.textPrimary },
@@ -245,6 +351,23 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: '#fff', fontWeight: '700', fontSize: 14.5 },
   secondaryBtn:     { alignItems: 'center', paddingVertical: 10, marginTop: spacing.sm },
   secondaryBtnText: { color: colors.primary, fontWeight: '700', fontSize: 13.5 },
+
+  notesCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
+  notesHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  notesTitle: { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary },
+  notesText:  { fontSize: 13.5, color: colors.textPrimary, lineHeight: 19 },
+  notesEmptyText: { fontSize: 13, color: colors.textSecondary, lineHeight: 18, fontStyle: 'italic' },
+  notesInput: { fontSize: 14, color: colors.textPrimary, minHeight: 70, textAlignVertical: 'top', backgroundColor: colors.background, borderRadius: radius.md, padding: spacing.sm },
+  notesActionRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.sm },
+  notesCancelBtn: { paddingVertical: 8, paddingHorizontal: 12 },
+  notesCancelBtnText: { fontSize: 13.5, fontWeight: '600', color: colors.textSecondary },
+  notesSaveBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 8, paddingHorizontal: 18 },
+  notesSaveBtnText: { fontSize: 13.5, fontWeight: '700', color: '#fff' },
+
+  shareCard:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.lavender, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.md },
+  shareIconChip: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+  shareTitle:    { fontFamily: fonts.headline, fontSize: 14.5, color: colors.textPrimary },
+  shareSub:      { fontSize: 12, color: colors.textPrimary, opacity: 0.65, marginTop: 2, lineHeight: 16 },
 
   doctorCard:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
   doctorIconChip: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center' },

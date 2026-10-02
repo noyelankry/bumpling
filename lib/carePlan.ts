@@ -173,4 +173,10 @@ export async function removeItem(items: CareItemWithCustom[], id: string): Promi
   return next
 }
 
+export async function saveVisitNotes(items: CareItemWithCustom[], id: string, notes: string): Promise<CareItemWithCustom[]> {
+  const next = items.map(i => i.id === id ? { ...i, visitNotes: notes.trim() || undefined } : i)
+  await saveCareItems(next)
+  return next
+}
+
 export { computeCareItems }

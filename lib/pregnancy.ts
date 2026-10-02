@@ -17,6 +17,8 @@ export type CareItem = {
   /** Doctor name and/or clinic/location — free text, shown alongside the scheduled date. */
   location?: string
   prepNote?: string
+  /** Post-visit notes/summary — what actually happened, added after the fact. */
+  visitNotes?: string
   /** Set when the user tells us they'd already done this before adding it to the app. */
   done?: boolean
   /** When they told us, not when the test itself happened — informational only. */

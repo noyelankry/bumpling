@@ -1,16 +1,17 @@
-// Shared brain-dump storage: free-form notes and doctor questions, organized
-// by category/tags and optionally linked to an upcoming appointment.
+// Shared brain-dump storage: free-form notes and doctor questions,
+// optionally enriched with details/tags/an appointment link.
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const STORAGE_KEY = 'bumpling_brain_dump'
 
-export type EntryCategory = 'doctor' | 'personal'
+export type EntryKind = 'thought' | 'doctor'
+export type Filter = 'all' | 'doctor' | 'personal'
 
 export type Entry = {
   id: string
   text: string
   details?: string
-  category: EntryCategory
+  kind: EntryKind
   tags: string[]
   linkedAppointmentId?: string
   linkedAppointmentTitle?: string
@@ -20,22 +21,31 @@ export type Entry = {
 
 export const SUGGESTED_TAGS = ['Sleep', 'Energy', 'Symptoms', 'Nutrition']
 
-// Pre-rework entries only had `type` ('doctor' | 'thought') and no
-// tags/details/link — map those into the current shape on load.
-type StoredEntry = Partial<Entry> & { type?: 'doctor' | 'thought' }
+/** "Ask doctor" entries get their own filter; everything else is "Personal". */
+export function filterGroupOf(kind: EntryKind): Filter {
+  return kind === 'doctor' ? 'doctor' : 'personal'
+}
+
+// Earlier shapes had `type` ('doctor' | 'thought') or `category`
+// ('doctor' | 'personal') instead of `kind`, and no tags/details/link; a
+// since-removed 'symptom' kind also folds into 'thought' here.
+type StoredEntry = Partial<Omit<Entry, 'kind'>> & { kind?: string; type?: string; category?: string }
 
 function migrate(raw: StoredEntry[]): Entry[] {
-  return raw.map(e => ({
-    id: e.id ?? Date.now().toString(),
-    text: e.text ?? '',
-    details: e.details,
-    category: e.category ?? (e.type === 'doctor' ? 'doctor' : 'personal'),
-    tags: e.tags ?? [],
-    linkedAppointmentId: e.linkedAppointmentId,
-    linkedAppointmentTitle: e.linkedAppointmentTitle,
-    done: e.done ?? false,
-    createdAt: e.createdAt ?? new Date().toISOString(),
-  }))
+  return raw.map(e => {
+    const kind: EntryKind = (e.kind ?? e.category ?? e.type) === 'doctor' ? 'doctor' : 'thought'
+    return {
+      id: e.id ?? Date.now().toString(),
+      text: e.text ?? '',
+      details: e.details,
+      kind,
+      tags: e.tags ?? [],
+      linkedAppointmentId: e.linkedAppointmentId,
+      linkedAppointmentTitle: e.linkedAppointmentTitle,
+      done: e.done ?? false,
+      createdAt: e.createdAt ?? new Date().toISOString(),
+    }
+  })
 }
 
 export async function loadEntries(): Promise<Entry[]> {
@@ -54,7 +64,7 @@ async function saveEntries(entries: Entry[]): Promise<void> {
 
 export async function addEntry(entries: Entry[], details: {
   text: string
-  category: EntryCategory
+  kind: EntryKind
   details?: string
   tags?: string[]
   linkedAppointmentId?: string
@@ -64,7 +74,7 @@ export async function addEntry(entries: Entry[], details: {
     id: Date.now().toString(),
     text: details.text,
     details: details.details?.trim() || undefined,
-    category: details.category,
+    kind: details.kind,
     tags: details.tags ?? [],
     linkedAppointmentId: details.linkedAppointmentId,
     linkedAppointmentTitle: details.linkedAppointmentTitle,
@@ -72,6 +82,27 @@ export async function addEntry(entries: Entry[], details: {
     createdAt: new Date().toISOString(),
   }
   const next = [entry, ...entries]
+  await saveEntries(next)
+  return next
+}
+
+export async function updateEntry(entries: Entry[], id: string, details: {
+  text: string
+  kind: EntryKind
+  details?: string
+  tags?: string[]
+  linkedAppointmentId?: string
+  linkedAppointmentTitle?: string
+}): Promise<Entry[]> {
+  const next = entries.map(e => e.id === id ? {
+    ...e,
+    text: details.text,
+    details: details.details?.trim() || undefined,
+    kind: details.kind,
+    tags: details.tags ?? [],
+    linkedAppointmentId: details.linkedAppointmentId,
+    linkedAppointmentTitle: details.linkedAppointmentTitle,
+  } : e)
   await saveEntries(next)
   return next
 }

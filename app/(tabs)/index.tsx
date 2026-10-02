@@ -78,25 +78,6 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {brainDumpEntries.length > 0 && (
-          <TouchableOpacity
-            style={styles.brainDumpCard}
-            activeOpacity={0.7}
-            onPress={() => router.push('/brain-dump')}
-          >
-            <View style={styles.iconChipLavender}>
-              <Ionicons name="bulb-outline" size={20} color={colors.lavenderDeep} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.brainDumpTitle}>
-                {brainDumpEntries.length} {brainDumpEntries.length === 1 ? 'thing' : 'things'} on your mind
-              </Text>
-              <Text style={styles.brainDumpSub}>Last added {formatRelativeTime(brainDumpEntries[0].createdAt)}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
-        )}
-
         {nextItem && (
           <TouchableOpacity
             style={styles.nextUpCard}
@@ -135,6 +116,25 @@ export default function HomeScreen() {
                 <Text style={styles.metaText}>{nextItem.location || 'Your care provider'}</Text>
               </View>
             </View>
+          </TouchableOpacity>
+        )}
+
+        {brainDumpEntries.length > 0 && (
+          <TouchableOpacity
+            style={styles.brainDumpCard}
+            activeOpacity={0.7}
+            onPress={() => router.push('/brain-dump')}
+          >
+            <View style={styles.iconChipLavender}>
+              <Ionicons name="bulb-outline" size={20} color={colors.lavenderDeep} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.brainDumpTitle}>
+                {brainDumpEntries.length} {brainDumpEntries.length === 1 ? 'thing' : 'things'} on your mind
+              </Text>
+              <Text style={styles.brainDumpSub}>Last added {formatRelativeTime(brainDumpEntries[0].createdAt)}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         )}
 
