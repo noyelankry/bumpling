@@ -4,29 +4,26 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { colors, spacing, radius, fonts } from '../../lib/theme'
-import { BabyMark } from '../../components/illustrations'
-import { supabase } from '../../lib/supabase'
-import { clearCarePlanData } from '../../lib/carePlan'
-import { DEV_BYPASS_KEY } from '../../lib/devBypass'
-import { useNavVisibility } from '../../lib/navVisibility'
-import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
-import { clearHealthData } from './health'
-import { clearBrainDumpData } from '../brain-dump'
+import { colors, spacing, radius, fonts } from '../lib/theme'
+import { BabyMark } from '../components/illustrations'
+import { supabase } from '../lib/supabase'
+import { clearCarePlanData } from '../lib/carePlan'
+import { DEV_BYPASS_KEY } from '../lib/devBypass'
+import { goBack } from '../lib/navigation'
+import { clearHealthData } from './(tabs)/health'
+import { clearBrainDumpData } from '../lib/brainDump'
 
 type Profile = { full_name: string; username: string }
 
-export default function MoreScreen() {
+export default function ProfileScreen() {
   const router = useRouter()
-  // Nav scroll-collapse is Plan-only; this screen force-expands instead (see health.tsx).
-  const { expand } = useNavVisibility()
-  const autoScroll = useAutoScrollEnabled()
+  const back = () => goBack(router, '/(tabs)')
   const [form, setForm] = useState<Profile>({ full_name: '', username: '' })
   const [saving, setSaving] = useState(false)
   const [editing, setEditing] = useState(false)
   const [snapshot, setSnapshot] = useState<Profile | null>(null)
 
-  useFocusEffect(useCallback(() => { loadProfile(); expand() }, [expand]))
+  useFocusEffect(useCallback(() => { loadProfile() }, []))
 
   async function loadProfile() {
     const { data } = await supabase.auth.getClaims()
@@ -87,26 +84,15 @@ export default function MoreScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-        scrollEnabled={autoScroll.scrollEnabled}
-        onLayout={autoScroll.onLayout}
-        onContentSizeChange={autoScroll.onContentSizeChange}
-      >
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <BabyMark size={34} />
-            <Text style={styles.appName}>Bumpling</Text>
-          </View>
-          <TouchableOpacity style={styles.bellBtn}>
-            <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-            <View style={styles.bellDot} />
+          <TouchableOpacity onPress={back} hitSlop={8}>
+            <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
           </TouchableOpacity>
+          <Text style={styles.headerTitle}>Profile</Text>
+          <View style={{ width: 26 }} />
         </View>
-
-        <Text style={styles.title}>Profile</Text>
 
         <View style={styles.heroCard}>
           <View style={styles.avatar}>
@@ -179,16 +165,6 @@ export default function MoreScreen() {
           </TouchableOpacity>
         )}
 
-        <Text style={styles.sectionLabel}>More</Text>
-
-        <TouchableOpacity style={styles.listCard} onPress={() => router.push('/brain-dump')} activeOpacity={0.8}>
-          <View style={[styles.fieldIcon, styles.braindumpIcon]}>
-            <Ionicons name="bulb-outline" size={18} color={colors.creamDeep} />
-          </View>
-          <Text style={styles.listCardText}>Brain dump</Text>
-          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
-
         <TouchableOpacity style={styles.logoutRow} onPress={signOut} activeOpacity={0.7}>
           <Ionicons name="log-out-outline" size={20} color={colors.urgent} />
           <Text style={styles.logoutText}>Log out</Text>
@@ -201,15 +177,10 @@ export default function MoreScreen() {
 
 const styles = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingHorizontal: spacing.md, paddingTop: 28, paddingBottom: 24 },
+  scroll: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, paddingBottom: 24 },
 
-  header:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  appName:    { fontSize: 24, fontWeight: '700', color: colors.textPrimary },
-  bellBtn:    { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  bellDot:    { position: 'absolute', top: 6, right: 6, width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.background },
-
-  title: { fontFamily: fonts.headline, fontSize: 30, color: colors.textPrimary, marginBottom: spacing.sm },
+  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.sm, marginBottom: spacing.xs },
+  headerTitle: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary },
 
   heroCard:    { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.peach, borderRadius: radius.xl, padding: spacing.sm, marginBottom: spacing.md },
   avatar:      { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
@@ -232,11 +203,6 @@ const styles = StyleSheet.create({
   usernameInputRow: { flexDirection: 'row', alignItems: 'center' },
   usernamePrefix:   { fontSize: 16, fontWeight: '600', color: colors.textSecondary },
   usernameInput:    { flex: 1, marginLeft: 1 },
-
-  listCard:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.md, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
-  listCardText: { flex: 1, fontSize: 15, fontWeight: '600', color: colors.textPrimary },
-  fieldIcon:      { width: 38, height: 38, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
-  braindumpIcon: { backgroundColor: colors.cream },
 
   saveBtn:     { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 14, alignItems: 'center', marginBottom: spacing.md },
   saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },

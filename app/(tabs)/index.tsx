@@ -7,20 +7,21 @@ import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark, FetusIllustration } from '../../components/illustrations'
 import { gestationalAge, formatDate } from '../../lib/pregnancy'
 import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
-import { useNavVisibility } from '../../lib/navVisibility'
 import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
+import { type Entry, loadEntries, formatRelativeTime } from '../../lib/brainDump'
 
 export default function HomeScreen() {
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date>(TODAY)
+  const [brainDumpEntries, setBrainDumpEntries] = useState<Entry[]>([])
   const router = useRouter()
-  const { onScroll, expand } = useNavVisibility()
   const autoScroll = useAutoScrollEnabled()
   const age = gestationalAge(lmp, TODAY)
 
   useFocusEffect(useCallback(() => {
     loadCareItems().then(setItems)
     loadLMP().then(setLmp)
+    loadEntries().then(setBrainDumpEntries)
   }, []))
 
   const computed = computeCareItems(items, lmp, TODAY)
@@ -36,9 +37,6 @@ export default function HomeScreen() {
         scrollEnabled={autoScroll.scrollEnabled}
         onLayout={autoScroll.onLayout}
         onContentSizeChange={autoScroll.onContentSizeChange}
-        onScroll={onScroll}
-        scrollEventThrottle={80}
-        onTouchStart={expand}
       >
 
         <View style={styles.header}>
@@ -46,10 +44,15 @@ export default function HomeScreen() {
             <BabyMark size={34} />
             <Text style={styles.appName}>Bumpling</Text>
           </View>
-          <TouchableOpacity style={styles.bellBtn}>
-            <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-            <View style={styles.bellDot} />
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')} accessibilityLabel="Profile">
+              <Ionicons name="person-outline" size={20} color={colors.textPrimary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.bellBtn}>
+              <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
+              <View style={styles.bellDot} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.weekRow}>
@@ -74,6 +77,25 @@ export default function HomeScreen() {
             tiny fingers are forming and movement is increasing.
           </Text>
         </View>
+
+        {brainDumpEntries.length > 0 && (
+          <TouchableOpacity
+            style={styles.brainDumpCard}
+            activeOpacity={0.7}
+            onPress={() => router.push('/brain-dump')}
+          >
+            <View style={styles.iconChipLavender}>
+              <Ionicons name="bulb-outline" size={20} color={colors.lavenderDeep} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.brainDumpTitle}>
+                {brainDumpEntries.length} {brainDumpEntries.length === 1 ? 'thing' : 'things'} on your mind
+              </Text>
+              <Text style={styles.brainDumpSub}>Last added {formatRelativeTime(brainDumpEntries[0].createdAt)}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
+        )}
 
         {nextItem && (
           <TouchableOpacity
@@ -127,7 +149,9 @@ const styles = StyleSheet.create({
 
   header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   headerLeft:  { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   appName:     { fontSize: 24, fontWeight: '700', color: colors.textPrimary },
+  profileBtn:  { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   bellBtn:     { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', position: 'relative' },
   bellDot:     { position: 'absolute', top: 6, right: 6, width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.background },
 
@@ -148,6 +172,11 @@ const styles = StyleSheet.create({
   tipTextBold: { fontWeight: '700', opacity: 1 },
 
   iconChip: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center' },
+  iconChipLavender: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.lavender, alignItems: 'center', justifyContent: 'center' },
+
+  brainDumpCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.xl, padding: spacing.sm, marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
+  brainDumpTitle: { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary },
+  brainDumpSub:   { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
 
   nextUpCard:    { backgroundColor: colors.card, borderRadius: radius.xl, padding: spacing.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
   nextUpTopRow:  { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

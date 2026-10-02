@@ -1,12 +1,11 @@
 import { useCallback, useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useFocusEffect } from 'expo-router'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { MoodFace, BabyMark, FetusIllustration } from '../../components/illustrations'
-import { useNavVisibility } from '../../lib/navVisibility'
 import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 import { gestationalAge } from '../../lib/pregnancy'
 import { TODAY, loadLMP } from '../../lib/carePlan'
@@ -55,7 +54,7 @@ function formatTime(iso: string) {
 }
 
 export default function HealthScreen() {
-  const { expand } = useNavVisibility()
+  const router = useRouter()
   const autoScroll = useAutoScrollEnabled()
   const [checkIns, setCheckIns] = useState<CheckIn[]>([])
   const [lmp, setLmp] = useState<Date>(TODAY)
@@ -69,11 +68,7 @@ export default function HealthScreen() {
 
   const age = gestationalAge(lmp, TODAY)
 
-  // The nav's scroll-collapse behavior is Plan-only (see RadialTabBar) — this
-  // screen rarely has enough content to benefit, and forcing it here caused
-  // persistent jank. Force-expand on focus so a collapsed state carried over
-  // from Plan doesn't linger when the user switches tabs.
-  useFocusEffect(useCallback(() => { load(); loadLMP().then(setLmp); expand() }, [expand]))
+  useFocusEffect(useCallback(() => { load(); loadLMP().then(setLmp) }, []))
 
   async function load() {
     const raw = await AsyncStorage.getItem(STORAGE_KEY)
@@ -137,10 +132,15 @@ export default function HealthScreen() {
             <BabyMark size={34} />
             <Text style={styles.appName}>Bumpling</Text>
           </View>
-          <TouchableOpacity style={styles.bellBtn}>
-            <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-            <View style={styles.bellDot} />
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')} accessibilityLabel="Profile">
+              <Ionicons name="person-outline" size={20} color={colors.textPrimary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.bellBtn}>
+              <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
+              <View style={styles.bellDot} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.heroRow}>
@@ -311,7 +311,9 @@ const styles = StyleSheet.create({
 
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   appName: { fontSize: 24, fontWeight: '700', color: colors.textPrimary },
+  profileBtn: { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   bellBtn: { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', position: 'relative' },
   bellDot: { position: 'absolute', top: 6, right: 6, width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.background },
 

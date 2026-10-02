@@ -8,7 +8,6 @@ import { supabase } from '../lib/supabase'
 import { DEV_BYPASS_KEY } from '../lib/devBypass'
 import { hasLMP, hasCompletedCatchUp, hasCompletedBooked } from '../lib/carePlan'
 import { fonts } from '../lib/theme'
-import { NavVisibilityProvider } from '../lib/navVisibility'
 
 // Sets the bundled body font once at the root. On web this relies on real DOM
 // font-family inheritance to reach every Text without touching each screen's
@@ -105,9 +104,7 @@ export default function RootLayout() {
 
   return (
     <View style={[{ flex: 1 }, rootFontStyle]}>
-      <NavVisibilityProvider>
-        <Stack screenOptions={{ headerShown: false }} />
-      </NavVisibilityProvider>
+      <Stack screenOptions={{ headerShown: false }} />
     </View>
   )
 }

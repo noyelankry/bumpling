@@ -7,7 +7,6 @@ import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark, BellyMark } from '../../components/illustrations'
 import { addDays, formatDate, formatDateRange, formatWeekday, gestationalAge } from '../../lib/pregnancy'
 import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
-import { useNavVisibility } from '../../lib/navVisibility'
 import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 
 // Grouped by trimester (derived from the item's own window) rather than a
@@ -39,7 +38,6 @@ function ItemIcon({ title, size, color }: { title: string; size: number; color: 
 
 export default function PlanScreen() {
   const router = useRouter()
-  const { onScroll, expand } = useNavVisibility()
   const autoScroll = useAutoScrollEnabled()
   const [trackWidth, setTrackWidth] = useState(0)
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
@@ -101,9 +99,6 @@ export default function PlanScreen() {
         scrollEnabled={autoScroll.scrollEnabled}
         onLayout={autoScroll.onLayout}
         onContentSizeChange={autoScroll.onContentSizeChange}
-        onScroll={onScroll}
-        scrollEventThrottle={80}
-        onTouchStart={expand}
       >
 
         <View style={styles.header}>
@@ -111,9 +106,14 @@ export default function PlanScreen() {
             <BabyMark size={34} />
             <Text style={styles.appName}>Bumpling</Text>
           </View>
-          <TouchableOpacity style={styles.bellBtn}>
-            <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')} accessibilityLabel="Profile">
+              <Ionicons name="person-outline" size={20} color={colors.textPrimary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.bellBtn}>
+              <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.titleRow}>
@@ -336,7 +336,9 @@ const styles = StyleSheet.create({
 
   header:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   appName:    { fontSize: 24, fontWeight: '700', color: colors.textPrimary },
+  profileBtn: { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   bellBtn:    { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
 
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },

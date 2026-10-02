@@ -9,8 +9,8 @@ export default function TabLayout() {
     >
       <Tabs.Screen name="index" options={{ title: 'Today' }} />
       <Tabs.Screen name="plan" options={{ title: 'Plan' }} />
+      <Tabs.Screen name="brain-dump" options={{ title: 'Brain dump' }} />
       <Tabs.Screen name="health" options={{ title: 'Health' }} />
-      <Tabs.Screen name="more" options={{ title: 'You' }} />
     </Tabs>
   )
 }
