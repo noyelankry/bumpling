@@ -38,7 +38,8 @@
         {
           "calendarPermission": "Bumpling uses your calendar to add appointments you've scheduled."
         }
-      ]
+      ],
+      "expo-sharing"
     ]
   }
 }

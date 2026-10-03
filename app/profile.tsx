@@ -13,6 +13,8 @@ import { goBack } from '../lib/navigation'
 import { clearHealthData } from './(tabs)/health'
 import { clearBrainDumpData } from '../lib/brainDump'
 import { type Partner, loadPartner, savePartner, clearPartnerData } from '../lib/partner'
+import { clearBirthPrefsData } from '../lib/birthPrefs'
+import { loadMomPhone, saveMomPhone, clearMomContactData } from '../lib/momContact'
 
 type Profile = { full_name: string; username: string }
 
@@ -20,12 +22,13 @@ export default function ProfileScreen() {
   const router = useRouter()
   const back = () => goBack(router, '/(tabs)')
   const [form, setForm] = useState<Profile>({ full_name: '', username: '' })
+  const [phone, setPhone] = useState('')
   const [partner, setPartner] = useState<Partner>({ name: '', email: '' })
   const [saving, setSaving] = useState(false)
   const [editing, setEditing] = useState(false)
-  const [snapshot, setSnapshot] = useState<{ form: Profile; partner: Partner } | null>(null)
+  const [snapshot, setSnapshot] = useState<{ form: Profile; phone: string; partner: Partner } | null>(null)
 
-  useFocusEffect(useCallback(() => { loadProfile(); loadPartner().then(setPartner) }, []))
+  useFocusEffect(useCallback(() => { loadProfile(); loadPartner().then(setPartner); loadMomPhone().then(setPhone) }, []))
 
   async function loadProfile() {
     const { data } = await supabase.auth.getClaims()
@@ -39,10 +42,12 @@ export default function ProfileScreen() {
 
   async function save() {
     setSaving(true)
-    // Partner info is local-only (AsyncStorage, see lib/partner.ts) — it
-    // saves regardless of Supabase session state, unlike the profile fields
-    // below which need a signed-in user to write to.
+    // Partner info and mom's phone are local-only (AsyncStorage, see
+    // lib/partner.ts / lib/momContact.ts) — they save regardless of Supabase
+    // session state, unlike the profile fields below which need a signed-in
+    // user to write to.
     await savePartner(partner)
+    await saveMomPhone(phone.trim())
     const { data } = await supabase.auth.getClaims()
     if (data?.claims) {
       const { error } = await supabase.from('profiles').update({
@@ -58,10 +63,10 @@ export default function ProfileScreen() {
 
   function toggleEdit() {
     if (editing) {
-      if (snapshot) { setForm(snapshot.form); setPartner(snapshot.partner) }
+      if (snapshot) { setForm(snapshot.form); setPhone(snapshot.phone); setPartner(snapshot.partner) }
       setEditing(false)
     } else {
-      setSnapshot({ form, partner })
+      setSnapshot({ form, phone, partner })
       setEditing(true)
     }
   }
@@ -74,6 +79,8 @@ export default function ProfileScreen() {
         clearHealthData(),
         clearBrainDumpData(),
         clearPartnerData(),
+        clearBirthPrefsData(),
+        clearMomContactData(),
         AsyncStorage.removeItem(DEV_BYPASS_KEY),
       ])
       router.replace('/(auth)/login')
@@ -162,6 +169,21 @@ export default function ProfileScreen() {
                 editable={editing}
               />
             </View>
+          </View>
+
+          <View style={styles.fieldDivider} />
+
+          <View style={styles.fieldRow}>
+            <Text style={styles.fieldLabel}>Phone</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="Your phone number"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="phone-pad"
+              editable={editing}
+            />
           </View>
         </View>
 

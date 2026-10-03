@@ -1,42 +1,33 @@
-// TODO(prepare-for-birth): placeholder only — real design still pending.
-//
-// Planned feature (from product discussion): a "Prepare for birth" flow that
-// surfaces as a built-in plan item around week 30-32, with an "Explore" CTA
-// (see the teaser card in app/(tabs)/plan.tsx). Lets the mom plan and log
-// birth preferences, with guiding questions to help her think it through.
-// Sections:
-//   - Birth preferences
-//   - Hospital bag
-//   - Questions for your care team
-//   - Who's coming with you
-//   - After-birth preferences
-// Should end in a summary view she can save and share/export to show her
-// maternity team (PDF? plain share sheet? TBD at design time).
-//
-// Not yet decided: whether this becomes a real CareItem (windowStartWeek
-// 30-32) wired into the attention/journey/upcoming sections like other plan
-// items, or a separate standalone entity — intentionally deferred.
-
+import { useCallback, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import { goBack } from '../lib/navigation'
+import { TOPICS, loadBirthPrefs, isTopicDone, type BirthPrefsData } from '../lib/birthPrefs'
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name']
 
-const SECTIONS: { icon: IoniconsName; label: string }[] = [
-  { icon: 'heart-outline', label: 'Birth preferences' },
-  { icon: 'bag-outline', label: 'Hospital bag' },
-  { icon: 'help-circle-outline', label: 'Questions for your care team' },
-  { icon: 'people-outline', label: "Who's coming with you" },
-  { icon: 'leaf-outline', label: 'After-birth preferences' },
-]
+const EMPTY_PREFS: BirthPrefsData = { answers: {}, supportContacts: [] }
 
 export default function PrepareForBirthScreen() {
   const router = useRouter()
   const back = () => goBack(router, '/(tabs)/plan')
+  const [prefs, setPrefs] = useState<BirthPrefsData>(EMPTY_PREFS)
+
+  useFocusEffect(useCallback(() => {
+    loadBirthPrefs().then(setPrefs)
+  }, []))
+
+  const doneCount = TOPICS.filter(t => isTopicDone(prefs, t)).length
+  const allDone = doneCount === TOPICS.length
+  const firstUnanswered = TOPICS.find(t => !isTopicDone(prefs, t))
+
+  function continueFlow() {
+    if (allDone) router.push('/birth-preferences-summary')
+    else router.push('/birth-preferences')
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -50,39 +41,54 @@ export default function PrepareForBirthScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        <View style={styles.heroRow}>
-          <View style={styles.heroIconChip}>
+        <Text style={styles.title}>Prepare for birth</Text>
+        <Text style={styles.subtitle}>Explore your preferences at your own pace.</Text>
+
+        <View style={styles.progressRow}>
+          <Text style={styles.progressText}>{doneCount} of {TOPICS.length} topics explored</Text>
+        </View>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${(doneCount / TOPICS.length) * 100}%` }]} />
+        </View>
+
+        <TouchableOpacity style={styles.introCard} activeOpacity={0.8} onPress={continueFlow}>
+          <View style={styles.introIconChip}>
             <Ionicons name="heart-outline" size={24} color={colors.lavenderDeep} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.heroTitle}>Let's get you ready</Text>
-            <Text style={styles.heroSub}>
-              Plan and log your birth preferences, then save a summary to share with your maternity team.
-            </Text>
+            <Text style={styles.introTitle}>Birth preferences</Text>
+            <Text style={styles.introSub}>A flexible guide to help you think through what matters to you.</Text>
           </View>
-        </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+        </TouchableOpacity>
 
         <View style={styles.listCard}>
-          {SECTIONS.map((section, i) => (
-            <View key={section.label} style={[styles.row, i > 0 && styles.rowDivider]}>
-              <View style={styles.rowIconChip}>
-                <Ionicons name={section.icon} size={18} color={colors.lavenderDeep} />
-              </View>
-              <Text style={styles.rowTitle}>{section.label}</Text>
-              <View style={styles.soonPill}>
-                <Text style={styles.soonPillText}>Soon</Text>
-              </View>
-            </View>
-          ))}
+          {TOPICS.map((topic, i) => {
+            const done = isTopicDone(prefs, topic)
+            return (
+              <TouchableOpacity
+                key={topic.id}
+                style={[styles.row, i > 0 && styles.rowDivider]}
+                activeOpacity={0.7}
+                onPress={() => router.push({ pathname: '/birth-preferences', params: { topic: topic.id } })}
+              >
+                <View style={styles.rowIconChip}>
+                  <Ionicons name={topic.icon as IoniconsName} size={18} color={colors.lavenderDeep} />
+                </View>
+                <Text style={styles.rowTitle}>{topic.navLabel}</Text>
+                <View style={[styles.statusPill, done && styles.statusPillDone]}>
+                  {done && <Ionicons name="checkmark" size={12} color={colors.sageDeep} style={{ marginRight: 3 }} />}
+                  <Text style={[styles.statusPillText, done && styles.statusPillTextDone]}>{done ? 'Done' : 'Not started'}</Text>
+                </View>
+              </TouchableOpacity>
+            )
+          })}
         </View>
 
-        <View style={styles.comingSoonCard}>
-          <Ionicons name="construct-outline" size={18} color={colors.sageDeep} />
-          <Text style={styles.comingSoonText}>
-            This is a placeholder — we're still designing this. Your preferences, a guided summary, and
-            share/export options to bring to your maternity team are all on the way.
-          </Text>
-        </View>
+        <TouchableOpacity style={styles.continueBtn} activeOpacity={0.85} onPress={continueFlow}>
+          <Text style={styles.continueBtnText}>{allDone ? 'View summary' : firstUnanswered ? `Continue · ${firstUnanswered.navLabel}` : 'Continue'}</Text>
+          <Ionicons name="arrow-forward" size={18} color="#fff" />
+        </TouchableOpacity>
 
       </ScrollView>
     </SafeAreaView>
@@ -96,19 +102,29 @@ const styles = StyleSheet.create({
 
   scroll: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, paddingBottom: 56 },
 
-  heroRow:      { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginBottom: spacing.md },
-  heroIconChip: { width: 52, height: 52, borderRadius: radius.lg, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
-  heroTitle:    { fontFamily: fonts.headline, fontSize: 19, color: colors.textPrimary },
-  heroSub:      { fontSize: 12.5, color: colors.textSecondary, marginTop: 3, lineHeight: 17 },
+  title:    { fontFamily: fonts.headline, fontSize: 26, color: colors.textPrimary },
+  subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 4, marginBottom: spacing.sm },
+
+  progressRow:  { marginBottom: 6 },
+  progressText: { fontSize: 12.5, fontWeight: '700', color: colors.textSecondary },
+  progressTrack: { height: 6, borderRadius: 3, backgroundColor: colors.border, marginBottom: spacing.md, overflow: 'hidden' },
+  progressFill:  { height: '100%', borderRadius: 3, backgroundColor: colors.sageDeep },
+
+  introCard:    { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.lavender, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.md },
+  introIconChip: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+  introTitle:   { fontFamily: fonts.headline, fontSize: 16, color: colors.textPrimary },
+  introSub:     { fontSize: 12, color: colors.textPrimary, opacity: 0.7, marginTop: 2, lineHeight: 16 },
 
   listCard: { backgroundColor: colors.card, borderRadius: radius.lg, marginBottom: spacing.md, overflow: 'hidden', borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
   row:        { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.sm },
   rowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
   rowIconChip: { width: 38, height: 38, borderRadius: radius.pill, backgroundColor: colors.lavender, alignItems: 'center', justifyContent: 'center' },
   rowTitle:   { flex: 1, fontSize: 14.5, fontWeight: '600', color: colors.textPrimary },
-  soonPill:      { backgroundColor: colors.neutralChip, paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
-  soonPillText:  { fontSize: 11, fontWeight: '700', color: colors.neutralChipDeep },
+  statusPill:      { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.neutralChip, paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
+  statusPillDone:  { backgroundColor: colors.sage },
+  statusPillText:  { fontSize: 11, fontWeight: '700', color: colors.neutralChipDeep },
+  statusPillTextDone: { color: colors.sageDeep },
 
-  comingSoonCard: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, backgroundColor: colors.sage, borderRadius: radius.lg, padding: spacing.sm },
-  comingSoonText: { flex: 1, fontSize: 12.5, color: colors.textPrimary, opacity: 0.75, lineHeight: 18 },
+  continueBtn:     { flexDirection: 'row', gap: 8, backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', justifyContent: 'center' },
+  continueBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 })

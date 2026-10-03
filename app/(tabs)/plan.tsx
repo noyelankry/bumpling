@@ -427,24 +427,19 @@ export default function PlanScreen() {
           </>
         )}
 
-        {/* TODO: placeholder only — see app/prepare-for-birth.tsx for the
-            full feature spec. Surfaces a couple weeks ahead of its week
-            30-32 window, same early-heads-up pattern as the journey card's
-            "Next up". */}
-        {age.weeks >= 26 && (
-          <View style={styles.birthPrepCard}>
-            <View style={styles.birthPrepIconChip}>
-              <Ionicons name="heart-outline" size={22} color={colors.lavenderDeep} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.birthPrepTitle}>Prepare for birth</Text>
-              <Text style={styles.birthPrepSub}>Birth preferences, hospital bag, and more — around week 30.</Text>
-            </View>
-            <TouchableOpacity style={styles.birthPrepBtn} onPress={() => router.push('/prepare-for-birth')}>
-              <Text style={styles.birthPrepBtnText}>Explore</Text>
-            </TouchableOpacity>
+        {/* TODO: gate behind age.weeks once past onboarding, e.g. >= 25. */}
+        <View style={styles.birthPrepCard}>
+          <View style={styles.birthPrepIconChip}>
+            <Ionicons name="heart-outline" size={22} color={colors.lavenderDeep} />
           </View>
-        )}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.birthPrepTitle}>Prepare for birth</Text>
+            <Text style={styles.birthPrepSub}>Think through your birth preferences, at your own pace.</Text>
+          </View>
+          <TouchableOpacity style={styles.birthPrepBtn} onPress={() => router.push('/prepare-for-birth')}>
+            <Text style={styles.birthPrepBtnText}>Explore</Text>
+          </TouchableOpacity>
+        </View>
 
       </ScrollView>
     </SafeAreaView>
