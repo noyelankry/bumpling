@@ -4,10 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { MoodFace, BabyMark, FetusIllustration } from '../../components/illustrations'
 import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 import { gestationalAge } from '../../lib/pregnancy'
+import { getDateLocale } from '../../lib/i18n/dateLocale'
+import { useDirectionalIcon } from '../../lib/i18n/useDirectionalIcon'
+import { useLanguage } from '../../lib/i18n/LanguageProvider'
 import { TODAY, loadLMP } from '../../lib/carePlan'
 
 const STORAGE_KEY = 'bumpling_health_checkins'
@@ -16,19 +20,23 @@ export async function clearHealthData(): Promise<void> {
   await AsyncStorage.removeItem(STORAGE_KEY)
 }
 
+// Stored values stay these fixed English keys regardless of display
+// language — same pattern as care-item ids — so a saved check-in never goes
+// stale if the user switches language later. Display labels are resolved
+// through t('symptom.<key>') / t('mood.<key>') at render time.
 const SYMPTOMS = [
-  'Nausea', 'Fatigue', 'Headache', 'Backache',
-  'Heartburn', 'Swelling', 'Cramping', 'Insomnia',
+  'nausea', 'fatigue', 'headache', 'backache',
+  'heartburn', 'swelling', 'cramping', 'insomnia',
 ] as const
 
 type Mood = 'happy' | 'calm' | 'okay' | 'tired' | 'anxious'
 
-const MOODS: { key: Mood; label: string; color: string }[] = [
-  { key: 'happy', label: 'Happy', color: colors.moodHappy },
-  { key: 'calm', label: 'Calm', color: colors.moodCalm },
-  { key: 'okay', label: 'Okay', color: colors.moodOkay },
-  { key: 'tired', label: 'Tired', color: colors.moodTired },
-  { key: 'anxious', label: 'Anxious', color: colors.moodAnxious },
+const MOOD_KEYS: { key: Mood; color: string }[] = [
+  { key: 'happy', color: colors.moodHappy },
+  { key: 'calm', color: colors.moodCalm },
+  { key: 'okay', color: colors.moodOkay },
+  { key: 'tired', color: colors.moodTired },
+  { key: 'anxious', color: colors.moodAnxious },
 ]
 
 type CheckIn = {
@@ -46,15 +54,23 @@ function todayKey(d = new Date()) {
 }
 
 function formatDay(dateKey: string) {
-  return new Date(dateKey + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return new Date(dateKey + 'T00:00:00').toLocaleDateString(getDateLocale(), { month: 'short', day: 'numeric' })
 }
 
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  return new Date(iso).toLocaleTimeString(getDateLocale(), { hour: 'numeric', minute: '2-digit' })
 }
 
 export default function HealthScreen() {
   const router = useRouter()
+  const { t } = useTranslation('health')
+  const { isRTL } = useLanguage()
+  const { forward } = useDirectionalIcon()
+  const MOODS = MOOD_KEYS.map(m => ({ ...m, label: t(`mood.${m.key}`) }))
+  // Case-insensitive so a legacy capitalized symptom saved before this
+  // translation existed still resolves to its label instead of showing raw.
+  const symptomLabel = (s: string): string =>
+    (SYMPTOMS as readonly string[]).includes(s.toLowerCase()) ? t(`symptom.${s.toLowerCase()}` as 'symptom.nausea') : s
   const autoScroll = useAutoScrollEnabled()
   const [checkIns, setCheckIns] = useState<CheckIn[]>([])
   const [lmp, setLmp] = useState<Date>(TODAY)
@@ -89,11 +105,11 @@ export default function HealthScreen() {
   }
 
   function photoTrackingComingSoon() {
-    const message = "Photo tracking will be available once we add backend support for storing photos."
+    const message = t('photoTrackingComingSoon')
     if (Platform.OS === 'web') {
       window.alert(message)
     } else {
-      Alert.alert('Coming soon', message)
+      Alert.alert(t('comingSoonTitle'), message)
     }
   }
 
@@ -133,28 +149,28 @@ export default function HealthScreen() {
             <Text style={styles.appName}>Bumpling</Text>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')} accessibilityLabel="Profile">
+            <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')} accessibilityLabel={t('profileLabel')}>
               <Ionicons name="person-outline" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.bellBtn}>
               <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-              <View style={styles.bellDot} />
+              <View style={[styles.bellDot, isRTL && styles.bellDotRTL]} />
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.heroRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Health</Text>
-            <Text style={styles.heroSubtitle}>Today · Week {age.weeks} + {age.days}</Text>
+            <Text style={styles.title}>{t('title')}</Text>
+            <Text style={styles.heroSubtitle}>{t('heroSubtitle', { weeks: age.weeks, days: age.days })}</Text>
           </View>
           <FetusIllustration size={110} />
         </View>
 
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardTitle}>How are you feeling today?</Text>
-            {!!savedAt && <Text style={styles.loggedText}>Logged at {formatTime(savedAt)}</Text>}
+            <Text style={styles.cardTitle}>{t('howFeeling')}</Text>
+            {!!savedAt && <Text style={styles.loggedText}>{t('loggedAt', { time: formatTime(savedAt) })}</Text>}
           </View>
 
           <View style={styles.moodRow}>
@@ -177,17 +193,17 @@ export default function HealthScreen() {
           </View>
 
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.cardTitle}>Symptoms</Text>
+            <Text style={styles.cardTitle}>{t('symptoms')}</Text>
             <TouchableOpacity onPress={() => setSymptomsOpen(v => !v)} activeOpacity={0.7} style={styles.viewAllBtn}>
-              <Text style={styles.viewAllText}>{symptomsOpen ? 'Hide' : 'View all'}</Text>
-              <Ionicons name={symptomsOpen ? 'chevron-up' : 'chevron-forward'} size={14} color={colors.textSecondary} />
+              <Text style={styles.viewAllText}>{symptomsOpen ? t('hide') : t('viewAll')}</Text>
+              <Ionicons name={symptomsOpen ? 'chevron-up' : forward} size={14} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.chipRow}>
             {symptoms.map(s => (
               <View key={s} style={styles.symptomPill}>
-                <Text style={styles.symptomPillText}>{s}</Text>
+                <Text style={styles.symptomPillText}>{symptomLabel(s)}</Text>
                 <TouchableOpacity onPress={() => toggleSymptom(s)} hitSlop={6}>
                   <Ionicons name="close" size={14} color={colors.urgent} />
                 </TouchableOpacity>
@@ -195,17 +211,17 @@ export default function HealthScreen() {
             ))}
             <TouchableOpacity style={styles.addSymptomBtn} onPress={() => setSymptomsOpen(true)} activeOpacity={0.8}>
               <Ionicons name="add" size={14} color={colors.textPrimary} />
-              <Text style={styles.addSymptomText}>Add symptom</Text>
+              <Text style={styles.addSymptomText}>{t('addSymptom')}</Text>
             </TouchableOpacity>
           </View>
 
           {symptomsOpen && (
             <View style={styles.chipRow}>
               {unpickedSymptoms.length === 0 ? (
-                <Text style={styles.emptyText}>All symptoms added.</Text>
+                <Text style={styles.emptyText}>{t('allSymptomsAdded')}</Text>
               ) : unpickedSymptoms.map(s => (
                 <TouchableOpacity key={s} style={styles.pickerChip} onPress={() => toggleSymptom(s)} activeOpacity={0.8}>
-                  <Text style={styles.pickerChipText}>{s}</Text>
+                  <Text style={styles.pickerChipText}>{symptomLabel(s)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -216,31 +232,31 @@ export default function HealthScreen() {
               <Ionicons name="body-outline" size={20} color={colors.primaryDark} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.navRowTitle}>Track weight</Text>
-              <Text style={styles.navRowSub}>{weight || 'optional'}</Text>
+              <Text style={styles.navRowTitle}>{t('trackWeight')}</Text>
+              <Text style={styles.navRowSub}>{weight || t('optional')}</Text>
             </View>
-            <Ionicons name={vitalsOpen ? 'chevron-down' : 'chevron-forward'} size={18} color={colors.textSecondary} />
+            <Ionicons name={vitalsOpen ? 'chevron-down' : forward} size={18} color={colors.textSecondary} />
           </TouchableOpacity>
 
           {vitalsOpen && (
             <View style={styles.vitalsRow}>
               <View style={styles.vitalField}>
-                <Text style={styles.fieldLabel}>Weight</Text>
+                <Text style={styles.fieldLabel}>{t('weight')}</Text>
                 <TextInput
                   style={styles.vitalInput}
                   value={weight}
                   onChangeText={setWeight}
-                  placeholder="e.g. 68 kg"
+                  placeholder={t('weightPlaceholder')}
                   placeholderTextColor={colors.textSecondary}
                 />
               </View>
               <View style={styles.vitalField}>
-                <Text style={styles.fieldLabel}>Blood pressure</Text>
+                <Text style={styles.fieldLabel}>{t('bloodPressure')}</Text>
                 <TextInput
                   style={styles.vitalInput}
                   value={bloodPressure}
                   onChangeText={setBloodPressure}
-                  placeholder="e.g. 118/76"
+                  placeholder={t('bloodPressurePlaceholder')}
                   placeholderTextColor={colors.textSecondary}
                 />
               </View>
@@ -252,20 +268,20 @@ export default function HealthScreen() {
               <Ionicons name="camera-outline" size={20} color={colors.primaryDark} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.navRowTitle}>I prefer photos!</Text>
-              <Text style={styles.navRowSub}>Track with photos</Text>
+              <Text style={styles.navRowTitle}>{t('preferPhotos')}</Text>
+              <Text style={styles.navRowSub}>{t('trackWithPhotos')}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+            <Ionicons name={forward} size={18} color={colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.saveBtn} onPress={save} activeOpacity={0.85}>
-            <Text style={styles.saveBtnText}>{savedAt ? "Update today's check-in" : "Save today's check-in"}</Text>
+            <Text style={styles.saveBtnText}>{savedAt ? t('updateCheckIn') : t('saveCheckIn')}</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionLabel}>Recent check-ins</Text>
+        <Text style={styles.sectionLabel}>{t('recentCheckIns')}</Text>
         {history.length === 0 ? (
-          <Text style={styles.emptyText}>Your check-ins will show up here.</Text>
+          <Text style={styles.emptyText}>{t('noCheckInsYet')}</Text>
         ) : (
           <View style={{ gap: spacing.xs }}>
             {history.map(c => {
@@ -282,7 +298,7 @@ export default function HealthScreen() {
                   )}
                   <View style={{ flex: 1 }}>
                     {c.symptoms.length > 0 && (
-                      <Text style={styles.historySymptoms}>{c.symptoms.join(', ')}</Text>
+                      <Text style={styles.historySymptoms}>{c.symptoms.map(symptomLabel).join(', ')}</Text>
                     )}
                     {(c.weight || c.bloodPressure) && (
                       <Text style={styles.historyVitals}>
@@ -291,7 +307,7 @@ export default function HealthScreen() {
                     )}
                     {!!c.note && <Text style={styles.historyNote} numberOfLines={1}>{c.note}</Text>}
                     {c.symptoms.length === 0 && !c.weight && !c.bloodPressure && !c.note && !moodMeta && (
-                      <Text style={styles.historySymptoms}>Feeling good</Text>
+                      <Text style={styles.historySymptoms}>{t('feelingGood')}</Text>
                     )}
                   </View>
                 </View>
@@ -316,6 +332,7 @@ const styles = StyleSheet.create({
   profileBtn: { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   bellBtn: { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', position: 'relative' },
   bellDot: { position: 'absolute', top: 6, right: 6, width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.background },
+  bellDotRTL: { right: undefined, left: 6 },
 
   heroRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs },
   title: { fontFamily: fonts.headline, fontSize: 34, color: colors.textPrimary },

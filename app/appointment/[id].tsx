@@ -3,16 +3,21 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert,
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { formatDate, formatDateRange, formatWeekday } from '../../lib/pregnancy'
-import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, removeItem, markDone, unmarkDone, saveVisitNotes, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, removeItem, markDone, unmarkDone, saveVisitNotes, computeCareItems, getItemTitle, type CareItemWithCustom } from '../../lib/carePlan'
 import { addAppointmentToCalendar } from '../../lib/calendar'
 import { shareAppointmentWithPartner } from '../../lib/shareAppointment'
 import { type Partner, loadPartner } from '../../lib/partner'
 import { goBack } from '../../lib/navigation'
+import { useDirectionalIcon } from '../../lib/i18n/useDirectionalIcon'
 
 export default function AppointmentDetailScreen() {
   const router = useRouter()
+  const { t } = useTranslation('appointmentDetail')
+  const { t: tBusiness } = useTranslation('business')
+  const { back: backIcon, forward } = useDirectionalIcon()
   const back = () => goBack(router, '/(tabs)/plan')
   const { id } = useLocalSearchParams<{ id: string }>()
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
@@ -38,9 +43,9 @@ export default function AppointmentDetailScreen() {
   if (!item) {
     return (
       <SafeAreaView style={styles.container}>
-        <Header onBack={back} title="Appointment" />
+        <Header onBack={back} title={t('defaultTitle')} backIcon={backIcon} />
         <View style={styles.notFound}>
-          <Text style={styles.notFoundText}>This item isn't on your plan anymore.</Text>
+          <Text style={styles.notFoundText}>{t('notFound')}</Text>
         </View>
       </SafeAreaView>
     )
@@ -53,12 +58,12 @@ export default function AppointmentDetailScreen() {
       back()
     }
     if (Platform.OS === 'web') {
-      if (window.confirm('Remove this from your plan?')) doRemove()
+      if (window.confirm(t('removeConfirmTitle'))) doRemove()
       return
     }
-    Alert.alert('Remove from plan?', '', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: doRemove },
+    Alert.alert(t('removeConfirmTitle'), '', [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('remove'), style: 'destructive', onPress: doRemove },
     ])
   }
 
@@ -74,16 +79,16 @@ export default function AppointmentDetailScreen() {
 
   async function handleAddToCalendar() {
     const result = await addAppointmentToCalendar({
-      title: item!.title,
+      title: getItemTitle(item!),
       date: item!.scheduledAt!,
       timeLabel: item!.scheduledTimeLabel,
       location: item!.location,
       notes: item!.prepNote,
-    })
+    }, tBusiness)
     if (Platform.OS === 'web') {
       window.alert(result.message)
     } else {
-      Alert.alert(result.ok ? 'Added' : "Couldn't add to calendar", result.message)
+      Alert.alert(result.ok ? t('addedTitle') : t('couldntAddToCalendar'), result.message)
     }
   }
 
@@ -103,26 +108,26 @@ export default function AppointmentDetailScreen() {
   async function handleSharePartner() {
     const dateLabel = item!.scheduledAt
       ? formatWeekday(item!.scheduledAt)
-      : `Target dates: ${formatDateRange(item!.windowStart, item!.windowEnd)}`
+      : t('targetDates') + ': ' + formatDateRange(item!.windowStart, item!.windowEnd)
     const result = await shareAppointmentWithPartner({
-      title: item!.title,
+      title: getItemTitle(item!),
       dateLabel,
       timeLabel: item!.scheduledTimeLabel,
       location: item!.location,
       notes: item!.visitNotes || item!.prepNote,
       partnerEmail: partner.email || undefined,
-    })
+    }, tBusiness)
     if (!result.message) return
     if (Platform.OS === 'web') {
       window.alert(result.message)
     } else {
-      Alert.alert(result.ok ? 'Shared' : "Couldn't share", result.message)
+      Alert.alert(result.ok ? t('sharedTitle') : t('couldntShare'), result.message)
     }
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header onBack={back} title={item.title} />
+      <Header onBack={back} title={getItemTitle(item)} backIcon={backIcon} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
@@ -141,7 +146,7 @@ export default function AppointmentDetailScreen() {
             item.status === 'actionable' && styles.statusPillTextUrgent,
             item.status === 'future' && styles.statusPillTextNeutral,
           ]}>
-            {item.status === 'done' ? 'Already done' : item.status === 'scheduled' ? 'Scheduled' : item.status === 'actionable' ? 'Needs scheduling' : "We'll remind you later"}
+            {item.status === 'done' ? t('statusDone') : item.status === 'scheduled' ? t('statusScheduled') : item.status === 'actionable' ? t('statusActionable') : t('statusFuture')}
           </Text>
         </View>
 
@@ -166,15 +171,15 @@ export default function AppointmentDetailScreen() {
           ) : item.status === 'done' ? (
             <View style={styles.doneRow}>
               <Ionicons name="checkmark-circle" size={22} color={colors.sageDeep} />
-              <Text style={styles.bigDate}>You already did this</Text>
+              <Text style={styles.bigDate}>{t('alreadyDidThis')}</Text>
             </View>
           ) : (
             <>
-              <Text style={styles.fieldLabel}>Target dates</Text>
+              <Text style={styles.fieldLabel}>{t('targetDates')}</Text>
               <Text style={styles.rangeText}>{formatDateRange(item.windowStart, item.windowEnd)}</Text>
               {item.status === 'actionable' && (
                 <>
-                  <Text style={[styles.fieldLabel, { marginTop: spacing.sm }]}>Book by</Text>
+                  <Text style={[styles.fieldLabel, { marginTop: spacing.sm }]}>{t('bookBy')}</Text>
                   <Text style={styles.bookByText}>{formatDate(item.bookBy)}</Text>
                 </>
               )}
@@ -182,12 +187,12 @@ export default function AppointmentDetailScreen() {
           )}
 
           {item.status === 'done' && !!item.doneAt && (
-            <Text style={styles.timeLabel}>Marked done on {formatDate(item.doneAt)}</Text>
+            <Text style={styles.timeLabel}>{t('markedDoneOn', { date: formatDate(item.doneAt) })}</Text>
           )}
 
           {item.status === 'done' ? (
             <TouchableOpacity style={styles.secondaryBtn} onPress={handleUnmarkDone}>
-              <Text style={styles.secondaryBtnText}>Undo</Text>
+              <Text style={styles.secondaryBtnText}>{t('undo')}</Text>
             </TouchableOpacity>
           ) : item.scheduledAt ? (
             <>
@@ -197,7 +202,7 @@ export default function AppointmentDetailScreen() {
                   pathname: '/add-item',
                   params: {
                     id: item.id,
-                    title: item.title,
+                    title: getItemTitle(item),
                     date: item.scheduledAt!.toISOString(),
                     time: item.scheduledTimeLabel ?? '',
                     location: item.location ?? '',
@@ -207,22 +212,22 @@ export default function AppointmentDetailScreen() {
                   },
                 })}
               >
-                <Text style={styles.secondaryBtnText}>Change details</Text>
+                <Text style={styles.secondaryBtnText}>{t('changeDetails')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.secondaryBtn} onPress={handleAddToCalendar}>
-                <Text style={styles.secondaryBtnText}>Add to calendar</Text>
+                <Text style={styles.secondaryBtnText}>{t('addToCalendar')}</Text>
               </TouchableOpacity>
             </>
           ) : (
             <>
               <TouchableOpacity
                 style={styles.primaryBtn}
-                onPress={() => router.push({ pathname: '/add-item', params: { id: item.id, title: item.title, prepNote: item.prepNote ?? '', windowStart: item.windowStart.toISOString(), windowEnd: item.windowEnd.toISOString() } })}
+                onPress={() => router.push({ pathname: '/add-item', params: { id: item.id, title: getItemTitle(item), prepNote: item.prepNote ?? '', windowStart: item.windowStart.toISOString(), windowEnd: item.windowEnd.toISOString() } })}
               >
-                <Text style={styles.primaryBtnText}>Schedule now</Text>
+                <Text style={styles.primaryBtnText}>{t('scheduleNow')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.secondaryBtn} onPress={handleMarkDone}>
-                <Text style={styles.secondaryBtnText}>I already did this</Text>
+                <Text style={styles.secondaryBtnText}>{t('iAlreadyDidThis')}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -230,7 +235,7 @@ export default function AppointmentDetailScreen() {
 
         <View style={styles.notesCard}>
           <View style={styles.notesHeaderRow}>
-            <Text style={styles.notesTitle}>Notes & summary</Text>
+            <Text style={styles.notesTitle}>{t('notesTitle')}</Text>
             {!notesEditing && (
               <TouchableOpacity onPress={() => setNotesEditing(true)} hitSlop={6}>
                 <Ionicons name={item.visitNotes ? 'pencil' : 'add'} size={16} color={colors.primaryDark} />
@@ -244,17 +249,17 @@ export default function AppointmentDetailScreen() {
                 style={styles.notesInput}
                 value={notesDraft}
                 onChangeText={setNotesDraft}
-                placeholder="What did the doctor say? Anything worth remembering for next time."
+                placeholder={t('notesPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 multiline
                 autoFocus
               />
               <View style={styles.notesActionRow}>
                 <TouchableOpacity style={styles.notesCancelBtn} onPress={cancelNotesEdit} disabled={savingNotes}>
-                  <Text style={styles.notesCancelBtnText}>Cancel</Text>
+                  <Text style={styles.notesCancelBtnText}>{t('cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.notesSaveBtn} onPress={handleSaveNotes} disabled={savingNotes}>
-                  <Text style={styles.notesSaveBtnText}>Save</Text>
+                  <Text style={styles.notesSaveBtnText}>{t('save')}</Text>
                 </TouchableOpacity>
               </View>
             </>
@@ -264,7 +269,7 @@ export default function AppointmentDetailScreen() {
             </TouchableOpacity>
           ) : (
             <TouchableOpacity onPress={() => setNotesEditing(true)}>
-              <Text style={styles.notesEmptyText}>Add notes from the visit — what was said, what's next.</Text>
+              <Text style={styles.notesEmptyText}>{t('notesEmpty')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -274,12 +279,12 @@ export default function AppointmentDetailScreen() {
             <Ionicons name="heart-outline" size={20} color={colors.lavenderDeep} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.shareTitle}>{partner.name ? `Share with ${partner.name}` : 'Share with your partner'}</Text>
+            <Text style={styles.shareTitle}>{partner.name ? t('shareWithPartner', { name: partner.name }) : t('shareWithYourPartner')}</Text>
             <Text style={styles.shareSub}>
-              {partner.email ? `Sends the details to ${partner.email}` : "Add their email in Profile to send it directly"}
+              {partner.email ? t('sendsDetailsTo', { email: partner.email }) : t('addEmailInProfile')}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+          <Ionicons name={forward} size={18} color={colors.textSecondary} />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.doctorCard} activeOpacity={0.7} onPress={() => router.push('/brain-dump')}>
@@ -287,15 +292,15 @@ export default function AppointmentDetailScreen() {
             <Ionicons name="medical-outline" size={20} color={colors.primaryDark} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.doctorTitle}>Questions for your doctor</Text>
-            <Text style={styles.doctorSub}>Jot down anything to ask before this appointment.</Text>
+            <Text style={styles.doctorTitle}>{t('questionsForDoctor')}</Text>
+            <Text style={styles.doctorSub}>{t('questionsForDoctorSub')}</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+          <Ionicons name={forward} size={18} color={colors.textSecondary} />
         </TouchableOpacity>
 
         {item.custom && (
           <TouchableOpacity style={styles.removeBtn} onPress={handleRemove}>
-            <Text style={styles.removeBtnText}>Remove from plan</Text>
+            <Text style={styles.removeBtnText}>{t('removeFromPlan')}</Text>
           </TouchableOpacity>
         )}
 
@@ -304,11 +309,11 @@ export default function AppointmentDetailScreen() {
   )
 }
 
-function Header({ onBack, title }: { onBack: () => void; title: string }) {
+function Header({ onBack, title, backIcon }: { onBack: () => void; title: string; backIcon: 'chevron-back' | 'chevron-forward' }) {
   return (
     <View style={styles.header}>
       <TouchableOpacity onPress={onBack} hitSlop={8}>
-        <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
+        <Ionicons name={backIcon} size={26} color={colors.textPrimary} />
       </TouchableOpacity>
       <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
       <View style={{ width: 26 }} />

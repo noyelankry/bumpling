@@ -1,0 +1,20 @@
+{
+  "first-ob-visit": "First doctor visit",
+  "first-blood-tests": "Blood tests",
+  "first-urine-tests": "Urine tests",
+  "first-ultrasound": "First ultrasound",
+  "genetic-screening": "Genetic screening tests",
+  "nuchal-translucency": "Nuchal translucency scan",
+  "first-tri-biochem": "First trimester biochemical screening",
+  "cvs": "Chorionic villus sampling (CVS)",
+  "early-anatomy-scan": "Early anatomy scan",
+  "second-tri-biochem": "Second trimester biochemical screening",
+  "amniocentesis": "Amniocentesis",
+  "late-anatomy-scan": "Late anatomy scan",
+  "fetal-echo": "Fetal echocardiogram",
+  "glucose-test": "Glucose tolerance test",
+  "pertussis-vaccine": "Pertussis (Tdap) vaccine",
+  "third-tri-ultrasound": "Third trimester ultrasound",
+  "gbs-culture": "GBS culture (if indicated)",
+  "post-term-monitoring": "Post-term monitoring"
+}

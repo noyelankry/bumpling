@@ -1,0 +1,15 @@
+{
+  "trimester1": "שליש ראשון",
+  "trimester2": "שליש שני",
+  "trimester3": "שליש שלישי",
+  "title": "עשית כבר אחת מהבדיקות האלה?",
+  "subtitle": "סמני כל דבר שכבר עברת — לא נזכיר לך יותר על אלה.",
+  "thingsToReview_one": "דבר אחד לבדיקה",
+  "thingsToReview_two": "{{count}} דברים לבדיקה",
+  "thingsToReview_other": "{{count}} דברים לבדיקה",
+  "targetDates": "תאריכי מטרה: {{range}}",
+  "nothingYet": "אין עדיין כלום בתוכנית שלך — נציג בדיקות כשהן יהפכו לרלוונטיות.",
+  "canUpdateAnytime": "את יכולה לעדכן את זה בכל זמן.",
+  "saveCompleted": "שמור פעולות שהושלמו",
+  "continue": "המשך"
+}

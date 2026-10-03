@@ -3,13 +3,17 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityInd
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import { DEV_BYPASS_KEY } from '../lib/devBypass'
+import { useLanguage } from '../lib/i18n/LanguageProvider'
 import { BabyMark } from './illustrations'
 
 export default function Auth() {
+  const { t } = useTranslation('auth')
+  const { isRTL } = useLanguage()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -34,9 +38,9 @@ export default function Auth() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.blobTopLeft} />
-      <View style={styles.blobBottomLeft} />
-      <View style={styles.blobBottomRight} />
+      <View style={[styles.blobTopLeft, isRTL && styles.blobTopLeftRTL]} />
+      <View style={[styles.blobBottomLeft, isRTL && styles.blobBottomLeftRTL]} />
+      <View style={[styles.blobBottomRight, isRTL && styles.blobBottomRightRTL]} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
@@ -44,26 +48,26 @@ export default function Auth() {
           <View style={styles.logoArea}>
             <View style={styles.mascotWrap}>
               <BabyMark size={130} />
-              <View style={styles.heartAccent}>
+              <View style={[styles.heartAccent, isRTL && styles.heartAccentRTL]}>
                 <Ionicons name="heart" size={22} color={colors.primary} />
               </View>
             </View>
             <Text style={styles.logoText}>BUMPLING</Text>
             <Text style={styles.logoSub}>
-              {mode === 'signin' ? 'Welcome back' : 'Create your account'}
+              {mode === 'signin' ? t('welcomeBack') : t('createAccount')}
             </Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>{t('email')}</Text>
               <View style={styles.inputRow}>
                 <Ionicons name="mail-outline" size={18} color={colors.textSecondary} />
                 <TextInput
                   style={styles.input}
                   value={email}
                   onChangeText={setEmail}
-                  placeholder="email@address.com"
+                  placeholder={t('emailPlaceholder')}
                   placeholderTextColor={colors.textSecondary}
                   autoCapitalize="none"
                   keyboardType="email-address"
@@ -72,14 +76,14 @@ export default function Auth() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
+              <Text style={styles.label}>{t('password')}</Text>
               <View style={styles.inputRow}>
                 <Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
                 <TextInput
                   style={styles.input}
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="Password"
+                  placeholder={t('passwordPlaceholder')}
                   placeholderTextColor={colors.textSecondary}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
@@ -102,15 +106,15 @@ export default function Auth() {
             >
               {loading
                 ? <ActivityIndicator color="#fff" />
-                : <Text style={styles.primaryBtnText}>{mode === 'signin' ? 'Sign in' : 'Sign up'}</Text>
+                : <Text style={styles.primaryBtnText}>{mode === 'signin' ? t('signIn') : t('signUp')}</Text>
               }
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.switchMode} onPress={() => setMode(m => m === 'signin' ? 'signup' : 'signin')}>
               <Text style={styles.switchModeText}>
-                {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
+                {mode === 'signin' ? t('noAccount') : t('haveAccount')}
                 <Text style={styles.switchModeLink}>
-                  {mode === 'signin' ? 'Sign up' : 'Sign in'}
+                  {mode === 'signin' ? t('signUp') : t('signIn')}
                 </Text>
               </Text>
             </TouchableOpacity>
@@ -118,7 +122,7 @@ export default function Auth() {
 
           {__DEV__ && (
             <TouchableOpacity style={styles.devSkip} onPress={devSkip}>
-              <Text style={styles.devSkipText}>Skip sign-in (dev only).</Text>
+              <Text style={styles.devSkipText}>{t('devSkip')}</Text>
             </TouchableOpacity>
           )}
 
@@ -135,12 +139,16 @@ const styles = StyleSheet.create({
   scroll:    { flexGrow: 1, paddingHorizontal: spacing.md, justifyContent: 'center', paddingVertical: spacing.lg },
 
   blobTopLeft:     { position: 'absolute', top: -BLOB * 0.55, left: -BLOB * 0.55, width: BLOB, height: BLOB, borderRadius: BLOB / 2, backgroundColor: colors.peach },
+  blobTopLeftRTL:  { left: undefined, right: -BLOB * 0.55 },
   blobBottomLeft:  { position: 'absolute', bottom: -BLOB * 0.5, left: -BLOB * 0.5, width: BLOB * 0.75, height: BLOB * 0.75, borderRadius: BLOB * 0.375, backgroundColor: colors.peach },
+  blobBottomLeftRTL: { left: undefined, right: -BLOB * 0.5 },
   blobBottomRight: { position: 'absolute', bottom: -BLOB * 0.55, right: -BLOB * 0.55, width: BLOB, height: BLOB, borderRadius: BLOB / 2, backgroundColor: colors.peach },
+  blobBottomRightRTL: { right: undefined, left: -BLOB * 0.55 },
 
   logoArea:    { alignItems: 'center', marginBottom: spacing.lg },
   mascotWrap:  { width: 130, height: 130, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
   heartAccent: { position: 'absolute', top: 4, right: -6 },
+  heartAccentRTL: { right: undefined, left: -6 },
   logoText:    { fontFamily: fonts.headline, fontSize: 38, color: colors.primary, letterSpacing: 1 },
   logoSub:     { fontFamily: fonts.headline, fontSize: 18, color: colors.textSecondary, marginTop: 4 },
 

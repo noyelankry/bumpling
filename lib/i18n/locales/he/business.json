@@ -1,0 +1,15 @@
+{
+  "calendar": {
+    "webUnavailable": "סנכרון יומן אינו זמין בתצוגה המקדימה באינטרנט — זה פועל ב-iOS וב-Android.",
+    "permissionDenied": "הגישה ליומן נדחתה. ניתן לאפשר אותה בהגדרות ולנסות שוב.",
+    "noCalendarFound": "לא נמצא יומן במכשיר זה כדי להוסיף אליו.",
+    "added": "נוסף ליומן שלך."
+  },
+  "share": {
+    "emailSubject": "תור: {{title}}",
+    "openedEmailTo": "נפתחה טיוטת אימייל אל {{email}}.",
+    "couldntOpenMail": "לא ניתן לפתוח את אפליקציית המייל.",
+    "addPartnerEmail": "הוסיפי את האימייל של בן/בת הזוג בפרופיל כדי לשתף תור זה.",
+    "couldntOpenShareSheet": "לא ניתן לפתוח את תפריט השיתוף."
+  }
+}

@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native'
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker'
 import { Ionicons } from '@expo/vector-icons'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius } from '../lib/theme'
+import { getDateLocale } from '../lib/i18n/dateLocale'
 
 type Props = {
   value: Date | null
@@ -13,6 +15,7 @@ type Props = {
 }
 
 export default function DateField({ value, onChange, placeholder, maximumDate, minimumDate }: Props) {
+  const { t } = useTranslation('common')
   const [open, setOpen] = useState(false)
 
   function handleChange(event: DateTimePickerEvent, selected?: Date) {
@@ -27,7 +30,7 @@ export default function DateField({ value, onChange, placeholder, maximumDate, m
         <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} />
         <Text style={value ? styles.valueText : styles.placeholderText}>
           {value
-            ? value.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+            ? value.toLocaleDateString(getDateLocale(), { month: 'long', day: 'numeric', year: 'numeric' })
             : placeholder}
         </Text>
       </TouchableOpacity>
@@ -44,7 +47,7 @@ export default function DateField({ value, onChange, placeholder, maximumDate, m
           />
           {Platform.OS === 'ios' && (
             <TouchableOpacity style={styles.doneBtn} onPress={() => setOpen(false)}>
-              <Text style={styles.doneBtnText}>Done</Text>
+              <Text style={styles.doneBtnText}>{t('done')}</Text>
             </TouchableOpacity>
           )}
         </View>

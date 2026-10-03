@@ -3,13 +3,19 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark, FetusIllustration } from '../../components/illustrations'
 import { formatDateRange, formatWeekday, computeCareItems } from '../../lib/pregnancy'
-import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, markBookedDone, type CareItemWithCustom } from '../../lib/carePlan'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, markBookedDone, getItemTitle, type CareItemWithCustom } from '../../lib/carePlan'
+import { useDirectionalIcon } from '../../lib/i18n/useDirectionalIcon'
+import { useLanguage } from '../../lib/i18n/LanguageProvider'
 
 export default function BookedScreen() {
   const router = useRouter()
+  const { t } = useTranslation('booked')
+  const { isRTL } = useLanguage()
+  const { arrowForward } = useDirectionalIcon()
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date | null>(null)
 
@@ -48,24 +54,22 @@ export default function BookedScreen() {
           </View>
           <TouchableOpacity style={styles.bellBtn}>
             <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-            <View style={styles.bellDot} />
+            <View style={[styles.bellDot, isRTL && styles.bellDotRTL]} />
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.title}>Have any appointments already booked?</Text>
-        <Text style={styles.subtitle}>
-          Add the date — and a doctor or location if you like — for anything you've already scheduled.
-        </Text>
+        <Text style={styles.title}>{t('title')}</Text>
+        <Text style={styles.subtitle}>{t('subtitle')}</Text>
 
         <View style={styles.heroCard}>
           <View style={styles.heroIconChip}>
             <Ionicons name="checkmark-circle-outline" size={20} color={colors.sageDeep} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.heroTitle}>{bookedCount} of {remaining.length} booked</Text>
-            <Text style={styles.heroSub}>Add dates for the rest, or skip for now</Text>
+            <Text style={styles.heroTitle}>{t('heroCount', { booked: bookedCount, total: remaining.length })}</Text>
+            <Text style={styles.heroSub}>{t('heroSub')}</Text>
           </View>
-          <View style={styles.heroIllustration} pointerEvents="none">
+          <View style={[styles.heroIllustration, isRTL && styles.heroIllustrationRTL]} pointerEvents="none">
             <FetusIllustration size={100} />
           </View>
         </View>
@@ -83,7 +87,7 @@ export default function BookedScreen() {
                   params: isBooked
                     ? {
                         id: item.id,
-                        title: item.title,
+                        title: getItemTitle(item),
                         date: item.scheduledAt!.toISOString(),
                         time: item.scheduledTimeLabel ?? '',
                         location: item.location ?? '',
@@ -91,32 +95,32 @@ export default function BookedScreen() {
                         windowStart: item.windowStart.toISOString(),
                         windowEnd: item.windowEnd.toISOString(),
                       }
-                    : { id: item.id, title: item.title, windowStart: item.windowStart.toISOString(), windowEnd: item.windowEnd.toISOString() },
+                    : { id: item.id, title: getItemTitle(item), windowStart: item.windowStart.toISOString(), windowEnd: item.windowEnd.toISOString() },
                 })}
               >
                 <View style={[styles.checkbox, isBooked && styles.checkboxChecked]}>
                   {isBooked && <Ionicons name="checkmark" size={14} color="#fff" />}
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.rowTitle}>{item.title}</Text>
+                  <Text style={styles.rowTitle}>{getItemTitle(item)}</Text>
                   {isBooked ? (
                     <Text style={styles.rowMetaBooked}>
-                      Booked · {formatWeekday(item.scheduledAt!)}{item.scheduledTimeLabel ? ` · ${item.scheduledTimeLabel}` : ''}
+                      {t('bookedWeekday', { weekday: formatWeekday(item.scheduledAt!) })}{item.scheduledTimeLabel ? ` · ${item.scheduledTimeLabel}` : ''}
                       {item.location ? ` · ${item.location}` : ''}
                     </Text>
                   ) : (
-                    <Text style={styles.rowMeta}>Target dates: {formatDateRange(item.windowStart, item.windowEnd)}</Text>
+                    <Text style={styles.rowMeta}>{t('targetDates', { range: formatDateRange(item.windowStart, item.windowEnd) })}</Text>
                   )}
                 </View>
-                <Text style={styles.rowAction}>{isBooked ? 'Edit' : 'Add date'}</Text>
+                <Text style={styles.rowAction}>{isBooked ? t('edit') : t('addDate')}</Text>
               </TouchableOpacity>
             )
           })}
         </View>
 
         <TouchableOpacity style={styles.continueBtn} onPress={continueOn}>
-          <Text style={styles.continueBtnText}>{bookedCount > 0 ? `Continue (${bookedCount} booked)` : 'Continue'}</Text>
-          <Ionicons name="arrow-forward" size={18} color="#fff" />
+          <Text style={styles.continueBtnText}>{bookedCount > 0 ? t('continueWithCount', { count: bookedCount }) : t('continue')}</Text>
+          <Ionicons name={arrowForward} size={18} color="#fff" />
         </TouchableOpacity>
 
       </ScrollView>
@@ -134,6 +138,7 @@ const styles = StyleSheet.create({
   appName:      { fontSize: 19, fontWeight: '700', color: colors.textPrimary },
   bellBtn:      { width: 36, height: 36, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', position: 'relative' },
   bellDot:      { position: 'absolute', top: 4, right: 4, width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.background },
+  bellDotRTL:   { right: undefined, left: 4 },
 
   title:    { fontFamily: fonts.headline, fontSize: 28, color: colors.textPrimary, lineHeight: 34 },
   subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.md, lineHeight: 20 },
@@ -143,6 +148,7 @@ const styles = StyleSheet.create({
   heroTitle:     { fontFamily: fonts.headline, fontSize: 18, color: colors.textPrimary },
   heroSub:       { fontSize: 12.5, color: colors.textPrimary, opacity: 0.65, marginTop: 1 },
   heroIllustration: { position: 'absolute', right: -18, top: -10 },
+  heroIllustrationRTL: { right: undefined, left: -18 },
 
   listCard:     { backgroundColor: colors.card, borderRadius: radius.lg, marginBottom: spacing.md, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, overflow: 'hidden' },
   row:          { flexDirection: 'row', alignItems: 'center', gap: 10, padding: spacing.sm },

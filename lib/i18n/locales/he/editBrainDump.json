@@ -1,0 +1,19 @@
+{
+  "close": "סגור",
+  "cancel": "ביטול",
+  "editEntry": "ערוך רשומה",
+  "save": "שמור",
+  "notFound": "הרשומה הזו כבר לא קיימת.",
+  "placeholder": "מה עומד לך בראש?",
+  "kindThought": "מחשבה",
+  "kindDoctor": "לשאול את הרופא/ה",
+  "addDetails": "הוסף פרטים (לא חובה)",
+  "detailsPlaceholder": "משהו נוסף ששווה לזכור",
+  "addToNextAppointment": "הוסף לתור הבא",
+  "noUpcomingAppointments": "אין עדיין תורים קרובים.",
+  "bookBy": "להזמין עד {{date}}",
+  "addTag": "הוסף תגית",
+  "deleteEntry": "מחק רשומה",
+  "deleteEntryTitle": "למחוק את הרשומה הזו?",
+  "delete": "מחיקה"
+}

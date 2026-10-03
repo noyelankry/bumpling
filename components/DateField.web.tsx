@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { colors, radius, spacing, fonts } from '../lib/theme'
+import { getDateLocale } from '../lib/i18n/dateLocale'
+import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 
 type Props = {
   value: Date | null
@@ -11,7 +13,12 @@ type Props = {
   minimumDate?: Date
 }
 
-const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+// A fixed Sun(7)-Sat(13) reference week, just used to read each weekday's
+// locale-correct short label off Intl — not the actual rendered dates.
+function weekdayLabels(locale: string) {
+  const fmt = new Intl.DateTimeFormat(locale, { weekday: 'short' })
+  return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2024, 0, 7 + i)))
+}
 
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
@@ -33,6 +40,9 @@ function buildGrid(viewMonth: Date) {
 }
 
 export default function DateField({ value, onChange, placeholder, maximumDate, minimumDate }: Props) {
+  const { back, forward } = useDirectionalIcon()
+  const locale = getDateLocale()
+  const weekdays = weekdayLabels(locale)
   const [open, setOpen] = useState(false)
   const [viewMonth, setViewMonth] = useState(() => value ?? maximumDate ?? new Date())
   const [fieldHeight, setFieldHeight] = useState(52)
@@ -85,7 +95,7 @@ export default function DateField({ value, onChange, placeholder, maximumDate, m
         <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} />
         <Text style={value ? styles.valueText : styles.placeholderText}>
           {value
-            ? value.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+            ? value.toLocaleDateString(locale, { month: 'long', day: 'numeric', year: 'numeric' })
             : placeholder}
         </Text>
       </TouchableOpacity>
@@ -94,18 +104,18 @@ export default function DateField({ value, onChange, placeholder, maximumDate, m
         <View style={[styles.popover, { top: fieldHeight + 8 }]}>
           <View style={styles.monthRow}>
             <TouchableOpacity style={styles.navBtn} onPress={() => shiftMonth(-1)} hitSlop={6}>
-              <Ionicons name="chevron-back" size={18} color={colors.textPrimary} />
+              <Ionicons name={back} size={18} color={colors.textPrimary} />
             </TouchableOpacity>
             <Text style={styles.monthLabel}>
-              {viewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              {viewMonth.toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
             </Text>
             <TouchableOpacity style={styles.navBtn} onPress={() => shiftMonth(1)} hitSlop={6}>
-              <Ionicons name="chevron-forward" size={18} color={colors.textPrimary} />
+              <Ionicons name={forward} size={18} color={colors.textPrimary} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.weekdayRow}>
-            {WEEKDAYS.map((w, i) => (
+            {weekdays.map((w, i) => (
               <Text key={i} style={styles.weekdayText}>{w}</Text>
             ))}
           </View>

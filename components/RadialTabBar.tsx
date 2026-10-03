@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs'
 import { colors, radius } from '../lib/theme'
+import { useLanguage } from '../lib/i18n/LanguageProvider'
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name']
 
@@ -32,6 +33,7 @@ const FAN_OFFSETS = [
 
 export default function RadialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets()
+  const { isRTL } = useLanguage()
   const [width, setWidth] = useState(0)
 
   // "Today" is always the anchored pill and the other three are always the
@@ -52,7 +54,7 @@ export default function RadialTabBar({ state, descriptors, navigation }: BottomT
   const centerX = width / 2
   const positions = fanRoutes.map((route, i) => ({
     route,
-    cx: centerX + FAN_OFFSETS[i].dx,
+    cx: centerX + (isRTL ? -FAN_OFFSETS[i].dx : FAN_OFFSETS[i].dx),
     cy: STAGE_HEIGHT + FAN_OFFSETS[i].dy,
   }))
 

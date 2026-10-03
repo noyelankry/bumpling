@@ -1,0 +1,46 @@
+{
+  "slidePlan": {
+    "titleBlack": "Your care plan,",
+    "titleGreen": "organized",
+    "body": "We map out every test and scan by trimester, and remind you before booking windows close."
+  },
+  "slideToday": {
+    "titleBlack": "Know your week,",
+    "titleGreen": "at a glance",
+    "body": "See exactly how far along you are, what's coming up next, and what matters this week."
+  },
+  "slideHealth": {
+    "titleBlack": "Track how",
+    "titleGreen": "you're feeling",
+    "body": "Log your mood, symptoms and vitals in seconds — see how things change over time."
+  },
+  "slideAllInOne": {
+    "titleBlack": "Everything you need,",
+    "titleGreen": "all for you",
+    "body": "Your plan, your health, and your profile — all in one calm, simple place."
+  },
+  "preview": {
+    "needsAttention": "What needs your attention",
+    "cvs": "Chorionic villus sampling",
+    "bookBy": "Book by Oct 7",
+    "monthJul": "Jul",
+    "monthAug": "Aug",
+    "monthSep": "Sep",
+    "pregnant": "You're pregnant",
+    "weeks": "weeks",
+    "plusDays": "+ 4 days",
+    "weeklyTip": "This week: tiny fingers are forming.",
+    "howFeeling": "How are you feeling?",
+    "nausea": "Nausea",
+    "fatigue": "Fatigue",
+    "backache": "Backache",
+    "thingsNeedAttention": "2 things need your attention",
+    "earlyAnatomyScan": "Early anatomy scan"
+  },
+  "tagline": "We help you book the right tests on time.",
+  "getStarted": "Get Started",
+  "haveAccount": "Already have an account? ",
+  "logIn": "Log in",
+  "skip": "Skip",
+  "letsGo": "Let's Go!"
+}

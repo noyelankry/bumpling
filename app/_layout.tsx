@@ -8,6 +8,8 @@ import { supabase } from '../lib/supabase'
 import { DEV_BYPASS_KEY } from '../lib/devBypass'
 import { hasLMP, hasCompletedCatchUp, hasCompletedBooked } from '../lib/carePlan'
 import { fonts } from '../lib/theme'
+import '../lib/i18n'
+import { LanguageProvider } from '../lib/i18n/LanguageProvider'
 
 // Sets the bundled body font once at the root. On web this relies on real DOM
 // font-family inheritance to reach every Text without touching each screen's
@@ -103,8 +105,10 @@ export default function RootLayout() {
   }, [userId, segments])
 
   return (
-    <View style={[{ flex: 1 }, rootFontStyle]}>
-      <Stack screenOptions={{ headerShown: false }} />
-    </View>
+    <LanguageProvider>
+      <View style={[{ flex: 1 }, rootFontStyle]}>
+        <Stack screenOptions={{ headerShown: false }} />
+      </View>
+    </LanguageProvider>
   )
 }

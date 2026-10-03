@@ -3,11 +3,15 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter, useFocusEffect } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
-import { BabyMark, BellyMark } from '../../components/illustrations'
+import { BabyMark } from '../../components/illustrations'
+import { ItemIcon } from '../../components/ItemIcon'
 import { formatDate, formatDateRange, formatWeekday, gestationalAge } from '../../lib/pregnancy'
-import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, getItemTitle, type CareItemWithCustom } from '../../lib/carePlan'
 import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
+import { useDirectionalIcon } from '../../lib/i18n/useDirectionalIcon'
+import { useLanguage } from '../../lib/i18n/LanguageProvider'
 
 // Grouped by trimester (derived from the item's own window) rather than a
 // per-id table, since the real test chart has 18+ items — a fixed table
@@ -23,33 +27,16 @@ function metaFor(windowStartWeek: number) {
   return TRIMESTER_META[trimester]
 }
 
-function ItemIcon({ title, size, color }: { title: string; size: number; color: string }) {
-  const t = title.toLowerCase()
-  if (t.includes('ultrasound') || t.includes('scan')) return <BellyMark size={size} color={color} />
-  if (t.includes('blood') || t.includes('urine') || t.includes('screening') || t.includes('biochem') || t.includes('gbs') || t.includes('glucose')) {
-    return <Ionicons name="flask-outline" size={size} color={color} />
-  }
-  if (t.includes('vaccine')) return <Ionicons name="shield-checkmark-outline" size={size} color={color} />
-  if (t.includes('doctor visit')) return <Ionicons name="medical-outline" size={size} color={color} />
-  if (t.includes('amniocentesis') || t.includes('sampling') || t.includes('echo')) return <Ionicons name="body-outline" size={size} color={color} />
-  if (t.includes('monitoring')) return <Ionicons name="time-outline" size={size} color={color} />
-  return <Ionicons name="calendar-outline" size={size} color={color} />
-}
-
 type JourneyNodeState = 'done' | 'current' | 'upcoming' | 'milestone'
 type JourneyNode = {
   key: string
   label: string
-  /** Untruncated title, for ItemIcon's keyword matching — `label` may be shortened for display. */
-  iconTitle: string
+  /** Item id, for ItemIcon's lookup — stable regardless of the active language. */
+  iconId: string
   weekLabel: string
   weekValue: number
   state: JourneyNodeState
   linkId?: string
-}
-
-function trimesterName(weeks: number) {
-  return weeks < 14 ? 'First trimester' : weeks < 28 ? 'Second trimester' : 'Third trimester'
 }
 
 // Word-boundary-safe shortener for the journey stepper's tight columns —
@@ -69,6 +56,9 @@ function shortLabel(title: string, maxChars = 16): string {
 
 export default function PlanScreen() {
   const router = useRouter()
+  const { t } = useTranslation('plan')
+  const { isRTL } = useLanguage()
+  const { forward } = useDirectionalIcon()
   const autoScroll = useAutoScrollEnabled()
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date>(TODAY)
@@ -112,9 +102,9 @@ export default function PlanScreen() {
     if (firstUltrasoundItem) {
       nodes.push({
         key: firstUltrasoundItem.id,
-        label: shortLabel(firstUltrasoundItem.title),
-        iconTitle: firstUltrasoundItem.title,
-        weekLabel: `W${Math.round(firstUltrasoundItem.windowStartWeek)}`,
+        label: shortLabel(getItemTitle(firstUltrasoundItem)),
+        iconId: firstUltrasoundItem.id,
+        weekLabel: t('weekShort', { n: Math.round(firstUltrasoundItem.windowStartWeek) }),
         weekValue: firstUltrasoundItem.windowStartWeek,
         state: firstUltrasoundItem.status === 'done' ? 'done' : 'upcoming',
         linkId: firstUltrasoundItem.id,
@@ -123,9 +113,9 @@ export default function PlanScreen() {
     if (ntScanItem) {
       nodes.push({
         key: ntScanItem.id,
-        label: 'NT scan',
-        iconTitle: ntScanItem.title,
-        weekLabel: `W${Math.round(ntScanItem.windowStartWeek)}`,
+        label: t('ntScan'),
+        iconId: ntScanItem.id,
+        weekLabel: t('weekShort', { n: Math.round(ntScanItem.windowStartWeek) }),
         weekValue: ntScanItem.windowStartWeek,
         state: ntScanItem.status === 'done' ? 'done' : 'upcoming',
         linkId: ntScanItem.id,
@@ -133,26 +123,26 @@ export default function PlanScreen() {
     }
     nodes.push({
       key: 'current',
-      label: `Week ${age.weeks}`,
-      iconTitle: '',
-      weekLabel: 'Here now',
+      label: t('weekLabel', { weeks: age.weeks }),
+      iconId: '',
+      weekLabel: t('hereNow'),
       weekValue: age.weeks + age.days / 7,
       state: 'current',
     })
     if (nextMajorItem) {
       nodes.push({
         key: nextMajorItem.id,
-        label: shortLabel(nextMajorItem.title),
-        iconTitle: nextMajorItem.title,
+        label: shortLabel(getItemTitle(nextMajorItem)),
+        iconId: nextMajorItem.id,
         weekLabel: nextMajorItem.status === 'scheduled' && nextMajorItem.scheduledAt
           ? formatDate(nextMajorItem.scheduledAt)
-          : `W${Math.round(nextMajorItem.windowStartWeek)}`,
+          : t('weekShort', { n: Math.round(nextMajorItem.windowStartWeek) }),
         weekValue: nextMajorItem.windowStartWeek,
         state: 'upcoming',
         linkId: nextMajorItem.id,
       })
     }
-    nodes.push({ key: 'meet-baby', label: 'Meet baby', iconTitle: '', weekLabel: 'W40', weekValue: 40, state: 'milestone' })
+    nodes.push({ key: 'meet-baby', label: t('meetBaby'), iconId: '', weekLabel: t('weekShort', { n: 40 }), weekValue: 40, state: 'milestone' })
 
     return nodes.sort((a, b) => a.weekValue - b.weekValue)
   }, [firstUltrasoundItem, ntScanItem, nextMajorItem, age])
@@ -162,9 +152,9 @@ export default function PlanScreen() {
   const nextUpMeta = (() => {
     if (!nextMajorItem) return ''
     if (nextMajorItem.status === 'scheduled' && nextMajorItem.scheduledAt) return formatDate(nextMajorItem.scheduledAt)
-    if (nextMajorItem.status === 'actionable') return `Book by ${formatDate(nextMajorItem.bookBy)}`
+    if (nextMajorItem.status === 'actionable') return t('bookBy', { date: formatDate(nextMajorItem.bookBy) })
     const days = Math.max(0, Math.round((nextMajorItem.windowStart.getTime() - TODAY.getTime()) / 86400000))
-    return `Week ${Math.round(nextMajorItem.windowStartWeek)} · in ${days} day${days === 1 ? '' : 's'}`
+    return t('weekInDays', { weeks: Math.round(nextMajorItem.windowStartWeek), count: days })
   })()
 
   return (
@@ -183,7 +173,7 @@ export default function PlanScreen() {
             <Text style={styles.appName}>Bumpling</Text>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')} accessibilityLabel="Profile">
+            <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')} accessibilityLabel={t('profileLabel')}>
               <Ionicons name="person-outline" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.bellBtn}>
@@ -194,10 +184,10 @@ export default function PlanScreen() {
 
         <View style={styles.titleRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Pregnancy plan</Text>
-            <Text style={styles.subtitle}>We help you book the right tests on time.</Text>
+            <Text style={styles.title}>{t('title')}</Text>
+            <Text style={styles.subtitle}>{t('subtitle')}</Text>
           </View>
-          <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/add-item')} accessibilityLabel="Add appointment">
+          <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/add-item')} accessibilityLabel={t('addAppointmentLabel')}>
             <Ionicons name="add" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -208,12 +198,12 @@ export default function PlanScreen() {
               <Ionicons name="calendar-outline" size={22} color={colors.sageDeep} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.summaryWeek}>Week {age.weeks} + {age.days}</Text>
-              <Text style={styles.summarySub}>Based on your dates</Text>
+              <Text style={styles.summaryWeek}>{t('summaryWeek', { weeks: age.weeks, days: age.days })}</Text>
+              <Text style={styles.summarySub}>{t('summarySub')}</Text>
             </View>
             <View style={styles.summaryIllustration}>
               <BabyMark size={52} />
-              <View style={styles.summaryHeart}>
+              <View style={[styles.summaryHeart, isRTL && styles.summaryHeartRTL]}>
                 <Ionicons name="heart" size={13} color={colors.lavenderDeep} />
               </View>
             </View>
@@ -222,14 +212,14 @@ export default function PlanScreen() {
           <View style={styles.summaryDivider} />
 
           <Text style={styles.needsYouTitle}>
-            {needsYouCount > 0 ? `${needsYouCount} thing${needsYouCount > 1 ? 's' : ''} need your attention` : 'Nothing needs your attention right now'}
+            {needsYouCount > 0 ? t('needsYou', { count: needsYouCount }) : t('nothingNeedsAttention')}
           </Text>
-          <Text style={styles.needsYouSub}>We'll remind you before booking windows close.</Text>
+          <Text style={styles.needsYouSub}>{t('needsYouSub')}</Text>
         </View>
 
         {attention.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>What needs your attention</Text>
+            <Text style={styles.sectionTitle}>{t('whatNeedsAttention')}</Text>
             <View style={{ gap: spacing.xs, marginBottom: spacing.lg }}>
               {attention.map(item => {
                 const meta = metaFor(item.windowStartWeek)
@@ -241,28 +231,28 @@ export default function PlanScreen() {
                     onPress={() => router.push(`/appointment/${item.id}`)}
                   >
                     <View style={[styles.iconChip, { backgroundColor: meta.chipBg }]}>
-                      <ItemIcon title={item.title} size={20} color={meta.iconColor} />
+                      <ItemIcon id={item.id} size={20} color={meta.iconColor} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.attentionTitle}>{item.title}</Text>
+                      <Text style={styles.attentionTitle}>{getItemTitle(item)}</Text>
                       <Text style={styles.attentionMeta}>
-                        Target dates: {formatDateRange(item.windowStart, item.windowEnd)}
+                        {t('targetDates', { range: formatDateRange(item.windowStart, item.windowEnd) })}
                       </Text>
                       {item.status === 'actionable' && (
-                        <Text style={styles.bookBy}>Book by {formatDate(item.bookBy)}</Text>
+                        <Text style={styles.bookBy}>{t('bookBy', { date: formatDate(item.bookBy) })}</Text>
                       )}
                     </View>
                     {item.status === 'actionable' ? (
                       <TouchableOpacity
                         activeOpacity={0.85}
                         style={styles.scheduleBtn}
-                        onPress={() => router.push({ pathname: '/add-item', params: { id: item.id, title: item.title, prepNote: item.prepNote ?? '', windowStart: item.windowStart.toISOString(), windowEnd: item.windowEnd.toISOString() } })}
+                        onPress={() => router.push({ pathname: '/add-item', params: { id: item.id, title: getItemTitle(item), prepNote: item.prepNote ?? '', windowStart: item.windowStart.toISOString(), windowEnd: item.windowEnd.toISOString() } })}
                       >
-                        <Text style={styles.scheduleBtnText}>Schedule now</Text>
+                        <Text style={styles.scheduleBtnText}>{t('scheduleNow')}</Text>
                       </TouchableOpacity>
                     ) : (
                       <View style={styles.laterPill}>
-                        <Text style={styles.laterPillText}>We'll remind you later</Text>
+                        <Text style={styles.laterPillText}>{t('remindLater')}</Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -277,14 +267,14 @@ export default function PlanScreen() {
             <Ionicons name="heart-outline" size={20} color={colors.sageDeep} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.reassuranceTitle}>Everything else can wait</Text>
-            <Text style={styles.reassuranceSub}>We'll bring things back when they become relevant.</Text>
+            <Text style={styles.reassuranceTitle}>{t('everythingElseWait')}</Text>
+            <Text style={styles.reassuranceSub}>{t('reassuranceSub')}</Text>
           </View>
         </View>
 
         {scheduled.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>Next up</Text>
+            <Text style={styles.sectionTitle}>{t('nextUp')}</Text>
             <View style={styles.listCard}>
               {scheduled.map((item, i) => {
                 const meta = metaFor(item.windowStartWeek)
@@ -296,17 +286,17 @@ export default function PlanScreen() {
                     onPress={() => router.push(`/appointment/${item.id}`)}
                   >
                     <View style={[styles.iconChip, { backgroundColor: meta.chipBg }]}>
-                      <ItemIcon title={item.title} size={18} color={meta.iconColor} />
+                      <ItemIcon id={item.id} size={18} color={meta.iconColor} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.attentionTitle}>{item.title}</Text>
+                      <Text style={styles.attentionTitle}>{getItemTitle(item)}</Text>
                       <Text style={styles.attentionMeta}>
                         {formatWeekday(item.scheduledAt!)}{item.scheduledTimeLabel ? ` • ${item.scheduledTimeLabel}` : ''}
                       </Text>
                       {!!item.location && <Text style={styles.attentionMeta}>{item.location}</Text>}
                       {!!item.prepNote && <Text style={styles.prepNote}>{item.prepNote}</Text>}
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                    <Ionicons name={forward} size={18} color={colors.textSecondary} />
                   </TouchableOpacity>
                 )
               })}
@@ -316,16 +306,18 @@ export default function PlanScreen() {
 
         <View style={styles.journeyCard}>
           <View style={styles.journeyHeaderRow}>
-            <Text style={styles.journeyTitle}>Your journey</Text>
+            <Text style={styles.journeyTitle}>{t('yourJourney')}</Text>
             <View style={styles.weekChip}>
-              <Text style={styles.weekChipText}>Week {age.weeks}</Text>
+              <Text style={styles.weekChipText}>{t('weekLabel', { weeks: age.weeks })}</Text>
               <Ionicons name="chevron-down" size={13} color={colors.primaryDark} />
             </View>
           </View>
 
-          <Text style={styles.trimesterTitle}>{trimesterName(age.weeks)}</Text>
+          <Text style={styles.trimesterTitle}>
+            {age.weeks < 14 ? t('trimester1') : age.weeks < 28 ? t('trimester2') : t('trimester3')}
+          </Text>
           <View style={styles.hereRow}>
-            <Text style={styles.hereText}>You're here</Text>
+            <Text style={styles.hereText}>{t('youAreHere')}</Text>
             <Ionicons name="heart" size={13} color={colors.primary} />
           </View>
 
@@ -356,7 +348,7 @@ export default function PlanScreen() {
                         ) : node.state === 'milestone' ? (
                           <Ionicons name="gift-outline" size={14} color={colors.lavenderDeep} />
                         ) : (
-                          <ItemIcon title={node.iconTitle} size={13} color={colors.textSecondary} />
+                          <ItemIcon id={node.iconId} size={13} color={colors.textSecondary} />
                         )}
                       </View>
                     )}
@@ -379,14 +371,14 @@ export default function PlanScreen() {
           {nextMajorItem && (
             <TouchableOpacity style={styles.nextUpMiniCard} activeOpacity={0.7} onPress={() => router.push(`/appointment/${nextMajorItem.id}`)}>
               <View style={styles.nextUpMiniIconChip}>
-                <ItemIcon title={nextMajorItem.title} size={18} color={colors.lavenderDeep} />
+                <ItemIcon id={nextMajorItem.id} size={18} color={colors.lavenderDeep} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.nextUpMiniEyebrow}>Next up</Text>
-                <Text style={styles.nextUpMiniTitle}>{nextMajorItem.title}</Text>
+                <Text style={styles.nextUpMiniEyebrow}>{t('nextUp')}</Text>
+                <Text style={styles.nextUpMiniTitle}>{getItemTitle(nextMajorItem)}</Text>
                 <Text style={styles.nextUpMiniMeta}>{nextUpMeta}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.lavenderDeep} />
+              <Ionicons name={forward} size={18} color={colors.lavenderDeep} />
             </TouchableOpacity>
           )}
         </View>
@@ -394,10 +386,10 @@ export default function PlanScreen() {
         {allUpcoming.length > 0 && (
           <>
             <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitle}>Upcoming appointments</Text>
+              <Text style={styles.sectionTitle}>{t('upcomingAppointments')}</Text>
               <TouchableOpacity style={styles.viewAllBtn} onPress={() => router.push('/appointments')}>
-                <Text style={styles.viewAllText}>View all</Text>
-                <Ionicons name="chevron-forward" size={14} color={colors.primaryDark} />
+                <Text style={styles.viewAllText}>{t('viewAll')}</Text>
+                <Ionicons name={forward} size={14} color={colors.primaryDark} />
               </TouchableOpacity>
             </View>
             <View style={styles.listCard}>
@@ -411,15 +403,15 @@ export default function PlanScreen() {
                     onPress={() => router.push(`/appointment/${appt.id}`)}
                   >
                     <View style={[styles.iconChip, { backgroundColor: meta.chipBg }]}>
-                      <ItemIcon title={appt.title} size={18} color={meta.iconColor} />
+                      <ItemIcon id={appt.id} size={18} color={meta.iconColor} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.attentionTitle}>{appt.title}</Text>
+                      <Text style={styles.attentionTitle}>{getItemTitle(appt)}</Text>
                       <Text style={styles.attentionMeta}>
-                        {appt.status === 'scheduled' && appt.scheduledAt ? formatWeekday(appt.scheduledAt) : `Week ${Math.round(appt.windowStartWeek)}`}
+                        {appt.status === 'scheduled' && appt.scheduledAt ? formatWeekday(appt.scheduledAt) : t('weekLabel', { weeks: Math.round(appt.windowStartWeek) })}
                       </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                    <Ionicons name={forward} size={18} color={colors.textSecondary} />
                   </TouchableOpacity>
                 )
               })}
@@ -433,11 +425,11 @@ export default function PlanScreen() {
             <Ionicons name="heart-outline" size={22} color={colors.lavenderDeep} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.birthPrepTitle}>Prepare for birth</Text>
-            <Text style={styles.birthPrepSub}>Think through your birth preferences, at your own pace.</Text>
+            <Text style={styles.birthPrepTitle}>{t('prepareForBirth')}</Text>
+            <Text style={styles.birthPrepSub}>{t('prepareForBirthSub')}</Text>
           </View>
           <TouchableOpacity style={styles.birthPrepBtn} onPress={() => router.push('/prepare-for-birth')}>
-            <Text style={styles.birthPrepBtnText}>Explore</Text>
+            <Text style={styles.birthPrepBtnText}>{t('explore')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -469,6 +461,7 @@ const styles = StyleSheet.create({
   summarySub:       { fontSize: 12.5, color: colors.textPrimary, opacity: 0.65, marginTop: 1 },
   summaryIllustration: { width: 56, height: 56, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   summaryHeart:      { position: 'absolute', top: -2, right: 0 },
+  summaryHeartRTL:   { right: undefined, left: 0 },
   summaryDivider:    { height: 1, backgroundColor: 'rgba(43,36,32,0.08)', marginVertical: spacing.sm },
   needsYouTitle: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary },
   needsYouSub:   { fontSize: 12.5, color: colors.textPrimary, opacity: 0.65, marginTop: 3, lineHeight: 18 },

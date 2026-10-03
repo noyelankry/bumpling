@@ -1,0 +1,9 @@
+{
+  "title": "תורים",
+  "nothingYet": "אין עדיין כלום בתוכנית שלך.",
+  "upcoming": "קרובים",
+  "past": "קודמים",
+  "weekLabel": "שבוע {{weeks}}",
+  "doneOn": "בוצע {{date}}",
+  "done": "בוצע"
+}

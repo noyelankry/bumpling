@@ -1,0 +1,9 @@
+{
+  "title": "Appointments",
+  "nothingYet": "Nothing on your plan yet.",
+  "upcoming": "Upcoming",
+  "past": "Past",
+  "weekLabel": "Week {{weeks}}",
+  "doneOn": "Done {{date}}",
+  "done": "Done"
+}

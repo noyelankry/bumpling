@@ -1,6 +1,8 @@
 // Shared brain-dump storage: free-form notes and doctor questions,
 // optionally enriched with details/tags/an appointment link.
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import i18next from './i18n'
+import { getDateLocale } from './i18n/dateLocale'
 
 const STORAGE_KEY = 'bumpling_brain_dump'
 
@@ -19,7 +21,9 @@ export type Entry = {
   createdAt: string
 }
 
-export const SUGGESTED_TAGS = ['Sleep', 'Energy', 'Symptoms', 'Nutrition']
+// Stored lowercase (see SYMPTOMS in app/(tabs)/health.tsx for the same
+// pattern) — display labels are resolved through t('tag.<key>') at render.
+export const SUGGESTED_TAGS = ['sleep', 'energy', 'symptoms', 'nutrition']
 
 /** "Ask doctor" entries get their own filter; everything else is "Personal". */
 export function filterGroupOf(kind: EntryKind): Filter {
@@ -127,12 +131,12 @@ export async function clearBrainDumpData(): Promise<void> {
 export function formatRelativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diffMs / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 1) return i18next.t('brainDump:justNow')
+  if (mins < 60) return i18next.t('brainDump:minutesAgo', { count: mins })
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
+  if (hours < 24) return i18next.t('brainDump:hoursAgo', { count: hours })
   const days = Math.floor(hours / 24)
-  return `${days}d ago`
+  return i18next.t('brainDump:daysAgo', { count: days })
 }
 
 /** "Today" / "Yesterday" / "Sep 28" section label for a createdAt timestamp. */
@@ -141,13 +145,13 @@ export function formatEntryDay(iso: string): string {
   const now = new Date()
   const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
   const diffDays = Math.round((startOfDay(now) - startOfDay(date)) / 86400000)
-  if (diffDays === 0) return 'Today'
-  if (diffDays === 1) return 'Yesterday'
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  if (diffDays === 0) return i18next.t('brainDump:today')
+  if (diffDays === 1) return i18next.t('brainDump:yesterday')
+  return date.toLocaleDateString(getDateLocale(), { month: 'short', day: 'numeric' })
 }
 
 export function formatEntryTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  return new Date(iso).toLocaleTimeString(getDateLocale(), { hour: 'numeric', minute: '2-digit' })
 }
 
 /** Groups entries (assumed already sorted newest-first) into day sections. */

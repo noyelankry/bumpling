@@ -6,94 +6,106 @@ import {
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark, FetusIllustration, MoodFace } from '../../components/illustrations'
+import { useLanguage } from '../../lib/i18n/LanguageProvider'
+import { useDirectionalIcon } from '../../lib/i18n/useDirectionalIcon'
 
 const ONBOARDING_KEY = 'bumpling_onboarding_seen'
 
-const SLIDES = [
-  {
-    key: 'plan',
-    titleBlack: 'Your care plan,',
-    titleGreen: 'organized',
-    body: 'We map out every test and scan by trimester, and remind you before booking windows close.',
-    Preview: PlanPreview,
-  },
-  {
-    key: 'today',
-    titleBlack: 'Know your week,',
-    titleGreen: 'at a glance',
-    body: "See exactly how far along you are, what's coming up next, and what matters this week.",
-    Preview: TodayPreview,
-  },
-  {
-    key: 'health',
-    titleBlack: 'Track how',
-    titleGreen: "you're feeling",
-    body: 'Log your mood, symptoms and vitals in seconds — see how things change over time.',
-    Preview: HealthPreview,
-  },
-  {
-    key: 'allinone',
-    titleBlack: 'Everything you need,',
-    titleGreen: 'all for you',
-    body: 'Your plan, your health, and your profile — all in one calm, simple place.',
-    Preview: AllInOnePreview,
-  },
-]
+function getSlides(t: TFunction<'onboarding'>) {
+  return [
+    {
+      key: 'plan',
+      titleBlack: t('slidePlan.titleBlack'),
+      titleGreen: t('slidePlan.titleGreen'),
+      body: t('slidePlan.body'),
+      Preview: PlanPreview,
+    },
+    {
+      key: 'today',
+      titleBlack: t('slideToday.titleBlack'),
+      titleGreen: t('slideToday.titleGreen'),
+      body: t('slideToday.body'),
+      Preview: TodayPreview,
+    },
+    {
+      key: 'health',
+      titleBlack: t('slideHealth.titleBlack'),
+      titleGreen: t('slideHealth.titleGreen'),
+      body: t('slideHealth.body'),
+      Preview: HealthPreview,
+    },
+    {
+      key: 'allinone',
+      titleBlack: t('slideAllInOne.titleBlack'),
+      titleGreen: t('slideAllInOne.titleGreen'),
+      body: t('slideAllInOne.body'),
+      Preview: AllInOnePreview,
+    },
+  ]
+}
 
 function PlanPreview() {
+  const { t } = useTranslation('onboarding')
+  const { isRTL } = useLanguage()
+  const side = (pct: `${number}%`) => ({ left: isRTL ? undefined : pct, right: isRTL ? pct : undefined })
   return (
     <View style={preview.card}>
-      <Text style={preview.cardTitle}>What needs your attention</Text>
+      <Text style={preview.cardTitle}>{t('preview.needsAttention')}</Text>
       <View style={preview.planRow}>
         <View style={preview.planIconChip}>
           <Ionicons name="body-outline" size={16} color={colors.primaryDark} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={preview.planRowTitle}>Chorionic villus sampling</Text>
-          <Text style={preview.planRowMeta}>Book by Oct 7</Text>
+          <Text style={preview.planRowTitle}>{t('preview.cvs')}</Text>
+          <Text style={preview.planRowMeta}>{t('preview.bookBy')}</Text>
         </View>
       </View>
       <View style={preview.trackWrap}>
         <View style={preview.trackLine} />
-        <View style={[preview.trackSegment, { left: '8%', width: '18%', backgroundColor: colors.peachDeep }]} />
-        <View style={[preview.trackSegment, { left: '34%', width: '22%', backgroundColor: colors.sageDeep }]} />
-        <View style={[preview.trackSegment, { left: '64%', width: '20%', backgroundColor: colors.lavenderDeep }]} />
+        <View style={[preview.trackSegment, side('8%'), { width: '18%', backgroundColor: colors.peachDeep }]} />
+        <View style={[preview.trackSegment, side('34%'), { width: '22%', backgroundColor: colors.sageDeep }]} />
+        <View style={[preview.trackSegment, side('64%'), { width: '20%', backgroundColor: colors.lavenderDeep }]} />
       </View>
       <View style={preview.monthRow}>
-        <Text style={preview.monthLabel}>Jul</Text>
-        <Text style={preview.monthLabel}>Aug</Text>
-        <Text style={preview.monthLabel}>Sep</Text>
+        <Text style={preview.monthLabel}>{t('preview.monthJul')}</Text>
+        <Text style={preview.monthLabel}>{t('preview.monthAug')}</Text>
+        <Text style={preview.monthLabel}>{t('preview.monthSep')}</Text>
       </View>
     </View>
   )
 }
 
 function TodayPreview() {
+  const { t } = useTranslation('onboarding')
   return (
     <View style={preview.card}>
-      <Text style={preview.eyebrow}>You're pregnant</Text>
+      <Text style={preview.eyebrow}>{t('preview.pregnant')}</Text>
       <View style={preview.heroRow}>
         <Text style={preview.heroNum}>14</Text>
         <View>
-          <Text style={preview.heroWeeks}>weeks</Text>
-          <Text style={preview.heroDays}>+ 4 days</Text>
+          <Text style={preview.heroWeeks}>{t('preview.weeks')}</Text>
+          <Text style={preview.heroDays}>{t('preview.plusDays')}</Text>
         </View>
       </View>
       <View style={preview.tipRow}>
         <Ionicons name="sparkles-outline" size={13} color={colors.lavenderDeep} />
-        <Text style={preview.tipText}>This week: tiny fingers are forming.</Text>
+        <Text style={preview.tipText}>{t('preview.weeklyTip')}</Text>
       </View>
     </View>
   )
 }
 
 function HealthPreview() {
+  const { t } = useTranslation('onboarding')
   const moods: Array<'happy' | 'calm' | 'okay' | 'tired' | 'anxious'> = ['happy', 'calm', 'okay', 'tired', 'anxious']
+  const symptoms = [t('preview.nausea'), t('preview.fatigue'), t('preview.backache')]
   return (
     <View style={preview.card}>
-      <Text style={preview.cardTitle}>How are you feeling?</Text>
+      <Text style={preview.cardTitle}>{t('preview.howFeeling')}</Text>
       <View style={preview.moodRow}>
         {moods.map((m, i) => (
           <View key={m} style={[preview.moodChip, i === 1 && preview.moodChipActive]}>
@@ -102,7 +114,7 @@ function HealthPreview() {
         ))}
       </View>
       <View style={preview.symptomRow}>
-        {['Nausea', 'Fatigue', 'Backache'].map((s, i) => (
+        {symptoms.map((s, i) => (
           <View key={s} style={[preview.symptomChip, i === 0 && preview.symptomChipActive]}>
             <Text style={[preview.symptomChipText, i === 0 && preview.symptomChipTextActive]}>{s}</Text>
           </View>
@@ -113,6 +125,7 @@ function HealthPreview() {
 }
 
 function AllInOnePreview() {
+  const { t } = useTranslation('onboarding')
   return (
     <View style={[preview.card, { padding: 12 }]}>
       <View style={preview.miniHeader}>
@@ -122,12 +135,12 @@ function AllInOnePreview() {
         </View>
         <Ionicons name="notifications-outline" size={13} color={colors.textPrimary} />
       </View>
-      <Text style={[preview.cardTitle, { marginTop: 8 }]}>2 things need your attention</Text>
+      <Text style={[preview.cardTitle, { marginTop: 8 }]}>{t('preview.thingsNeedAttention')}</Text>
       <View style={preview.planRow}>
         <View style={preview.planIconChip}>
           <Ionicons name="calendar-outline" size={14} color={colors.sageDeep} />
         </View>
-        <Text style={preview.planRowTitle}>Early anatomy scan</Text>
+        <Text style={preview.planRowTitle}>{t('preview.earlyAnatomyScan')}</Text>
       </View>
       <View style={preview.miniNav}>
         {(['calendar-outline', 'leaf-outline', 'person-outline'] as const).map((icon, i) => (
@@ -142,10 +155,13 @@ function AllInOnePreview() {
 
 export default function OnboardingScreen() {
   const router = useRouter()
+  const { t } = useTranslation('onboarding')
+  const { arrowForward } = useDirectionalIcon()
   const { width } = useWindowDimensions()
   const [step, setStep] = useState<'welcome' | 'slides'>('welcome')
   const [slideIndex, setSlideIndex] = useState(0)
   const flatListRef = useRef<FlatList>(null)
+  const SLIDES = getSlides(t)
 
   async function finishOnboarding() {
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true')
@@ -174,18 +190,18 @@ export default function OnboardingScreen() {
               <BabyMark size={40} />
             </View>
             <Text style={styles.logoText}>BUMPLING</Text>
-            <Text style={styles.tagline}>We help you book the right tests on time.</Text>
+            <Text style={styles.tagline}>{t('tagline')}</Text>
           </View>
         </View>
 
         <View style={styles.welcomeBottom}>
           <TouchableOpacity style={styles.ctaBtn} onPress={() => setStep('slides')}>
-            <Text style={styles.ctaBtnText}>Get Started</Text>
+            <Text style={styles.ctaBtnText}>{t('getStarted')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={finishOnboarding} style={styles.loginLink}>
             <Text style={styles.loginLinkText}>
-              Already have an account?{' '}
-              <Text style={styles.loginLinkBold}>Log in</Text>
+              {t('haveAccount')}
+              <Text style={styles.loginLinkBold}>{t('logIn')}</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -196,7 +212,7 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView style={styles.slidesContainer}>
       <TouchableOpacity style={styles.skipBtn} onPress={finishOnboarding}>
-        <Text style={styles.skipText}>Skip</Text>
+        <Text style={styles.skipText}>{t('skip')}</Text>
       </TouchableOpacity>
 
       <FlatList
@@ -233,11 +249,11 @@ export default function OnboardingScreen() {
 
         {slideIndex === SLIDES.length - 1 ? (
           <TouchableOpacity style={styles.letsGoBtn} onPress={finishOnboarding}>
-            <Text style={styles.letsGoBtnText}>Let's Go!</Text>
+            <Text style={styles.letsGoBtnText}>{t('letsGo')}</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.arrowBtn} onPress={goNext}>
-            <Ionicons name="arrow-forward" size={24} color="#fff" />
+            <Ionicons name={arrowForward} size={24} color="#fff" />
           </TouchableOpacity>
         )}
       </View>

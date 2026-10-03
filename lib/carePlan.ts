@@ -2,6 +2,7 @@
 // Appointment Detail and Add Item so every screen sees the same state.
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { addDays, computeCareItems, type CareItem } from './pregnancy'
+import i18next from './i18n'
 
 const ITEMS_KEY = 'bumpling_care_items'
 const LMP_KEY = 'bumpling_lmp'
@@ -44,6 +45,18 @@ export const DEFAULT_CARE_ITEMS: CareItem[] = [
 type StoredCareItem = Omit<CareItem, 'scheduledAt' | 'doneAt'> & { scheduledAt?: string; doneAt?: string; custom?: boolean }
 
 export type CareItemWithCustom = CareItem & { custom?: boolean }
+
+const DEFAULT_CARE_ITEM_IDS = new Set(DEFAULT_CARE_ITEMS.map(i => i.id))
+
+// Default items' titles live in lib/i18n/locales/*/carePlan.json keyed by id
+// and are always resolved fresh for the active language — the `title` field
+// stored on the item (set once from the English catalog) is never read for
+// these, so a stale translation can't get baked into storage. Custom items
+// (user-typed, `custom: true`) keep their own literal title untouched.
+export function getItemTitle(item: Pick<CareItemWithCustom, 'id' | 'title' | 'custom'>): string {
+  if (item.custom || !DEFAULT_CARE_ITEM_IDS.has(item.id)) return item.title
+  return i18next.t(`carePlan:${item.id}`, { defaultValue: item.title })
+}
 
 function serialize(items: CareItemWithCustom[]): StoredCareItem[] {
   return items.map(i => ({ ...i, scheduledAt: i.scheduledAt?.toISOString(), doneAt: i.doneAt?.toISOString() }))

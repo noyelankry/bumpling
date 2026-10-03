@@ -3,9 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert,
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark } from '../../components/illustrations'
 import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
+import { useLanguage } from '../../lib/i18n/LanguageProvider'
 import {
   type Entry, type EntryKind, type Filter,
   loadEntries, addEntry, toggleDone, removeEntry, clearBrainDumpData,
@@ -14,19 +16,24 @@ import {
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name']
 
-const KIND_META: Record<EntryKind, { icon: IoniconsName; label: string; color: string; chipBg: string }> = {
-  thought: { icon: 'bulb-outline', label: 'Thought', color: colors.creamDeep, chipBg: colors.cream },
-  doctor:  { icon: 'medical-outline', label: 'Ask doctor', color: colors.lavenderDeep, chipBg: colors.lavender },
+const KIND_ICON: Record<EntryKind, { icon: IoniconsName; color: string; chipBg: string }> = {
+  thought: { icon: 'bulb-outline', color: colors.creamDeep, chipBg: colors.cream },
+  doctor:  { icon: 'medical-outline', color: colors.lavenderDeep, chipBg: colors.lavender },
 }
-
-const FILTERS: { key: Filter; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'doctor', label: 'For doctor' },
-  { key: 'personal', label: 'Personal' },
-]
 
 export default function BrainDumpScreen() {
   const router = useRouter()
+  const { t } = useTranslation('brainDump')
+  const { isRTL } = useLanguage()
+  const KIND_META: Record<EntryKind, { icon: IoniconsName; label: string; color: string; chipBg: string }> = {
+    thought: { ...KIND_ICON.thought, label: t('kindThought') },
+    doctor: { ...KIND_ICON.doctor, label: t('kindDoctor') },
+  }
+  const FILTERS: { key: Filter; label: string }[] = [
+    { key: 'all', label: t('filterAll') },
+    { key: 'doctor', label: t('filterDoctor') },
+    { key: 'personal', label: t('filterPersonal') },
+  ]
   const autoScroll = useAutoScrollEnabled()
   const [entries, setEntries] = useState<Entry[]>([])
   const [text, setText] = useState('')
@@ -53,24 +60,24 @@ export default function BrainDumpScreen() {
   function confirmDelete(id: string) {
     const doDelete = async () => setEntries(await removeEntry(entries, id))
     if (Platform.OS === 'web') {
-      if (window.confirm('Delete this entry?')) doDelete()
+      if (window.confirm(t('deleteEntryTitle'))) doDelete()
       return
     }
-    Alert.alert('Delete entry?', '', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: doDelete },
+    Alert.alert(t('deleteEntryTitle'), '', [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('delete'), style: 'destructive', onPress: doDelete },
     ])
   }
 
   function handleMenu() {
     const doClear = async () => { await clearBrainDumpData(); setEntries([]) }
     if (Platform.OS === 'web') {
-      if (window.confirm('Clear all brain dump entries?')) doClear()
+      if (window.confirm(t('clearAllConfirm'))) doClear()
       return
     }
-    Alert.alert('Brain dump', undefined, [
-      { text: 'Clear all entries', style: 'destructive', onPress: doClear },
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('menuTitle'), undefined, [
+      { text: t('clearAll'), style: 'destructive', onPress: doClear },
+      { text: t('cancel'), style: 'cancel' },
     ])
   }
 
@@ -101,7 +108,7 @@ export default function BrainDumpScreen() {
             <Text style={styles.appName}>Bumpling</Text>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')} accessibilityLabel="Profile">
+            <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')} accessibilityLabel={t('profileLabel')}>
               <Ionicons name="person-outline" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.bellBtn}>
@@ -115,10 +122,10 @@ export default function BrainDumpScreen() {
             <Ionicons name="bulb-outline" size={24} color={colors.lavenderDeep} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.heroTitle}>Get it out of your head</Text>
-            <Text style={styles.heroSub}>A safe space for all your thoughts, questions, and worries — big or small.</Text>
+            <Text style={styles.heroTitle}>{t('heroTitle')}</Text>
+            <Text style={styles.heroSub}>{t('heroSub')}</Text>
           </View>
-          <TouchableOpacity style={styles.menuBtn} onPress={handleMenu} accessibilityLabel="More options">
+          <TouchableOpacity style={styles.menuBtn} onPress={handleMenu} accessibilityLabel={t('moreOptions')}>
             <Ionicons name="ellipsis-horizontal" size={16} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>
@@ -128,7 +135,7 @@ export default function BrainDumpScreen() {
             style={styles.input}
             value={text}
             onChangeText={setText}
-            placeholder="What's on your mind?"
+            placeholder={t('placeholder')}
             placeholderTextColor={colors.textSecondary}
             multiline
           />
@@ -150,10 +157,10 @@ export default function BrainDumpScreen() {
               })}
             </View>
             <TouchableOpacity
-              style={[styles.addBtn, !text.trim() && styles.addBtnDisabled]}
+              style={[styles.addBtn, !text.trim() && styles.addBtnDisabled, isRTL && styles.addBtnRTL]}
               onPress={quickAdd}
               disabled={!text.trim()}
-              accessibilityLabel="Add entry"
+              accessibilityLabel={t('addEntry')}
             >
               <Ionicons name="add" size={20} color="#fff" />
             </TouchableOpacity>
@@ -176,9 +183,7 @@ export default function BrainDumpScreen() {
 
         {groups.length === 0 ? (
           <Text style={styles.emptyText}>
-            {entries.length === 0
-              ? 'Anything on your mind — jot it down above and come back to it later.'
-              : 'Nothing matches this filter.'}
+            {entries.length === 0 ? t('emptyNoEntries') : t('emptyNoMatch')}
           </Text>
         ) : (
           groups.map(group => (
@@ -188,6 +193,7 @@ export default function BrainDumpScreen() {
                 <Row
                   key={item.id}
                   item={item}
+                  meta={KIND_META[item.kind]}
                   onPress={() => router.push({ pathname: '/edit-brain-dump', params: { id: item.id } })}
                   onToggleDone={() => handleToggleDone(item.id)}
                   onDelete={() => confirmDelete(item.id)}
@@ -202,20 +208,21 @@ export default function BrainDumpScreen() {
   )
 }
 
-function Row({ item, onPress, onToggleDone, onDelete }: {
+function Row({ item, meta, onPress, onToggleDone, onDelete }: {
   item: Entry
+  meta: { icon: IoniconsName; label: string; color: string; chipBg: string }
   onPress: () => void
   onToggleDone: () => void
   onDelete: () => void
 }) {
-  const meta = KIND_META[item.kind]
+  const { t } = useTranslation('brainDump')
   return (
     <View style={styles.row}>
       <TouchableOpacity
         style={[styles.rowIconChip, { backgroundColor: meta.chipBg }]}
         onPress={onToggleDone}
         hitSlop={4}
-        accessibilityLabel={item.done ? 'Mark not done' : 'Mark done'}
+        accessibilityLabel={item.done ? t('markNotDone') : t('markDone')}
       >
         <Ionicons
           name={item.done ? 'checkmark-circle' : meta.icon}
@@ -233,7 +240,7 @@ function Row({ item, onPress, onToggleDone, onDelete }: {
 
       <View style={styles.rowTrailing}>
         <Text style={styles.rowTime}>{formatEntryTime(item.createdAt)}</Text>
-        <TouchableOpacity onPress={onDelete} hitSlop={8} style={styles.rowMenuBtn} accessibilityLabel="Delete entry">
+        <TouchableOpacity onPress={onDelete} hitSlop={8} style={styles.rowMenuBtn} accessibilityLabel={t('deleteEntry')}>
           <Ionicons name="ellipsis-vertical" size={16} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
@@ -269,6 +276,7 @@ const styles = StyleSheet.create({
   typeChipTextActive: { color: '#fff' },
 
   addBtn:         { width: 36, height: 36, borderRadius: radius.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginLeft: spacing.xs },
+  addBtnRTL:      { marginLeft: 0, marginRight: spacing.xs },
   addBtnDisabled: { opacity: 0.4 },
 
   filterTabs: { flexDirection: 'row', gap: 6, marginBottom: spacing.md },

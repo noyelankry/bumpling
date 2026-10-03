@@ -3,15 +3,20 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Keyboa
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import DateField from '../components/DateField'
 import { formatDateRange } from '../lib/pregnancy'
 import { loadCareItems, loadLMP, scheduleItem, addCustomItem } from '../lib/carePlan'
 import { addAppointmentToCalendar } from '../lib/calendar'
 import { goBack } from '../lib/navigation'
+import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 
 export default function AddItemScreen() {
   const router = useRouter()
+  const { t } = useTranslation('addItem')
+  const { t: tBusiness } = useTranslation('business')
+  const { back: backIcon } = useDirectionalIcon()
   const back = () => goBack(router, '/(tabs)/plan')
   const params = useLocalSearchParams<{ id?: string; title?: string; date?: string; time?: string; location?: string; prepNote?: string; windowStart?: string; windowEnd?: string }>()
   const isEditing = !!params.id
@@ -29,8 +34,8 @@ export default function AddItemScreen() {
   const outsideWindow = !!(date && windowStart && windowEnd && (date.getTime() < windowStart.getTime() || date.getTime() > windowEnd.getTime()))
 
   async function save() {
-    if (!title.trim()) return Alert.alert('Add a title', 'What is this appointment for?')
-    if (!date) return Alert.alert('Add a date', 'Pick a date for this appointment.')
+    if (!title.trim()) return Alert.alert(t('missingTitleTitle'), t('missingTitleBody'))
+    if (!date) return Alert.alert(t('missingDateTitle'), t('missingDateBody'))
 
     setSaving(true)
     const current = await loadCareItems()
@@ -49,11 +54,11 @@ export default function AddItemScreen() {
         timeLabel: details.timeLabel,
         location: details.location,
         notes: details.prepNote,
-      })
+      }, tBusiness)
       if (!result.ok) {
         setSaving(false)
         // The appointment itself is already saved — only the calendar step failed.
-        Alert.alert("Couldn't add to calendar", result.message, [{ text: 'OK', onPress: back }])
+        Alert.alert(t('couldntAddToCalendar'), result.message, [{ text: t('ok'), onPress: back }])
         return
       }
     }
@@ -68,75 +73,75 @@ export default function AddItemScreen() {
 
         <View style={styles.header}>
           <TouchableOpacity onPress={back} hitSlop={8}>
-            <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
+            <Ionicons name={backIcon} size={26} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{isEditing ? 'Schedule appointment' : 'Add appointment'}</Text>
+          <Text style={styles.headerTitle}>{isEditing ? t('scheduleAppointment') : t('addAppointment')}</Text>
           <View style={{ width: 26 }} />
         </View>
 
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
-          <Field label="Title">
+          <Field label={t('titleLabel')}>
             <View style={styles.inputRow}>
               <Ionicons name="document-text-outline" size={18} color={colors.textSecondary} />
               <TextInput
                 style={styles.input}
                 value={title}
                 onChangeText={setTitle}
-                placeholder="e.g. Dentist checkup"
+                placeholder={t('titlePlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 editable={!isEditing}
               />
             </View>
           </Field>
 
-          <Field label="Date" style={{ zIndex: 10 }}>
-            <DateField value={date} onChange={setDate} placeholder="Select a date" />
+          <Field label={t('dateLabel')} style={{ zIndex: 10 }}>
+            <DateField value={date} onChange={setDate} placeholder={t('datePlaceholder')} />
           </Field>
 
           {outsideWindow && windowStart && windowEnd && (
             <View style={styles.warningRow}>
               <Ionicons name="alert-circle-outline" size={16} color={colors.urgent} />
               <Text style={styles.warningText}>
-                That's outside the recommended window ({formatDateRange(windowStart, windowEnd)}). Doctors' schedules don't always line up — you can still save it.
+                {t('outsideWindow', { range: formatDateRange(windowStart, windowEnd) })}
               </Text>
             </View>
           )}
 
-          <Field label="Time (optional)">
+          <Field label={t('timeLabel')}>
             <View style={styles.inputRow}>
               <Ionicons name="time-outline" size={18} color={colors.textSecondary} />
               <TextInput
                 style={styles.input}
                 value={time}
                 onChangeText={setTime}
-                placeholder="e.g. 10:30 AM"
+                placeholder={t('timePlaceholder')}
                 placeholderTextColor={colors.textSecondary}
               />
             </View>
           </Field>
 
-          <Field label="Doctor / location (optional)">
+          <Field label={t('locationLabel')}>
             <View style={styles.inputRow}>
               <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
               <TextInput
                 style={styles.input}
                 value={location}
                 onChangeText={setLocation}
-                placeholder="e.g. Dr. Cohen, Sunshine Clinic"
+                placeholder={t('locationPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
               />
             </View>
           </Field>
 
-          <Field label="Notes (optional)">
+          <Field label={t('notesLabel')}>
             <View style={[styles.inputRow, styles.multilineRow]}>
               <Ionicons name="reader-outline" size={18} color={colors.textSecondary} style={{ marginTop: 2 }} />
               <TextInput
                 style={[styles.input, styles.multiline]}
                 value={prepNote}
                 onChangeText={setPrepNote}
-                placeholder="e.g. No fasting needed, bring insurance card"
+                placeholder={t('notesPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 multiline
               />
@@ -148,16 +153,16 @@ export default function AddItemScreen() {
               <View style={[styles.checkbox, addToCalendar && styles.checkboxChecked]}>
                 {addToCalendar && <Ionicons name="checkmark" size={14} color="#fff" />}
               </View>
-              <Text style={styles.calendarRowText}>Add to my calendar</Text>
+              <Text style={styles.calendarRowText}>{t('addToCalendar')}</Text>
             </TouchableOpacity>
           )}
 
           <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={save} disabled={saving}>
-            <Text style={styles.saveBtnText}>{isEditing ? 'Save' : 'Add to plan'}</Text>
+            <Text style={styles.saveBtnText}>{isEditing ? t('save') : t('addToPlan')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.skipBtn} onPress={back} disabled={saving}>
-            <Text style={styles.skipBtnText}>Skip for now</Text>
+            <Text style={styles.skipBtnText}>{t('skipForNow')}</Text>
           </TouchableOpacity>
 
         </ScrollView>

@@ -1,0 +1,12 @@
+{
+  "title": "Have any appointments already booked?",
+  "subtitle": "Add the date — and a doctor or location if you like — for anything you've already scheduled.",
+  "heroCount": "{{booked}} of {{total}} booked",
+  "heroSub": "Add dates for the rest, or skip for now",
+  "bookedWeekday": "Booked · {{weekday}}",
+  "targetDates": "Target dates: {{range}}",
+  "edit": "Edit",
+  "addDate": "Add date",
+  "continue": "Continue",
+  "continueWithCount": "Continue ({{count}} booked)"
+}

@@ -3,14 +3,21 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter, useFocusEffect } from 'expo-router'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark, FetusIllustration } from '../../components/illustrations'
 import { gestationalAge, formatDate } from '../../lib/pregnancy'
-import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, type CareItemWithCustom } from '../../lib/carePlan'
+import { getDateLocale } from '../../lib/i18n/dateLocale'
+import { useDirectionalIcon } from '../../lib/i18n/useDirectionalIcon'
+import { useLanguage } from '../../lib/i18n/LanguageProvider'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, getItemTitle, type CareItemWithCustom } from '../../lib/carePlan'
 import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 import { type Entry, loadEntries, formatRelativeTime } from '../../lib/brainDump'
 
 export default function HomeScreen() {
+  const { t } = useTranslation('home')
+  const { isRTL } = useLanguage()
+  const { forward } = useDirectionalIcon()
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date>(TODAY)
   const [brainDumpEntries, setBrainDumpEntries] = useState<Entry[]>([])
@@ -45,25 +52,25 @@ export default function HomeScreen() {
             <Text style={styles.appName}>Bumpling</Text>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')} accessibilityLabel="Profile">
+            <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')} accessibilityLabel={t('profileLabel')}>
               <Ionicons name="person-outline" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.bellBtn}>
               <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-              <View style={styles.bellDot} />
+              <View style={[styles.bellDot, isRTL && styles.bellDotRTL]} />
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.weekRow}>
           <View style={styles.weekTextCol}>
-            <Text style={styles.eyebrow}>You're pregnant</Text>
+            <Text style={styles.eyebrow}>{t('pregnant')}</Text>
             <Text style={styles.heroNumber}>{age.weeks}</Text>
-            <Text style={styles.heroWeeksLabel}>{age.weeks === 1 ? 'week' : 'weeks'}</Text>
-            <View style={styles.heroDaysLine}>
+            <Text style={styles.heroWeeksLabel}>{t('week', { count: age.weeks })}</Text>
+            <View style={[styles.heroDaysLine, isRTL && styles.heroDaysLineRTL]}>
               <Text>
                 <Text style={styles.heroDaysAccent}>+{age.days}</Text>
-                <Text style={styles.heroDaysText}> {age.days === 1 ? 'day' : 'days'}</Text>
+                <Text style={styles.heroDaysText}> {t('day', { count: age.days })}</Text>
               </Text>
             </View>
           </View>
@@ -73,8 +80,8 @@ export default function HomeScreen() {
         <View style={styles.tipCard}>
           <Ionicons name="sparkles-outline" size={16} color={colors.lavenderDeep} style={{ marginTop: 2 }} />
           <Text style={styles.tipText}>
-            <Text style={styles.tipTextBold}>This week: </Text>
-            tiny fingers are forming and movement is increasing.
+            <Text style={styles.tipTextBold}>{t('weeklyTipLabel')}</Text>
+            {t('weeklyTip')}
           </Text>
         </View>
 
@@ -89,14 +96,14 @@ export default function HomeScreen() {
                 <Ionicons name="calendar-outline" size={20} color={colors.primaryDark} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.eyebrow}>Next up</Text>
-                <Text style={styles.nextUpTitle}>{nextItem.title}</Text>
+                <Text style={styles.eyebrow}>{t('nextUp')}</Text>
+                <Text style={styles.nextUpTitle}>{getItemTitle(nextItem)}</Text>
                 {nextItem.status === 'actionable' && (
-                  <Text style={styles.bookBy}>Book by {formatDate(nextItem.bookBy)}</Text>
+                  <Text style={styles.bookBy}>{t('bookBy', { date: formatDate(nextItem.bookBy) })}</Text>
                 )}
               </View>
               <View style={styles.chevronBtn}>
-                <Ionicons name="chevron-forward" size={18} color={colors.textPrimary} />
+                <Ionicons name={forward} size={18} color={colors.textPrimary} />
               </View>
             </View>
 
@@ -107,13 +114,13 @@ export default function HomeScreen() {
                 <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
                 <Text style={styles.metaText}>
                   {(nextItem.status === 'scheduled' && nextItem.scheduledAt ? nextItem.scheduledAt : nextItem.bookBy)
-                    .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    .toLocaleDateString(getDateLocale(), { month: 'short', day: 'numeric', year: 'numeric' })}
                 </Text>
               </View>
               <View style={styles.metaDivider} />
               <View style={styles.metaItem}>
                 <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
-                <Text style={styles.metaText}>{nextItem.location || 'Your care provider'}</Text>
+                <Text style={styles.metaText}>{nextItem.location || t('careProvider')}</Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -129,12 +136,10 @@ export default function HomeScreen() {
               <Ionicons name="bulb-outline" size={20} color={colors.lavenderDeep} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.brainDumpTitle}>
-                {brainDumpEntries.length} {brainDumpEntries.length === 1 ? 'thing' : 'things'} on your mind
-              </Text>
-              <Text style={styles.brainDumpSub}>Last added {formatRelativeTime(brainDumpEntries[0].createdAt)}</Text>
+              <Text style={styles.brainDumpTitle}>{t('thingsOnMind', { count: brainDumpEntries.length })}</Text>
+              <Text style={styles.brainDumpSub}>{t('lastAdded', { time: formatRelativeTime(brainDumpEntries[0].createdAt) })}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+            <Ionicons name={forward} size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         )}
 
@@ -154,6 +159,7 @@ const styles = StyleSheet.create({
   profileBtn:  { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   bellBtn:     { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', position: 'relative' },
   bellDot:     { position: 'absolute', top: 6, right: 6, width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.background },
+  bellDotRTL:  { right: undefined, left: 6 },
 
   eyebrow:       { fontSize: 12, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1 },
 
@@ -163,6 +169,7 @@ const styles = StyleSheet.create({
   heroNumber:     { fontFamily: fonts.headline, fontSize: 96, color: colors.textPrimary, lineHeight: 92, marginTop: 4 },
   heroWeeksLabel: { fontFamily: fonts.headline, fontSize: 20, color: colors.textPrimary, marginTop: -10 },
   heroDaysLine:   { marginTop: 4, alignSelf: 'flex-start', marginLeft: 30 },
+  heroDaysLineRTL: { marginLeft: 0, marginRight: 30 },
   heroDaysAccent: { fontFamily: fonts.headline, fontSize: 23, color: colors.primaryDark },
   heroDaysText:   { fontFamily: fonts.headline, fontSize: 20, color: colors.primaryDark },
 

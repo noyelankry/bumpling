@@ -1,0 +1,8 @@
+{
+  "done": "Done",
+  "cancel": "Cancel",
+  "save": "Save",
+  "ok": "OK",
+  "restartTitle": "Restart needed",
+  "restartBody": "Close and reopen Bumpling to switch to a right-to-left layout for Hebrew."
+}

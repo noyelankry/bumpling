@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../lib/theme'
-import { BellyMark } from '../components/illustrations'
+import { ItemIcon } from '../components/ItemIcon'
 import { formatDate, formatWeekday } from '../lib/pregnancy'
-import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, type CareItemWithCustom } from '../lib/carePlan'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, getItemTitle, type CareItemWithCustom } from '../lib/carePlan'
 import { goBack } from '../lib/navigation'
+import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 
 const TRIMESTER_META = [
   { chipBg: colors.peach, iconColor: colors.primaryDark },
@@ -20,21 +22,10 @@ function metaFor(windowStartWeek: number) {
   return TRIMESTER_META[trimester]
 }
 
-function ItemIcon({ title, size, color }: { title: string; size: number; color: string }) {
-  const t = title.toLowerCase()
-  if (t.includes('ultrasound') || t.includes('scan')) return <BellyMark size={size} color={color} />
-  if (t.includes('blood') || t.includes('urine') || t.includes('screening') || t.includes('biochem') || t.includes('gbs') || t.includes('glucose')) {
-    return <Ionicons name="flask-outline" size={size} color={color} />
-  }
-  if (t.includes('vaccine')) return <Ionicons name="shield-checkmark-outline" size={size} color={color} />
-  if (t.includes('doctor visit')) return <Ionicons name="medical-outline" size={size} color={color} />
-  if (t.includes('amniocentesis') || t.includes('sampling') || t.includes('echo')) return <Ionicons name="body-outline" size={size} color={color} />
-  if (t.includes('monitoring')) return <Ionicons name="time-outline" size={size} color={color} />
-  return <Ionicons name="calendar-outline" size={size} color={color} />
-}
-
 export default function AppointmentsScreen() {
   const router = useRouter()
+  const { t } = useTranslation('appointments')
+  const { back: backIcon, forward } = useDirectionalIcon()
   const back = () => goBack(router, '/(tabs)/plan')
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date>(TODAY)
@@ -58,21 +49,21 @@ export default function AppointmentsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={back} hitSlop={8}>
-          <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
+          <Ionicons name={backIcon} size={26} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Appointments</Text>
+        <Text style={styles.headerTitle}>{t('title')}</Text>
         <View style={{ width: 26 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
         {upcoming.length === 0 && past.length === 0 && (
-          <Text style={styles.emptyText}>Nothing on your plan yet.</Text>
+          <Text style={styles.emptyText}>{t('nothingYet')}</Text>
         )}
 
         {upcoming.length > 0 && (
           <>
-            <Text style={styles.sectionLabel}>Upcoming</Text>
+            <Text style={styles.sectionLabel}>{t('upcoming')}</Text>
             <View style={styles.listCard}>
               {upcoming.map((item, i) => {
                 const meta = metaFor(item.windowStartWeek)
@@ -84,15 +75,15 @@ export default function AppointmentsScreen() {
                     onPress={() => router.push(`/appointment/${item.id}`)}
                   >
                     <View style={[styles.iconChip, { backgroundColor: meta.chipBg }]}>
-                      <ItemIcon title={item.title} size={18} color={meta.iconColor} />
+                      <ItemIcon id={item.id} size={18} color={meta.iconColor} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.rowTitle}>{item.title}</Text>
+                      <Text style={styles.rowTitle}>{getItemTitle(item)}</Text>
                       <Text style={styles.rowMeta}>
-                        {item.status === 'scheduled' && item.scheduledAt ? formatWeekday(item.scheduledAt) : `Week ${Math.round(item.windowStartWeek)}`}
+                        {item.status === 'scheduled' && item.scheduledAt ? formatWeekday(item.scheduledAt) : t('weekLabel', { weeks: Math.round(item.windowStartWeek) })}
                       </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                    <Ionicons name={forward} size={18} color={colors.textSecondary} />
                   </TouchableOpacity>
                 )
               })}
@@ -102,7 +93,7 @@ export default function AppointmentsScreen() {
 
         {past.length > 0 && (
           <>
-            <Text style={styles.sectionLabel}>Past</Text>
+            <Text style={styles.sectionLabel}>{t('past')}</Text>
             <View style={styles.listCard}>
               {past.map((item, i) => {
                 const meta = metaFor(item.windowStartWeek)
@@ -114,13 +105,13 @@ export default function AppointmentsScreen() {
                     onPress={() => router.push(`/appointment/${item.id}`)}
                   >
                     <View style={[styles.iconChip, { backgroundColor: colors.neutralChip }]}>
-                      <ItemIcon title={item.title} size={18} color={colors.neutralChipDeep} />
+                      <ItemIcon id={item.id} size={18} color={colors.neutralChipDeep} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.rowTitle}>{item.title}</Text>
-                      <Text style={styles.rowMeta}>{item.doneAt ? `Done ${formatDate(item.doneAt)}` : 'Done'}</Text>
+                      <Text style={styles.rowTitle}>{getItemTitle(item)}</Text>
+                      <Text style={styles.rowMeta}>{item.doneAt ? t('doneOn', { date: formatDate(item.doneAt) }) : t('done')}</Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                    <Ionicons name={forward} size={18} color={colors.textSecondary} />
                   </TouchableOpacity>
                 )
               })}

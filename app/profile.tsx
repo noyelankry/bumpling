@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import { BabyMark } from '../components/illustrations'
 import { supabase } from '../lib/supabase'
@@ -15,11 +16,17 @@ import { clearBrainDumpData } from '../lib/brainDump'
 import { type Partner, loadPartner, savePartner, clearPartnerData } from '../lib/partner'
 import { clearBirthPrefsData } from '../lib/birthPrefs'
 import { loadMomPhone, saveMomPhone, clearMomContactData } from '../lib/momContact'
+import { useLanguage } from '../lib/i18n/LanguageProvider'
+import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
+import type { Language } from '../lib/i18n/languageStorage'
 
 type Profile = { full_name: string; username: string }
 
 export default function ProfileScreen() {
   const router = useRouter()
+  const { t } = useTranslation('profile')
+  const { language, isRTL, setLanguage } = useLanguage()
+  const { back: backIcon } = useDirectionalIcon()
   const back = () => goBack(router, '/(tabs)')
   const [form, setForm] = useState<Profile>({ full_name: '', username: '' })
   const [phone, setPhone] = useState('')
@@ -55,7 +62,7 @@ export default function ProfileScreen() {
         username:   form.username || null,
         updated_at: new Date().toISOString(),
       }).eq('id', data.claims.sub)
-      if (error) { setSaving(false); Alert.alert('Error', error.message); return }
+      if (error) { setSaving(false); Alert.alert(t('error'), error.message); return }
     }
     setSaving(false)
     setEditing(false)
@@ -86,11 +93,11 @@ export default function ProfileScreen() {
       router.replace('/(auth)/login')
     }
     if (Platform.OS === 'web') {
-      if (window.confirm('Sign out of Bumpling?')) doSignOut()
+      if (window.confirm(t('signOutConfirmWeb'))) doSignOut()
     } else {
-      Alert.alert('Sign out', 'Are you sure you want to sign out?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign out', style: 'destructive', onPress: doSignOut },
+      Alert.alert(t('signOutTitle'), t('signOutConfirm'), [
+        { text: t('cancel'), style: 'cancel' },
+        { text: t('signOutTitle'), style: 'destructive', onPress: doSignOut },
       ])
     }
   }
@@ -104,33 +111,33 @@ export default function ProfileScreen() {
 
         <View style={styles.header}>
           <TouchableOpacity onPress={back} hitSlop={8}>
-            <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
+            <Ionicons name={backIcon} size={26} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={styles.headerTitle}>{t('title')}</Text>
           <View style={{ width: 26 }} />
         </View>
 
         <View style={styles.heroCard}>
           <View style={styles.avatar}>
             <Ionicons name="person" size={30} color="#fff" />
-            <TouchableOpacity style={styles.cameraBtn} activeOpacity={0.8}>
+            <TouchableOpacity style={[styles.cameraBtn, isRTL && styles.cameraBtnRTL]} activeOpacity={0.8}>
               <Ionicons name="camera-outline" size={14} color={colors.textPrimary} />
             </TouchableOpacity>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.profileName}>{form.full_name || 'Add your name'}</Text>
-            <Text style={styles.profileUsername}>{form.username ? `@${form.username}` : '@username'}</Text>
+            <Text style={styles.profileName}>{form.full_name || t('addYourName')}</Text>
+            <Text style={styles.profileUsername}>{form.username ? `@${form.username}` : t('usernamePlaceholder')}</Text>
           </View>
           <View style={styles.heroMascot}>
             <BabyMark size={38} />
-            <View style={styles.heroHeart}>
+            <View style={[styles.heroHeart, isRTL && styles.heroHeartRTL]}>
               <Ionicons name="heart" size={11} color={colors.lavenderDeep} />
             </View>
           </View>
         </View>
 
         <View style={styles.sectionLabelRow}>
-          <Text style={styles.sectionLabel}>Basic info</Text>
+          <Text style={styles.sectionLabel}>{t('basicInfo')}</Text>
           <TouchableOpacity style={styles.editBtn} onPress={toggleEdit} activeOpacity={0.7}>
             <Ionicons
               name={editing ? 'close' : 'pencil'}
@@ -142,12 +149,12 @@ export default function ProfileScreen() {
 
         <View style={[styles.fieldsCard, editing && styles.fieldsCardEditing]}>
           <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>Full name</Text>
+            <Text style={styles.fieldLabel}>{t('fullName')}</Text>
             <TextInput
               style={styles.fieldInput}
               value={form.full_name}
               onChangeText={set('full_name')}
-              placeholder="Your name"
+              placeholder={t('fullNamePlaceholder')}
               placeholderTextColor={colors.textSecondary}
               editable={editing}
             />
@@ -156,14 +163,14 @@ export default function ProfileScreen() {
           <View style={styles.fieldDivider} />
 
           <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>Username</Text>
+            <Text style={styles.fieldLabel}>{t('username')}</Text>
             <View style={styles.usernameInputRow}>
               <Text style={styles.usernamePrefix}>@</Text>
               <TextInput
                 style={[styles.fieldInput, styles.usernameInput]}
                 value={form.username}
                 onChangeText={v => set('username')(v.replace(/^@+/, ''))}
-                placeholder="username"
+                placeholder={t('usernameFieldPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 autoCapitalize="none"
                 editable={editing}
@@ -174,12 +181,12 @@ export default function ProfileScreen() {
           <View style={styles.fieldDivider} />
 
           <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>Phone</Text>
+            <Text style={styles.fieldLabel}>{t('phone')}</Text>
             <TextInput
               style={styles.fieldInput}
               value={phone}
               onChangeText={setPhone}
-              placeholder="Your phone number"
+              placeholder={t('phonePlaceholder')}
               placeholderTextColor={colors.textSecondary}
               keyboardType="phone-pad"
               editable={editing}
@@ -187,17 +194,17 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <Text style={styles.sectionLabel}>Partner</Text>
-        <Text style={styles.sectionHint}>Used to share appointment details — add their email to invite them along.</Text>
+        <Text style={styles.sectionLabel}>{t('partner')}</Text>
+        <Text style={styles.sectionHint}>{t('partnerHint')}</Text>
 
         <View style={[styles.fieldsCard, editing && styles.fieldsCardEditing]}>
           <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>Partner's name</Text>
+            <Text style={styles.fieldLabel}>{t('partnerName')}</Text>
             <TextInput
               style={styles.fieldInput}
               value={partner.name}
               onChangeText={setPartnerField('name')}
-              placeholder="Their name"
+              placeholder={t('partnerNamePlaceholder')}
               placeholderTextColor={colors.textSecondary}
               editable={editing}
             />
@@ -206,12 +213,12 @@ export default function ProfileScreen() {
           <View style={styles.fieldDivider} />
 
           <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>Partner's email</Text>
+            <Text style={styles.fieldLabel}>{t('partnerEmail')}</Text>
             <TextInput
               style={styles.fieldInput}
               value={partner.email}
               onChangeText={setPartnerField('email')}
-              placeholder="their@email.com"
+              placeholder={t('partnerEmailPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               autoCapitalize="none"
               keyboardType="email-address"
@@ -224,14 +231,32 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.saveBtn} onPress={save} disabled={saving}>
             {saving
               ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.saveBtnText}>Save changes</Text>
+              : <Text style={styles.saveBtnText}>{t('saveChanges')}</Text>
             }
           </TouchableOpacity>
         )}
 
+        <Text style={styles.sectionLabel}>{t('language')}</Text>
+        <View style={styles.fieldsCard}>
+          <View style={styles.languageRow}>
+            {(['en', 'he'] as Language[]).map(lang => (
+              <TouchableOpacity
+                key={lang}
+                style={[styles.langOption, language === lang && styles.langOptionActive]}
+                onPress={() => setLanguage(lang)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.langOptionText, language === lang && styles.langOptionTextActive]}>
+                  {lang === 'en' ? t('languageEnglish') : t('languageHebrew')}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         <TouchableOpacity style={styles.logoutRow} onPress={signOut} activeOpacity={0.7}>
           <Ionicons name="log-out-outline" size={20} color={colors.urgent} />
-          <Text style={styles.logoutText}>Log out</Text>
+          <Text style={styles.logoutText}>{t('logOut')}</Text>
         </TouchableOpacity>
 
       </ScrollView>
@@ -249,10 +274,12 @@ const styles = StyleSheet.create({
   heroCard:    { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.peach, borderRadius: radius.xl, padding: spacing.sm, marginBottom: spacing.md },
   avatar:      { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   cameraBtn:   { position: 'absolute', bottom: -2, right: -2, width: 28, height: 28, borderRadius: 14, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
+  cameraBtnRTL: { right: undefined, left: -2 },
   profileName: { fontFamily: fonts.headline, fontSize: 18, color: colors.textPrimary },
   profileUsername: { fontSize: 13, color: colors.textPrimary, opacity: 0.6, marginTop: 2 },
   heroMascot:  { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   heroHeart:   { position: 'absolute', top: -3, right: -5 },
+  heroHeartRTL: { right: undefined, left: -5 },
 
   sectionLabel:    { fontSize: 12, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: spacing.xs, marginTop: spacing.xs },
   sectionHint:     { fontSize: 12, color: colors.textSecondary, marginTop: -4, marginBottom: spacing.xs, lineHeight: 16 },
@@ -272,6 +299,12 @@ const styles = StyleSheet.create({
   saveBtn:     { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 14, alignItems: 'center', marginBottom: spacing.md },
   saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 
-  logoutRow:  { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: spacing.xs },
+  languageRow: { flexDirection: 'row', gap: spacing.xs, paddingVertical: spacing.xs },
+  langOption:  { flex: 1, paddingVertical: 10, borderRadius: radius.md, alignItems: 'center', backgroundColor: colors.neutralChip },
+  langOptionActive: { backgroundColor: colors.primary },
+  langOptionText:   { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
+  langOptionTextActive: { color: '#fff' },
+
+  logoutRow:  { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: spacing.xs, marginTop: spacing.xs },
   logoutText: { fontSize: 15, fontWeight: '700', color: colors.urgent },
 })

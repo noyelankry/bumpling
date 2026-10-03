@@ -3,19 +3,21 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark, FetusIllustration } from '../../components/illustrations'
 import { formatDateRange, computeCareItems, gestationalAge } from '../../lib/pregnancy'
-import { DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, markManyDone, markCatchUpDone, type CareItemWithCustom } from '../../lib/carePlan'
-
-const TRIMESTER_LABELS = ['First trimester', 'Second trimester', 'Third trimester']
-
-function trimesterFor(weeks: number) {
-  return TRIMESTER_LABELS[weeks < 14 ? 0 : weeks < 28 ? 1 : 2]
-}
+import { DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, markManyDone, markCatchUpDone, getItemTitle, type CareItemWithCustom } from '../../lib/carePlan'
+import { useDirectionalIcon } from '../../lib/i18n/useDirectionalIcon'
+import { useLanguage } from '../../lib/i18n/LanguageProvider'
 
 export default function CatchUpScreen() {
   const router = useRouter()
+  const { t } = useTranslation('catchUp')
+  const { isRTL } = useLanguage()
+  const { forward, arrowForward } = useDirectionalIcon()
+  const TRIMESTER_LABELS = [t('trimester1'), t('trimester2'), t('trimester3')]
+  const trimesterFor = (weeks: number) => TRIMESTER_LABELS[weeks < 14 ? 0 : weeks < 28 ? 1 : 2]
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -67,14 +69,12 @@ export default function CatchUpScreen() {
           </View>
           <TouchableOpacity style={styles.bellBtn}>
             <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-            <View style={styles.bellDot} />
+            <View style={[styles.bellDot, isRTL && styles.bellDotRTL]} />
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.title}>Already done any of these?</Text>
-        <Text style={styles.subtitle}>
-          Check off anything you've already had — we'll stop reminding you about those.
-        </Text>
+        <Text style={styles.title}>{t('title')}</Text>
+        <Text style={styles.subtitle}>{t('subtitle')}</Text>
 
         <View style={styles.heroCard}>
           <View style={styles.heroIconChip}>
@@ -82,15 +82,15 @@ export default function CatchUpScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.heroTitle}>{trimester}</Text>
-            <Text style={styles.heroSub}>{eligible.length} thing{eligible.length === 1 ? '' : 's'} to review</Text>
+            <Text style={styles.heroSub}>{t('thingsToReview', { count: eligible.length })}</Text>
           </View>
-          <View style={styles.heroIllustration} pointerEvents="none">
+          <View style={[styles.heroIllustration, isRTL && styles.heroIllustrationRTL]} pointerEvents="none">
             <FetusIllustration size={100} />
           </View>
         </View>
 
         {lmp && eligible.length === 0 ? (
-          <Text style={styles.emptyText}>Nothing on your plan yet — we'll bring tests up as they become relevant.</Text>
+          <Text style={styles.emptyText}>{t('nothingYet')}</Text>
         ) : (
           <View style={styles.listCard}>
             {eligible.map((item, i) => {
@@ -106,12 +106,12 @@ export default function CatchUpScreen() {
                     {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.rowTitle}>{item.title}</Text>
+                    <Text style={styles.rowTitle}>{getItemTitle(item)}</Text>
                     <Text style={[styles.rowMeta, isSelected && styles.rowMetaChecked]}>
-                      Target dates: {formatDateRange(item.windowStart, item.windowEnd)}
+                      {t('targetDates', { range: formatDateRange(item.windowStart, item.windowEnd) })}
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                  <Ionicons name={forward} size={18} color={colors.textSecondary} />
                 </TouchableOpacity>
               )
             })}
@@ -120,12 +120,12 @@ export default function CatchUpScreen() {
 
         <View style={styles.disclaimer}>
           <Ionicons name="information-circle" size={16} color={colors.textSecondary} />
-          <Text style={styles.disclaimerText}>You can update this anytime.</Text>
+          <Text style={styles.disclaimerText}>{t('canUpdateAnytime')}</Text>
         </View>
 
         <TouchableOpacity style={[styles.continueBtn, saving && { opacity: 0.6 }]} onPress={continueOn} disabled={saving}>
-          <Text style={styles.continueBtnText}>{selected.size > 0 ? 'Save completed items' : 'Continue'}</Text>
-          <Ionicons name="arrow-forward" size={18} color="#fff" />
+          <Text style={styles.continueBtnText}>{selected.size > 0 ? t('saveCompleted') : t('continue')}</Text>
+          <Ionicons name={arrowForward} size={18} color="#fff" />
         </TouchableOpacity>
 
       </ScrollView>
@@ -143,6 +143,7 @@ const styles = StyleSheet.create({
   appName:      { fontSize: 19, fontWeight: '700', color: colors.textPrimary },
   bellBtn:      { width: 36, height: 36, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', position: 'relative' },
   bellDot:      { position: 'absolute', top: 4, right: 4, width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.background },
+  bellDotRTL:   { right: undefined, left: 4 },
 
   title:    { fontFamily: fonts.headline, fontSize: 28, color: colors.textPrimary, lineHeight: 34 },
   subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.md, lineHeight: 20 },
@@ -152,6 +153,7 @@ const styles = StyleSheet.create({
   heroTitle:     { fontFamily: fonts.headline, fontSize: 18, color: colors.textPrimary },
   heroSub:       { fontSize: 12.5, color: colors.textPrimary, opacity: 0.65, marginTop: 1 },
   heroIllustration: { position: 'absolute', right: -18, top: -10 },
+  heroIllustrationRTL: { right: undefined, left: -18 },
 
   emptyText: { fontSize: 13.5, color: colors.textSecondary, lineHeight: 19 },
 

@@ -1,0 +1,19 @@
+{
+  "pregnant": "את בהריון",
+  "profileLabel": "פרופיל",
+  "week_one": "שבוע",
+  "week_two": "שבועות",
+  "week_other": "שבועות",
+  "day_one": "יום",
+  "day_two": "ימים",
+  "day_other": "ימים",
+  "weeklyTipLabel": "השבוע: ",
+  "weeklyTip": "אצבעות קטנות מתחילות להיווצר והתנועה הולכת וגוברת.",
+  "nextUp": "הבא בתור",
+  "bookBy": "להזמין עד {{date}}",
+  "careProvider": "נותן/ת הטיפול שלך",
+  "thingsOnMind_one": "דבר אחד בראש שלך",
+  "thingsOnMind_two": "{{count}} דברים בראש שלך",
+  "thingsOnMind_other": "{{count}} דברים בראש שלך",
+  "lastAdded": "נוסף לאחרונה {{time}}"
+}

@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, ScrollV
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark } from '../../components/illustrations'
 import DateField from '../../components/DateField'
 import { addDays, gestationalAge } from '../../lib/pregnancy'
 import { saveLMP } from '../../lib/carePlan'
+import { useLanguage } from '../../lib/i18n/LanguageProvider'
 
 // Care-plan chart tracks post-term monitoring out to week 41; 43 gives a bit of slack.
 const MAX_WEEKS_BACK = 43
@@ -16,6 +18,8 @@ type ErrorKind = 'missing' | 'tooOld'
 
 export default function LmpScreen() {
   const router = useRouter()
+  const { t } = useTranslation('lmp')
+  const { isRTL } = useLanguage()
   const [date, setDate] = useState<Date | null>(null)
   const [error, setError] = useState<ErrorKind | null>(null)
 
@@ -36,9 +40,9 @@ export default function LmpScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.blobTopLeft} />
-      <View style={styles.blobBottomLeft} />
-      <View style={styles.blobBottomRight} />
+      <View style={[styles.blobTopLeft, isRTL && styles.blobTopLeftRTL]} />
+      <View style={[styles.blobBottomLeft, isRTL && styles.blobBottomLeftRTL]} />
+      <View style={[styles.blobBottomRight, isRTL && styles.blobBottomRightRTL]} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
@@ -46,47 +50,43 @@ export default function LmpScreen() {
           <View style={styles.logoArea}>
             <View style={styles.mascotWrap}>
               <BabyMark size={110} />
-              <View style={styles.heartAccent}>
+              <View style={[styles.heartAccent, isRTL && styles.heartAccentRTL]}>
                 <Ionicons name="heart" size={18} color={colors.primary} />
               </View>
             </View>
           </View>
 
-          <Text style={styles.title}>When did your last period start?</Text>
-          <Text style={styles.subtitle}>
-            We use the first day of your last period to estimate your due date and suggest the right test windows for you.
-          </Text>
+          <Text style={styles.title}>{t('title')}</Text>
+          <Text style={styles.subtitle}>{t('subtitle')}</Text>
 
           <DateField
             value={date}
             onChange={handleChange}
-            placeholder="Select a date"
+            placeholder={t('datePlaceholder')}
             maximumDate={today}
             minimumDate={earliestLmp}
           />
           {error === 'missing' && (
-            <Text style={styles.errorText}>Pick the date your last period started.</Text>
+            <Text style={styles.errorText}>{t('errorMissing')}</Text>
           )}
           {error === 'tooOld' && (
-            <Text style={styles.errorText}>That's more than {MAX_WEEKS_BACK} weeks ago — outside a typical pregnancy. Double-check the date.</Text>
+            <Text style={styles.errorText}>{t('errorTooOld', { weeks: MAX_WEEKS_BACK })}</Text>
           )}
 
           {preview && (
             <View style={styles.previewCard}>
               <Ionicons name="calendar-outline" size={16} color={colors.sageDeep} />
-              <Text style={styles.previewText}>That puts you at about Week {preview.weeks} + {preview.days} today.</Text>
+              <Text style={styles.previewText}>{t('weekPreview', { weeks: preview.weeks, days: preview.days })}</Text>
             </View>
           )}
 
           <View style={styles.disclaimer}>
             <Ionicons name="information-circle-outline" size={16} color={colors.textSecondary} />
-            <Text style={styles.disclaimerText}>
-              This is a general estimate to help you plan ahead — always confirm dates and test timing with your doctor.
-            </Text>
+            <Text style={styles.disclaimerText}>{t('disclaimer')}</Text>
           </View>
 
           <TouchableOpacity style={styles.continueBtn} onPress={continueOn} activeOpacity={0.85}>
-            <Text style={styles.continueBtnText}>Continue</Text>
+            <Text style={styles.continueBtnText}>{t('continue')}</Text>
           </TouchableOpacity>
 
         </ScrollView>
@@ -102,12 +102,16 @@ const styles = StyleSheet.create({
   scroll:    { flexGrow: 1, paddingHorizontal: spacing.md, justifyContent: 'center', paddingVertical: spacing.lg },
 
   blobTopLeft:     { position: 'absolute', top: -BLOB * 0.55, left: -BLOB * 0.55, width: BLOB, height: BLOB, borderRadius: BLOB / 2, backgroundColor: colors.peach },
+  blobTopLeftRTL:  { left: undefined, right: -BLOB * 0.55 },
   blobBottomLeft:  { position: 'absolute', bottom: -BLOB * 0.5, left: -BLOB * 0.5, width: BLOB * 0.75, height: BLOB * 0.75, borderRadius: BLOB * 0.375, backgroundColor: colors.peach },
+  blobBottomLeftRTL: { left: undefined, right: -BLOB * 0.5 },
   blobBottomRight: { position: 'absolute', bottom: -BLOB * 0.55, right: -BLOB * 0.55, width: BLOB, height: BLOB, borderRadius: BLOB / 2, backgroundColor: colors.peach },
+  blobBottomRightRTL: { right: undefined, left: -BLOB * 0.55 },
 
   logoArea:    { alignItems: 'center', marginBottom: spacing.md },
   mascotWrap:  { width: 110, height: 110, alignItems: 'center', justifyContent: 'center' },
   heartAccent: { position: 'absolute', top: 2, right: -4 },
+  heartAccentRTL: { right: undefined, left: -4 },
 
   title:    { fontFamily: fonts.headline, fontSize: 26, color: colors.textPrimary, textAlign: 'center', lineHeight: 32 },
   subtitle: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs, marginBottom: spacing.lg, lineHeight: 20 },

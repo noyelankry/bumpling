@@ -1,0 +1,19 @@
+{
+  "close": "Close",
+  "cancel": "Cancel",
+  "editEntry": "Edit entry",
+  "save": "Save",
+  "notFound": "This entry isn't around anymore.",
+  "placeholder": "What's on your mind?",
+  "kindThought": "Thought",
+  "kindDoctor": "Ask doctor",
+  "addDetails": "Add details (optional)",
+  "detailsPlaceholder": "Anything else worth remembering",
+  "addToNextAppointment": "Add to next appointment",
+  "noUpcomingAppointments": "No upcoming appointments yet.",
+  "bookBy": "Book by {{date}}",
+  "addTag": "Add tag",
+  "deleteEntry": "Delete entry",
+  "deleteEntryTitle": "Delete this entry?",
+  "delete": "Delete"
+}

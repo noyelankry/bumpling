@@ -3,6 +3,7 @@
 // stubs (always denied), so this is native-only by design.
 import { Platform } from 'react-native'
 import * as Calendar from 'expo-calendar'
+import type { TFunction } from 'i18next'
 
 export type CalendarResult = { ok: boolean; message: string }
 
@@ -32,25 +33,28 @@ async function getWritableCalendarId(): Promise<string | null> {
   return writable?.id ?? null
 }
 
-export async function addAppointmentToCalendar(details: {
-  title: string
-  date: Date
-  timeLabel?: string
-  location?: string
-  notes?: string
-}): Promise<CalendarResult> {
+export async function addAppointmentToCalendar(
+  details: {
+    title: string
+    date: Date
+    timeLabel?: string
+    location?: string
+    notes?: string
+  },
+  t: TFunction<'business'>
+): Promise<CalendarResult> {
   if (Platform.OS === 'web') {
-    return { ok: false, message: "Calendar sync isn't available in the web preview — this works on iOS and Android." }
+    return { ok: false, message: t('calendar.webUnavailable') }
   }
 
   const { status } = await Calendar.requestCalendarPermissionsAsync()
   if (status !== 'granted') {
-    return { ok: false, message: 'Calendar access was denied. You can allow it in Settings and try again.' }
+    return { ok: false, message: t('calendar.permissionDenied') }
   }
 
   const calendarId = await getWritableCalendarId()
   if (!calendarId) {
-    return { ok: false, message: "Couldn't find a calendar on this device to add it to." }
+    return { ok: false, message: t('calendar.noCalendarFound') }
   }
 
   const startDate = combineDateAndTime(details.date, details.timeLabel)
@@ -64,5 +68,5 @@ export async function addAppointmentToCalendar(details: {
     notes: details.notes,
   })
 
-  return { ok: true, message: 'Added to your calendar.' }
+  return { ok: true, message: t('calendar.added') }
 }

@@ -1,5 +1,6 @@
 // Gestational-age and care-window math: the app's "external brain" for
 // converting fuzzy pregnancy-week language into real calendar dates.
+import { getDateLocale } from './i18n/dateLocale'
 
 export type CareStatus = 'done' | 'scheduled' | 'actionable' | 'future'
 
@@ -71,18 +72,18 @@ export function computeCareItems<T extends CareItem>(items: T[], lmp: Date, toda
 }
 
 export function formatDate(date: Date): string {
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return date.toLocaleDateString(getDateLocale(), { month: 'short', day: 'numeric' })
 }
 
 export function formatDateRange(start: Date, end: Date): string {
   const sameMonth = start.getMonth() === end.getMonth()
-  const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const startStr = start.toLocaleDateString(getDateLocale(), { month: 'short', day: 'numeric' })
   const endStr = sameMonth
-    ? end.toLocaleDateString('en-US', { day: 'numeric' })
-    : end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    ? end.toLocaleDateString(getDateLocale(), { day: 'numeric' })
+    : end.toLocaleDateString(getDateLocale(), { month: 'short', day: 'numeric' })
   return `${startStr}–${endStr}`
 }
 
 export function formatWeekday(date: Date): string {
-  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  return date.toLocaleDateString(getDateLocale(), { weekday: 'short', month: 'short', day: 'numeric' })
 }

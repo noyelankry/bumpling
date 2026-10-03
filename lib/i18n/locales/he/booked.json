@@ -1,0 +1,12 @@
+{
+  "title": "יש לך תורים שכבר נקבעו?",
+  "subtitle": "הוסיפי תאריך — ורופא/ה או מיקום אם תרצי — לכל דבר שכבר קבעת.",
+  "heroCount": "{{booked}} מתוך {{total}} נקבעו",
+  "heroSub": "הוסיפי תאריכים לשאר, או דלגי לעכשיו",
+  "bookedWeekday": "נקבע · {{weekday}}",
+  "targetDates": "תאריכי מטרה: {{range}}",
+  "edit": "עריכה",
+  "addDate": "הוסף תאריך",
+  "continue": "המשך",
+  "continueWithCount": "המשך ({{count}} נקבעו)"
+}

@@ -3,22 +3,28 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Keyboa
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import { goBack } from '../lib/navigation'
 import { formatDate } from '../lib/pregnancy'
-import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, type CareItemWithCustom } from '../lib/carePlan'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, getItemTitle, type CareItemWithCustom } from '../lib/carePlan'
 import { type Entry, type EntryKind, loadEntries, updateEntry, removeEntry, SUGGESTED_TAGS } from '../lib/brainDump'
+import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name']
 type Section = 'details' | 'appointment' | 'tags' | null
 
-const KIND_OPTIONS: { kind: EntryKind; icon: IoniconsName; label: string }[] = [
-  { kind: 'thought', icon: 'bulb-outline', label: 'Thought' },
-  { kind: 'doctor', icon: 'medical-outline', label: 'Ask doctor' },
-]
-
 export default function EditBrainDumpScreen() {
   const router = useRouter()
+  const { t } = useTranslation('editBrainDump')
+  const { t: tTag } = useTranslation('brainDump')
+  const { forward } = useDirectionalIcon()
+  const KIND_OPTIONS: { kind: EntryKind; icon: IoniconsName; label: string }[] = [
+    { kind: 'thought', icon: 'bulb-outline', label: t('kindThought') },
+    { kind: 'doctor', icon: 'medical-outline', label: t('kindDoctor') },
+  ]
+  const tagLabel = (tag: string): string =>
+    SUGGESTED_TAGS.includes(tag.toLowerCase()) ? tTag(`tag.${tag.toLowerCase()}` as 'tag.sleep') : tag
   const back = () => goBack(router, '/(tabs)/brain-dump')
   const { id } = useLocalSearchParams<{ id: string }>()
 
@@ -99,12 +105,12 @@ export default function EditBrainDumpScreen() {
     if (!id) return
     const doDelete = async () => { await removeEntry(entries, id); back() }
     if (Platform.OS === 'web') {
-      if (window.confirm('Delete this entry?')) doDelete()
+      if (window.confirm(t('deleteEntryTitle'))) doDelete()
       return
     }
-    Alert.alert('Delete entry?', '', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: doDelete },
+    Alert.alert(t('deleteEntryTitle'), '', [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('delete'), style: 'destructive', onPress: doDelete },
     ])
   }
 
@@ -113,12 +119,12 @@ export default function EditBrainDumpScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={back} hitSlop={8}>
-            <Text style={styles.cancelText}>Close</Text>
+            <Text style={styles.cancelText}>{t('close')}</Text>
           </TouchableOpacity>
           <View />
         </View>
         <View style={styles.notFound}>
-          <Text style={styles.notFoundText}>This entry isn't around anymore.</Text>
+          <Text style={styles.notFoundText}>{t('notFound')}</Text>
         </View>
       </SafeAreaView>
     )
@@ -130,11 +136,11 @@ export default function EditBrainDumpScreen() {
 
         <View style={styles.header}>
           <TouchableOpacity onPress={back} hitSlop={8}>
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={styles.cancelText}>{t('cancel')}</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Edit entry</Text>
+          <Text style={styles.headerTitle}>{t('editEntry')}</Text>
           <TouchableOpacity onPress={save} hitSlop={8} disabled={!text.trim() || saving}>
-            <Text style={[styles.saveText, !text.trim() && styles.saveTextDisabled]}>Save</Text>
+            <Text style={[styles.saveText, !text.trim() && styles.saveTextDisabled]}>{t('save')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -145,7 +151,7 @@ export default function EditBrainDumpScreen() {
               style={styles.input}
               value={text}
               onChangeText={setText}
-              placeholder="What's on your mind?"
+              placeholder={t('placeholder')}
               placeholderTextColor={colors.textSecondary}
               multiline
             />
@@ -168,16 +174,17 @@ export default function EditBrainDumpScreen() {
 
           <OptionRow
             icon="reader-outline"
-            label="Add details (optional)"
+            label={t('addDetails')}
             open={openSection === 'details'}
             summary={details.trim() || undefined}
             onPress={() => toggleSection('details')}
+            forwardIcon={forward}
           >
             <TextInput
               style={styles.detailsInput}
               value={details}
               onChangeText={setDetails}
-              placeholder="Anything else worth remembering"
+              placeholder={t('detailsPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               multiline
             />
@@ -185,13 +192,14 @@ export default function EditBrainDumpScreen() {
 
           <OptionRow
             icon="calendar-outline"
-            label="Add to next appointment"
+            label={t('addToNextAppointment')}
             open={openSection === 'appointment'}
             summary={appointmentTitle}
             onPress={() => toggleSection('appointment')}
+            forwardIcon={forward}
           >
             {upcomingAppointments.length === 0 ? (
-              <Text style={styles.emptyOptionText}>No upcoming appointments yet.</Text>
+              <Text style={styles.emptyOptionText}>{t('noUpcomingAppointments')}</Text>
             ) : (
               <View style={styles.appointmentList}>
                 {upcomingAppointments.map(item => {
@@ -200,12 +208,12 @@ export default function EditBrainDumpScreen() {
                     <TouchableOpacity
                       key={item.id}
                       style={[styles.appointmentRow, selected && styles.appointmentRowSelected]}
-                      onPress={() => pickAppointment(item.id, item.title)}
+                      onPress={() => pickAppointment(item.id, getItemTitle(item))}
                     >
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.appointmentTitle}>{item.title}</Text>
+                        <Text style={styles.appointmentTitle}>{getItemTitle(item)}</Text>
                         <Text style={styles.appointmentDate}>
-                          {item.status === 'scheduled' && item.scheduledAt ? formatDate(item.scheduledAt) : `Book by ${formatDate(item.bookBy)}`}
+                          {item.status === 'scheduled' && item.scheduledAt ? formatDate(item.scheduledAt) : t('bookBy', { date: formatDate(item.bookBy) })}
                         </Text>
                       </View>
                       {selected && <Ionicons name="checkmark-circle" size={20} color={colors.primary} />}
@@ -218,10 +226,11 @@ export default function EditBrainDumpScreen() {
 
           <OptionRow
             icon="pricetag-outline"
-            label="Add tag"
+            label={t('addTag')}
             open={openSection === 'tags'}
-            summary={tags.length > 0 ? tags.join(', ') : undefined}
+            summary={tags.length > 0 ? tags.map(tagLabel).join(', ') : undefined}
             onPress={() => toggleSection('tags')}
+            forwardIcon={forward}
           >
             <View style={styles.tagGrid}>
               {SUGGESTED_TAGS.map(tag => {
@@ -232,7 +241,7 @@ export default function EditBrainDumpScreen() {
                     style={[styles.tagChip, selected && styles.tagChipActive]}
                     onPress={() => toggleTag(tag)}
                   >
-                    <Text style={[styles.tagChipText, selected && styles.tagChipTextActive]}>{tag}</Text>
+                    <Text style={[styles.tagChipText, selected && styles.tagChipTextActive]}>{tagLabel(tag)}</Text>
                   </TouchableOpacity>
                 )
               })}
@@ -241,7 +250,7 @@ export default function EditBrainDumpScreen() {
 
           <TouchableOpacity style={styles.deleteBtn} onPress={confirmDelete}>
             <Ionicons name="trash-outline" size={15} color={colors.urgent} />
-            <Text style={styles.deleteBtnText}>Delete entry</Text>
+            <Text style={styles.deleteBtnText}>{t('deleteEntry')}</Text>
           </TouchableOpacity>
 
         </ScrollView>
@@ -250,12 +259,13 @@ export default function EditBrainDumpScreen() {
   )
 }
 
-function OptionRow({ icon, label, open, summary, onPress, children }: {
+function OptionRow({ icon, label, open, summary, onPress, forwardIcon, children }: {
   icon: IoniconsName
   label: string
   open: boolean
   summary?: string
   onPress: () => void
+  forwardIcon: IoniconsName
   children: React.ReactNode
 }) {
   return (
@@ -266,7 +276,7 @@ function OptionRow({ icon, label, open, summary, onPress, children }: {
           <Text style={styles.optionLabel}>{label}</Text>
           {!!summary && !open && <Text style={styles.optionSummary} numberOfLines={1}>{summary}</Text>}
         </View>
-        <Ionicons name={open ? 'chevron-down' : 'chevron-forward'} size={18} color={colors.textSecondary} />
+        <Ionicons name={open ? 'chevron-down' : forwardIcon} size={18} color={colors.textSecondary} />
       </TouchableOpacity>
       {open && <View style={styles.optionBody}>{children}</View>}
     </View>

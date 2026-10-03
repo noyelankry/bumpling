@@ -1,0 +1,19 @@
+{
+  "pregnant": "You're pregnant",
+  "profileLabel": "Profile",
+  "week_one": "week",
+  "week_two": "weeks",
+  "week_other": "weeks",
+  "day_one": "day",
+  "day_two": "days",
+  "day_other": "days",
+  "weeklyTipLabel": "This week: ",
+  "weeklyTip": "tiny fingers are forming and movement is increasing.",
+  "nextUp": "Next up",
+  "bookBy": "Book by {{date}}",
+  "careProvider": "Your care provider",
+  "thingsOnMind_one": "{{count}} thing on your mind",
+  "thingsOnMind_two": "{{count}} things on your mind",
+  "thingsOnMind_other": "{{count}} things on your mind",
+  "lastAdded": "Last added {{time}}"
+}

@@ -19,6 +19,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.bumpling.app"
     },
+    "supportsRTL": true,
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -39,7 +40,8 @@
           "calendarPermission": "Bumpling uses your calendar to add appointments you've scheduled."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-localization"
     ]
   }
 }
