@@ -74,11 +74,14 @@ export default function AddItemScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
 
         <View style={styles.header}>
-          <TouchableOpacity onPress={back} hitSlop={8}>
-            <Ionicons name={backIcon} size={26} color={colors.textPrimary} />
+          <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8}>
+            <Ionicons name={backIcon} size={22} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{isEditing ? t('scheduleAppointment') : t('addAppointment')}</Text>
-          <View style={{ width: 26 }} />
+        </View>
+
+        <View style={styles.titleBlock}>
+          <Text style={styles.pageTitle}>{isEditing ? t('scheduleAppointment') : t('addAppointment')}</Text>
+          {!isEditing && <Text style={styles.pageSubtitle}>{t('addSubtitle')}</Text>}
         </View>
 
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
@@ -184,10 +187,14 @@ function Field({ label, children, style }: { label: string; children: React.Reac
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  headerTitle: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary },
+  header:    { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.xs, paddingTop: spacing.md },
+  backBtn:   { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
 
-  scroll: { paddingHorizontal: spacing.md, paddingBottom: 56, paddingTop: 20 },
+  titleBlock:   { paddingHorizontal: spacing.md, marginTop: spacing.xs, marginBottom: spacing.sm },
+  pageTitle:    { fontFamily: fonts.headlineBold, fontSize: 26, color: colors.textPrimary, lineHeight: 31 },
+  pageSubtitle: { fontSize: 13.5, color: colors.textSecondary, marginTop: 4, lineHeight: 19 },
+
+  scroll: { paddingHorizontal: spacing.md, paddingBottom: 56, paddingTop: spacing.xs },
 
   fieldGroup: { marginBottom: spacing.md },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: colors.textPrimary, marginBottom: 6 },
@@ -206,7 +213,7 @@ const styles = StyleSheet.create({
   checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
   calendarRowText: { fontSize: 14, fontWeight: '600', color: colors.textPrimary },
 
-  saveBtn:     { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 16, alignItems: 'center', marginTop: spacing.xs },
+  saveBtn:     { backgroundColor: colors.textPrimary, borderRadius: radius.pill, paddingVertical: 16, alignItems: 'center', marginTop: spacing.xs },
   saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   skipBtn:     { alignItems: 'center', paddingVertical: spacing.sm, marginTop: spacing.xs },
   skipBtnText: { color: colors.textSecondary, fontWeight: '600', fontSize: 13.5 },

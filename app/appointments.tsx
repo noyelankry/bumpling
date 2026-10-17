@@ -38,12 +38,18 @@ export default function AppointmentsScreen() {
   const computed = useMemo(() => computeCareItems(items, lmp, TODAY), [items, lmp])
 
   const upcoming = computed
-    .filter(i => i.status !== 'done')
+    .filter(i => i.status === 'scheduled' || i.status === 'actionable' || i.status === 'future')
     .sort((a, b) => (a.scheduledAt ?? a.windowStart).getTime() - (b.scheduledAt ?? b.windowStart).getTime())
 
+  // Window closed with nothing booked — kept out of `upcoming` so it can't
+  // sort to the top on a stale date; surfaced in its own section instead.
+  const needsDecision = computed
+    .filter(i => i.status === 'missed')
+    .sort((a, b) => a.windowStart.getTime() - b.windowStart.getTime())
+
   const past = computed
-    .filter(i => i.status === 'done')
-    .sort((a, b) => (b.doneAt ?? b.windowStart).getTime() - (a.doneAt ?? a.windowStart).getTime())
+    .filter(i => i.status === 'done' || i.status === 'skipped')
+    .sort((a, b) => (b.doneAt ?? b.skippedAt ?? b.windowStart).getTime() - (a.doneAt ?? a.skippedAt ?? a.windowStart).getTime())
 
   return (
     <SafeAreaView style={styles.container}>
@@ -52,12 +58,14 @@ export default function AppointmentsScreen() {
           <Ionicons name={backIcon} size={26} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('title')}</Text>
-        <View style={{ width: 26 }} />
+        <TouchableOpacity onPress={() => router.push('/add-item')} hitSlop={8} accessibilityLabel={t('addLabel')}>
+          <Ionicons name="add" size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {upcoming.length === 0 && past.length === 0 && (
+        {upcoming.length === 0 && needsDecision.length === 0 && past.length === 0 && (
           <Text style={styles.emptyText}>{t('nothingYet')}</Text>
         )}
 
@@ -91,12 +99,36 @@ export default function AppointmentsScreen() {
           </>
         )}
 
+        {needsDecision.length > 0 && (
+          <>
+            <Text style={styles.sectionLabel}>{t('needsDecision')}</Text>
+            <View style={styles.listCard}>
+              {needsDecision.map((item, i) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[styles.row, i > 0 && styles.rowDivider]}
+                  activeOpacity={0.7}
+                  onPress={() => router.push(`/appointment/${item.id}`)}
+                >
+                  <View style={[styles.iconChip, { backgroundColor: colors.neutralChip }]}>
+                    <ItemIcon id={item.id} size={18} color={colors.neutralChipDeep} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.rowTitle}>{getItemTitle(item)}</Text>
+                    <Text style={styles.rowMeta}>{t('windowPassed')}</Text>
+                  </View>
+                  <Ionicons name={forward} size={18} color={colors.textSecondary} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
+
         {past.length > 0 && (
           <>
             <Text style={styles.sectionLabel}>{t('past')}</Text>
             <View style={styles.listCard}>
               {past.map((item, i) => {
-                const meta = metaFor(item.windowStartWeek)
                 return (
                   <TouchableOpacity
                     key={item.id}
@@ -109,7 +141,11 @@ export default function AppointmentsScreen() {
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.rowTitle}>{getItemTitle(item)}</Text>
-                      <Text style={styles.rowMeta}>{item.doneAt ? t('doneOn', { date: formatDate(item.doneAt) }) : t('done')}</Text>
+                      <Text style={styles.rowMeta}>
+                        {item.status === 'skipped'
+                          ? (item.skippedAt ? t('skippedOn', { date: formatDate(item.skippedAt) }) : t('skipped'))
+                          : (item.doneAt ? t('doneOn', { date: formatDate(item.doneAt) }) : t('done'))}
+                      </Text>
                     </View>
                     <Ionicons name={forward} size={18} color={colors.textSecondary} />
                   </TouchableOpacity>
@@ -126,7 +162,7 @@ export default function AppointmentsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.sm },
   headerTitle: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary },
 
   scroll: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, paddingBottom: 56 },

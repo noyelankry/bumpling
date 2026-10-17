@@ -72,11 +72,23 @@ export default function PlanScreen() {
   const computed = useMemo(() => computeCareItems(items, lmp, TODAY), [items, lmp])
 
   const scheduled = computed.filter(i => i.status === 'scheduled')
+  // Items whose booking window has fully closed, unscheduled — these no
+  // longer have a meaningful "book by" date, so they're surfaced separately
+  // (needsDecision below) instead of sorting to the top of "upcoming" forever.
+  // Kept out of needsYouCount below: a pile of past, probably-already-done
+  // items isn't "urgent" the way a closing booking window is, and counting
+  // them in the headline number reads as "you're behind" rather than
+  // "nothing's on fire" — exactly the anxious framing we want to avoid.
+  const needsDecision = computed.filter(i => i.status === 'missed')
   const upcoming = computed
-    .filter(i => i.status !== 'scheduled' && i.status !== 'done')
+    .filter(i => i.status === 'actionable' || i.status === 'future')
     .sort((a, b) => a.bookBy.getTime() - b.bookBy.getTime())
   const attention = upcoming.slice(0, 2)
   const needsYouCount = attention.filter(i => i.status === 'actionable').length
+  // A small number of stale items is still worth naming individually; a
+  // bigger pile (e.g. joining the app mid-pregnancy) reads as overwhelming
+  // one-by-one, so it collapses into a single reassuring summary instead.
+  const needsDecisionGrouped = needsDecision.length > 2
 
   // Full chronological list for the "Upcoming appointments" preview below —
   // distinct from `attention`/`scheduled` above, which are split by what
@@ -176,21 +188,11 @@ export default function PlanScreen() {
             <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')} accessibilityLabel={t('profileLabel')}>
               <Ionicons name="person-outline" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.bellBtn}>
-              <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.titleRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title}>{t('title')}</Text>
-            <Text style={styles.subtitle}>{t('subtitle')}</Text>
-          </View>
-          <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/add-item')} accessibilityLabel={t('addAppointmentLabel')}>
-            <Ionicons name="add" size={22} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.title}>{t('title')}</Text>
+        <Text style={styles.subtitle}>{t('subtitle')}</Text>
 
         <View style={styles.summaryCard}>
           <View style={styles.summaryTopRow}>
@@ -258,6 +260,50 @@ export default function PlanScreen() {
                   </TouchableOpacity>
                 )
               })}
+            </View>
+          </>
+        )}
+
+        {needsDecision.length > 0 && needsDecisionGrouped && (
+          <TouchableOpacity
+            style={styles.pastCheckupsCard}
+            activeOpacity={0.7}
+            onPress={() => router.push('/catch-up-review')}
+          >
+            <View style={styles.pastCheckupsIconChip}>
+              <Ionicons name="heart-outline" size={20} color={colors.sageDeep} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.pastCheckupsTitle}>{t('pastCheckupsTitle')}</Text>
+              <Text style={styles.pastCheckupsSub}>{t('pastCheckupsSub', { count: needsDecision.length })}</Text>
+            </View>
+            <Ionicons name={forward} size={18} color={colors.sageDeep} />
+          </TouchableOpacity>
+        )}
+
+        {needsDecision.length > 0 && !needsDecisionGrouped && (
+          <>
+            <Text style={styles.sectionTitle}>{t('needsDecision')}</Text>
+            <View style={{ gap: spacing.xs, marginBottom: spacing.lg }}>
+              {needsDecision.map(item => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.attentionCard}
+                  activeOpacity={0.7}
+                  onPress={() => router.push(`/appointment/${item.id}`)}
+                >
+                  <View style={[styles.iconChip, { backgroundColor: colors.neutralChip }]}>
+                    <ItemIcon id={item.id} size={20} color={colors.neutralChipDeep} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.attentionTitle}>{getItemTitle(item)}</Text>
+                    <Text style={styles.attentionMeta}>{t('windowPassed')}</Text>
+                  </View>
+                  <View style={styles.laterPill}>
+                    <Text style={styles.laterPillText}>{t('needsDecisionPill')}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
             </View>
           </>
         )}
@@ -419,6 +465,17 @@ export default function PlanScreen() {
           </>
         )}
 
+        <TouchableOpacity style={styles.addCustomCard} activeOpacity={0.7} onPress={() => router.push('/add-item')}>
+          <View style={styles.addCustomIconChip}>
+            <Ionicons name="add-circle-outline" size={22} color={colors.lavenderDeep} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.addCustomTitle}>{t('addCustomTitle')}</Text>
+            <Text style={styles.addCustomSub}>{t('addCustomSub')}</Text>
+          </View>
+          <Ionicons name={forward} size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
+
         {/* TODO: gate behind age.weeks once past onboarding, e.g. >= 25. */}
         <View style={styles.birthPrepCard}>
           <View style={styles.birthPrepIconChip}>
@@ -447,12 +504,9 @@ const styles = StyleSheet.create({
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   appName:    { fontSize: 24, fontWeight: '700', color: colors.textPrimary },
   profileBtn: { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
-  bellBtn:    { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
 
-  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   title:    { fontFamily: fonts.headlineBold, fontSize: 28, color: colors.textPrimary },
   subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 4, marginBottom: spacing.md },
-  addBtn:   { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
 
   summaryCard:      { backgroundColor: colors.sage, borderRadius: radius.xl, padding: spacing.md, marginBottom: spacing.lg },
   summaryTopRow:    { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
@@ -526,6 +580,16 @@ const styles = StyleSheet.create({
   reassuranceIconChip: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
   reassuranceTitle:    { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary },
   reassuranceSub:      { fontSize: 12, color: colors.textPrimary, opacity: 0.65, marginTop: 2, lineHeight: 17 },
+
+  pastCheckupsCard:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.sage, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg },
+  pastCheckupsIconChip: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+  pastCheckupsTitle:    { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary },
+  pastCheckupsSub:      { fontSize: 12, color: colors.textPrimary, opacity: 0.65, marginTop: 2, lineHeight: 17 },
+
+  addCustomCard:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
+  addCustomIconChip: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.lavender, alignItems: 'center', justifyContent: 'center' },
+  addCustomTitle:    { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary },
+  addCustomSub:      { fontSize: 12, color: colors.textSecondary, marginTop: 2, lineHeight: 16 },
 
   birthPrepCard:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.lavender, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.lg },
   birthPrepIconChip: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },

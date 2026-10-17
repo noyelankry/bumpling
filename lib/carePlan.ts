@@ -42,7 +42,7 @@ export const DEFAULT_CARE_ITEMS: CareItem[] = [
   { id: 'post-term-monitoring', title: 'Post-term monitoring', windowStartWeek: 40, windowEndWeek: 41, bookingLeadDays: 3 },
 ]
 
-type StoredCareItem = Omit<CareItem, 'scheduledAt' | 'doneAt'> & { scheduledAt?: string; doneAt?: string; custom?: boolean }
+type StoredCareItem = Omit<CareItem, 'scheduledAt' | 'doneAt' | 'skippedAt'> & { scheduledAt?: string; doneAt?: string; skippedAt?: string; custom?: boolean }
 
 export type CareItemWithCustom = CareItem & { custom?: boolean }
 
@@ -59,7 +59,7 @@ export function getItemTitle(item: Pick<CareItemWithCustom, 'id' | 'title' | 'cu
 }
 
 function serialize(items: CareItemWithCustom[]): StoredCareItem[] {
-  return items.map(i => ({ ...i, scheduledAt: i.scheduledAt?.toISOString(), doneAt: i.doneAt?.toISOString() }))
+  return items.map(i => ({ ...i, scheduledAt: i.scheduledAt?.toISOString(), doneAt: i.doneAt?.toISOString(), skippedAt: i.skippedAt?.toISOString() }))
 }
 
 function deserialize(stored: StoredCareItem[]): CareItemWithCustom[] {
@@ -67,6 +67,7 @@ function deserialize(stored: StoredCareItem[]): CareItemWithCustom[] {
     ...i,
     scheduledAt: i.scheduledAt ? new Date(i.scheduledAt) : undefined,
     doneAt: i.doneAt ? new Date(i.doneAt) : undefined,
+    skippedAt: i.skippedAt ? new Date(i.skippedAt) : undefined,
   }))
 }
 
@@ -176,6 +177,26 @@ export async function markManyDone(items: CareItemWithCustom[], ids: string[]): 
 
 export async function unmarkDone(items: CareItemWithCustom[], id: string): Promise<CareItemWithCustom[]> {
   const next = items.map(i => i.id === id ? { ...i, done: false, doneAt: undefined } : i)
+  await saveCareItems(next)
+  return next
+}
+
+export async function markSkipped(items: CareItemWithCustom[], id: string): Promise<CareItemWithCustom[]> {
+  const next = items.map(i => i.id === id ? { ...i, skipped: true, skippedAt: new Date() } : i)
+  await saveCareItems(next)
+  return next
+}
+
+export async function markManySkipped(items: CareItemWithCustom[], ids: string[]): Promise<CareItemWithCustom[]> {
+  const idSet = new Set(ids)
+  const skippedAt = new Date()
+  const next = items.map(i => idSet.has(i.id) ? { ...i, skipped: true, skippedAt } : i)
+  await saveCareItems(next)
+  return next
+}
+
+export async function unmarkSkipped(items: CareItemWithCustom[], id: string): Promise<CareItemWithCustom[]> {
+  const next = items.map(i => i.id === id ? { ...i, skipped: false, skippedAt: undefined } : i)
   await saveCareItems(next)
   return next
 }

@@ -2,7 +2,7 @@
 // converting fuzzy pregnancy-week language into real calendar dates.
 import { getDateLocale } from './i18n/dateLocale'
 
-export type CareStatus = 'done' | 'scheduled' | 'actionable' | 'future'
+export type CareStatus = 'done' | 'scheduled' | 'actionable' | 'future' | 'missed' | 'skipped'
 
 export type CareItem = {
   id: string
@@ -24,6 +24,9 @@ export type CareItem = {
   done?: boolean
   /** When they told us, not when the test itself happened — informational only. */
   doneAt?: Date
+  /** Set when the user explicitly dismisses a missed window without having done it. */
+  skipped?: boolean
+  skippedAt?: Date
 }
 
 export type ComputedCareItem = CareItem & {
@@ -60,8 +63,14 @@ export function computeCareItems<T extends CareItem>(items: T[], lmp: Date, toda
     let status: CareStatus
     if (item.done) {
       status = 'done'
+    } else if (item.skipped) {
+      status = 'skipped'
     } else if (item.scheduledAt) {
       status = 'scheduled'
+    } else if (today.getTime() > windowEnd.getTime()) {
+      // Window fully closed with nothing booked — stop nagging with a
+      // "book by" date that's already in the past (see markSkipped).
+      status = 'missed'
     } else {
       const daysUntilBookBy = Math.floor((bookBy.getTime() - today.getTime()) / DAY_MS)
       status = daysUntilBookBy <= ACTIONABLE_HORIZON_DAYS ? 'actionable' : 'future'

@@ -1,9 +1,14 @@
 {
   "title": "תורים",
+  "addLabel": "הוספה לתוכנית",
   "nothingYet": "אין עדיין כלום בתוכנית שלך.",
   "upcoming": "קרובים",
+  "needsDecision": "דורש החלטה",
+  "windowPassed": "הטווח המומלץ כבר עבר",
   "past": "קודמים",
   "weekLabel": "שבוע {{weeks}}",
   "doneOn": "בוצע {{date}}",
-  "done": "בוצע"
+  "done": "בוצע",
+  "skippedOn": "דולג {{date}}",
+  "skipped": "דולג"
 }

@@ -1,9 +1,14 @@
 {
   "title": "Appointments",
+  "addLabel": "Add to your plan",
   "nothingYet": "Nothing on your plan yet.",
   "upcoming": "Upcoming",
+  "needsDecision": "Needs a decision",
+  "windowPassed": "The recommended window has passed",
   "past": "Past",
   "weekLabel": "Week {{weeks}}",
   "doneOn": "Done {{date}}",
-  "done": "Done"
+  "done": "Done",
+  "skippedOn": "Skipped {{date}}",
+  "skipped": "Skipped"
 }

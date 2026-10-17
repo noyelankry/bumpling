@@ -1,0 +1,10 @@
+{
+  "title": "Catch up",
+  "subtitle": "These are from before you started tracking in Bumpling. Check off anything you already had — we'll take care of the rest.",
+  "targetDates": "Target dates: {{range}}",
+  "canUpdateAnytime": "You can always update this later from each item's page.",
+  "skipAll": "Skip these — I'll untrack them",
+  "markAllDone": "Mark all as done",
+  "save": "Save",
+  "allCaughtUp": "Nothing here — you're all caught up!"
+}
