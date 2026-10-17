@@ -166,6 +166,6 @@ const styles = StyleSheet.create({
   footerRow: { flexDirection: 'row', gap: spacing.sm },
   editBtn: { flex: 1, flexDirection: 'row', gap: 6, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: colors.border },
   editBtnText: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
-  shareBtn: { flex: 1.4, flexDirection: 'row', gap: 6, backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', justifyContent: 'center' },
+  shareBtn: { flex: 1.4, flexDirection: 'row', gap: 6, backgroundColor: colors.textPrimary, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', justifyContent: 'center' },
   shareBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 })

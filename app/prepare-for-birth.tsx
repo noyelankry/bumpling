@@ -133,6 +133,6 @@ const styles = StyleSheet.create({
   statusPillText:  { fontSize: 11, fontWeight: '700', color: colors.neutralChipDeep },
   statusPillTextDone: { color: colors.sageDeep },
 
-  continueBtn:     { flexDirection: 'row', gap: 8, backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', justifyContent: 'center' },
+  continueBtn:     { flexDirection: 'row', gap: 8, backgroundColor: colors.textPrimary, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', justifyContent: 'center' },
   continueBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 })

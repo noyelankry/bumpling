@@ -11,7 +11,7 @@ type IoniconsName = React.ComponentProps<typeof Ionicons>['name']
 const ICON: Record<string, { name: IoniconsName; color: string }> = {
   index: { name: 'home-outline', color: colors.primary },
   plan: { name: 'calendar-outline', color: colors.textPrimary },
-  'brain-dump': { name: 'bulb-outline', color: colors.creamDeep },
+  'brain-dump': { name: 'bulb-outline', color: colors.moodOkay },
   health: { name: 'leaf-outline', color: colors.lavenderDeep },
 }
 

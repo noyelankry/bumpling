@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   formFooterRow: { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.sm },
   formCancelBtn: { flex: 1, borderRadius: radius.pill, paddingVertical: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: colors.border },
   formCancelBtnText: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
-  formSaveBtn: { flex: 2, backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
+  formSaveBtn: { flex: 2, backgroundColor: colors.textPrimary, borderRadius: radius.pill, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
   formSaveBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
 
   tipsCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.md, borderWidth: 1, borderColor: colors.border },
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
   footerRow: { flexDirection: 'row', gap: spacing.sm },
   backBtn: { flex: 1, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: colors.border },
   backBtnText: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
-  nextBtn: { flex: 2, flexDirection: 'row', gap: 6, backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', justifyContent: 'center' },
+  nextBtn: { flex: 2, flexDirection: 'row', gap: 6, backgroundColor: colors.textPrimary, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', justifyContent: 'center' },
   nextBtnDisabled: { opacity: 0.45 },
   nextBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 })
