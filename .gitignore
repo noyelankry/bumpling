@@ -19,3 +19,6 @@ android
 .env
 .env.local
 .env.*.local
+
+# Claude Code local state (includes stray worktree checkouts with their own .git/.env)
+.claude/
