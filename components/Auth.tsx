@@ -9,25 +9,58 @@ import { supabase } from '../lib/supabase'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import { DEV_BYPASS_KEY } from '../lib/devBypass'
 import { useLanguage } from '../lib/i18n/LanguageProvider'
+import { TERMS_VERSION, PRIVACY_VERSION, HEALTH_CONSENT_VERSION } from '../lib/legal'
 import { BabyMark } from './illustrations'
+
+function Checkbox({ checked, onPress, children }: { checked: boolean; onPress: () => void; children: React.ReactNode }) {
+  return (
+    <TouchableOpacity style={styles.checkboxRow} onPress={onPress} activeOpacity={0.7}>
+      <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+        {checked && <Ionicons name="checkmark" size={14} color="#fff" />}
+      </View>
+      <Text style={styles.checkboxText}>{children}</Text>
+    </TouchableOpacity>
+  )
+}
 
 export default function Auth() {
   const { t } = useTranslation('auth')
   const { isRTL } = useLanguage()
+  const router = useRouter()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [agreedTerms, setAgreedTerms] = useState(false)
+  const [agreedHealthData, setAgreedHealthData] = useState(false)
+  const [agreedAge, setAgreedAge] = useState(false)
+
+  const canSignUp = mode === 'signin' || (agreedTerms && agreedHealthData && agreedAge)
 
   async function submit() {
+    if (!canSignUp) return
     setLoading(true)
-    const fn = mode === 'signin'
-      ? supabase.auth.signInWithPassword({ email, password })
-      : supabase.auth.signUp({ email, password })
-    const { error } = await fn
-    if (error) Alert.alert(error.message)
+    if (mode === 'signin') {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) Alert.alert(error.message)
+      setLoading(false)
+      return
+    }
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) {
+      Alert.alert(error.message)
+      setLoading(false)
+      return
+    }
+    if (data.user && data.session) {
+      await supabase.from('consent_logs').insert([
+        { user_id: data.user.id, document: 'terms', version: TERMS_VERSION },
+        { user_id: data.user.id, document: 'privacy', version: PRIVACY_VERSION },
+        { user_id: data.user.id, document: 'health_data', version: HEALTH_CONSENT_VERSION },
+        { user_id: data.user.id, document: 'age_attestation', version: TERMS_VERSION },
+      ])
+    }
     setLoading(false)
   }
 
@@ -98,11 +131,28 @@ export default function Auth() {
               </View>
             </View>
 
+            {mode === 'signup' && (
+              <View style={styles.consentGroup}>
+                <Checkbox checked={agreedTerms} onPress={() => setAgreedTerms(v => !v)}>
+                  {t('consent.termsPrefix')}
+                  <Text style={styles.consentLink} onPress={() => router.push('/terms-of-service')}>{t('consent.termsLink')}</Text>
+                  {t('consent.termsAnd')}
+                  <Text style={styles.consentLink} onPress={() => router.push('/privacy-policy')}>{t('consent.privacyLink')}</Text>
+                </Checkbox>
+                <Checkbox checked={agreedHealthData} onPress={() => setAgreedHealthData(v => !v)}>
+                  {t('consent.healthData')}
+                </Checkbox>
+                <Checkbox checked={agreedAge} onPress={() => setAgreedAge(v => !v)}>
+                  {t('consent.ageAttestation')}
+                </Checkbox>
+              </View>
+            )}
+
             <TouchableOpacity
               activeOpacity={0.85}
-              style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
+              style={[styles.primaryBtn, (loading || !canSignUp) && styles.primaryBtnDisabled]}
               onPress={submit}
-              disabled={loading}
+              disabled={loading || !canSignUp}
             >
               {loading
                 ? <ActivityIndicator color="#fff" />
@@ -157,6 +207,13 @@ const styles = StyleSheet.create({
   label:      { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
   inputRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.xl, paddingHorizontal: 16, paddingVertical: 14 },
   input:      { flex: 1, fontSize: 15, color: colors.textPrimary, padding: 0 },
+
+  consentGroup: { gap: spacing.xs },
+  checkboxRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  checkbox:        { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+  checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
+  checkboxText:    { flex: 1, fontSize: 12.5, color: colors.textSecondary, lineHeight: 18 },
+  consentLink:     { color: colors.primary, fontWeight: '700' },
 
   primaryBtn:         { backgroundColor: colors.textPrimary, borderRadius: radius.pill, paddingVertical: 16, alignItems: 'center', marginTop: spacing.xs, shadowColor: colors.textPrimary, shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } },
   primaryBtnDisabled: { opacity: 0.6 },
