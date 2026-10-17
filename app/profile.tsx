@@ -27,7 +27,7 @@ export default function ProfileScreen() {
   const router = useRouter()
   const { t } = useTranslation('profile')
   const { language, isRTL, setLanguage } = useLanguage()
-  const { back: backIcon } = useDirectionalIcon()
+  const { back: backIcon, forward } = useDirectionalIcon()
   const back = () => goBack(router, '/(tabs)')
   const [form, setForm] = useState<Profile>({ full_name: '', username: '' })
   const [phone, setPhone] = useState('')
@@ -124,22 +124,16 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.heroCard}>
-          <View style={styles.avatar}>
-            <Ionicons name="person" size={30} color="#fff" />
+          <View style={styles.avatarWrap}>
+            <View style={styles.avatar}>
+              <BabyMark size={52} />
+            </View>
             <TouchableOpacity style={[styles.cameraBtn, isRTL && styles.cameraBtnRTL]} activeOpacity={0.8}>
               <Ionicons name="camera-outline" size={14} color={colors.textPrimary} />
             </TouchableOpacity>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.profileName}>{form.full_name || t('addYourName')}</Text>
-            <Text style={styles.profileUsername}>{form.username ? `@${form.username}` : t('usernamePlaceholder')}</Text>
-          </View>
-          <View style={styles.heroMascot}>
-            <BabyMark size={38} />
-            <View style={[styles.heroHeart, isRTL && styles.heroHeartRTL]}>
-              <Ionicons name="heart" size={11} color={colors.lavenderDeep} />
-            </View>
-          </View>
+          <Text style={styles.profileName}>{form.full_name || t('addYourName')}</Text>
+          <Text style={styles.profileUsername}>{form.username ? `@${form.username}` : t('usernamePlaceholder')}</Text>
         </View>
 
         <View style={styles.sectionLabelRow}>
@@ -243,32 +237,39 @@ export default function ProfileScreen() {
         )}
 
         <Text style={styles.sectionLabel}>{t('language')}</Text>
-        <View style={styles.fieldsCard}>
-          <View style={styles.languageRow}>
-            {(['en', 'he'] as Language[]).map(lang => (
-              <TouchableOpacity
-                key={lang}
-                style={[styles.langOption, language === lang && styles.langOptionActive]}
-                onPress={() => setLanguage(lang)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.langOptionText, language === lang && styles.langOptionTextActive]}>
-                  {lang === 'en' ? t('languageEnglish') : t('languageHebrew')}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+        <View style={styles.languageRow}>
+          {(['en', 'he'] as Language[]).map(lang => (
+            <TouchableOpacity
+              key={lang}
+              style={[styles.langOption, language === lang && styles.langOptionActive]}
+              onPress={() => setLanguage(lang)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.langOptionText, language === lang && styles.langOptionTextActive]}>
+                {lang === 'en' ? t('languageEnglish') : t('languageHebrew')}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        <TouchableOpacity style={styles.helpRow} onPress={replayOnboarding} activeOpacity={0.7}>
-          <Ionicons name="play-circle-outline" size={20} color={colors.textSecondary} />
-          <Text style={styles.helpText}>{t('viewOnboardingAgain')}</Text>
-        </TouchableOpacity>
+        <View style={styles.actionsCard}>
+          <TouchableOpacity style={styles.actionRow} onPress={replayOnboarding} activeOpacity={0.7}>
+            <View style={[styles.actionIconChip, { backgroundColor: colors.lavender }]}>
+              <Ionicons name="play-outline" size={17} color={colors.lavenderDeep} />
+            </View>
+            <Text style={styles.actionText}>{t('viewOnboardingAgain')}</Text>
+            <Ionicons name={forward} size={17} color={colors.textSecondary} />
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.logoutRow} onPress={signOut} activeOpacity={0.7}>
-          <Ionicons name="log-out-outline" size={20} color={colors.urgent} />
-          <Text style={styles.logoutText}>{t('logOut')}</Text>
-        </TouchableOpacity>
+          <View style={styles.fieldDivider} />
+
+          <TouchableOpacity style={styles.actionRow} onPress={signOut} activeOpacity={0.7}>
+            <View style={[styles.actionIconChip, { backgroundColor: colors.urgentBg }]}>
+              <Ionicons name="log-out-outline" size={17} color={colors.urgent} />
+            </View>
+            <Text style={[styles.actionText, styles.actionTextUrgent]}>{t('logOut')}</Text>
+          </TouchableOpacity>
+        </View>
 
       </ScrollView>
     </SafeAreaView>
@@ -282,15 +283,13 @@ const styles = StyleSheet.create({
   header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.sm, marginBottom: spacing.xs },
   headerTitle: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary },
 
-  heroCard:    { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.peach, borderRadius: radius.xl, padding: spacing.sm, marginBottom: spacing.md },
-  avatar:      { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  cameraBtn:   { position: 'absolute', bottom: -2, right: -2, width: 28, height: 28, borderRadius: 14, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
+  heroCard:    { alignItems: 'center', backgroundColor: colors.peach, borderRadius: radius.xl, paddingVertical: spacing.lg, paddingHorizontal: spacing.md, marginBottom: spacing.md },
+  avatarWrap:  { marginBottom: spacing.sm },
+  avatar:      { width: 88, height: 88, borderRadius: 44, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+  cameraBtn:   { position: 'absolute', bottom: -2, right: -2, width: 30, height: 30, borderRadius: 15, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
   cameraBtnRTL: { right: undefined, left: -2 },
-  profileName: { fontFamily: fonts.headline, fontSize: 18, color: colors.textPrimary },
-  profileUsername: { fontSize: 13, color: colors.textPrimary, opacity: 0.6, marginTop: 2 },
-  heroMascot:  { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  heroHeart:   { position: 'absolute', top: -3, right: -5 },
-  heroHeartRTL: { right: undefined, left: -5 },
+  profileName: { fontFamily: fonts.headline, fontSize: 20, color: colors.textPrimary },
+  profileUsername: { fontSize: 13, color: colors.textPrimary, opacity: 0.6, marginTop: 3 },
 
   sectionLabel:    { fontSize: 12, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: spacing.xs, marginTop: spacing.xs },
   sectionHint:     { fontSize: 12, color: colors.textSecondary, marginTop: -4, marginBottom: spacing.xs, lineHeight: 16 },
@@ -311,14 +310,15 @@ const styles = StyleSheet.create({
   saveBtn:     { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 14, alignItems: 'center', marginBottom: spacing.md },
   saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 
-  languageRow: { flexDirection: 'row', gap: spacing.xs, paddingVertical: spacing.xs },
-  langOption:  { flex: 1, paddingVertical: 10, borderRadius: radius.md, alignItems: 'center', backgroundColor: colors.neutralChip },
+  languageRow: { flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.md },
+  langOption:  { flex: 1, paddingVertical: 12, borderRadius: radius.md, alignItems: 'center', backgroundColor: colors.neutralChip },
   langOptionActive: { backgroundColor: colors.primary },
   langOptionText:   { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
   langOptionTextActive: { color: '#fff' },
 
-  helpRow:    { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: spacing.xs, marginTop: spacing.sm },
-  helpText:   { fontSize: 15, fontWeight: '600', color: colors.textSecondary },
-  logoutRow:  { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: spacing.xs, marginTop: spacing.xs },
-  logoutText: { fontSize: 15, fontWeight: '700', color: colors.urgent },
+  actionsCard: { backgroundColor: colors.card, borderRadius: radius.lg, paddingHorizontal: spacing.sm, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
+  actionRow:      { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs },
+  actionIconChip: { width: 36, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  actionText:        { flex: 1, fontSize: 14.5, fontWeight: '600', color: colors.textPrimary },
+  actionTextUrgent:  { color: colors.urgent },
 })
