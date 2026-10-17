@@ -33,20 +33,32 @@ export default function ProfileScreen() {
   const [phone, setPhone] = useState('')
   const [partner, setPartner] = useState<Partner>({ name: '', email: '' })
   const [saving, setSaving] = useState(false)
-  const [editing, setEditing] = useState(false)
-  const [snapshot, setSnapshot] = useState<{ form: Profile; phone: string; partner: Partner } | null>(null)
+  // The last-saved values, so fields can just always be editable — no edit-mode
+  // toggle — while still only showing "Save changes" once something actually differs.
+  const [saved, setSaved] = useState<{ form: Profile; phone: string; partner: Partner } | null>(null)
+  const isDirty = !!saved && (
+    saved.form.full_name !== form.full_name || saved.form.username !== form.username ||
+    saved.phone !== phone || saved.partner.name !== partner.name || saved.partner.email !== partner.email
+  )
 
-  useFocusEffect(useCallback(() => { loadProfile(); loadPartner().then(setPartner); loadMomPhone().then(setPhone) }, []))
-
-  async function loadProfile() {
-    const { data } = await supabase.auth.getClaims()
-    if (!data?.claims) return
-    const { data: p } = await supabase
-      .from('profiles').select('*').eq('id', data.claims.sub).single()
-    if (p) {
-      setForm({ full_name: p.full_name ?? '', username: p.username ?? '' })
-    }
-  }
+  useFocusEffect(useCallback(() => {
+    let cancelled = false
+    ;(async () => {
+      const [p, ph] = await Promise.all([loadPartner(), loadMomPhone()])
+      let f: Profile = { full_name: '', username: '' }
+      const { data } = await supabase.auth.getClaims()
+      if (data?.claims) {
+        const { data: row } = await supabase.from('profiles').select('*').eq('id', data.claims.sub).single()
+        if (row) f = { full_name: row.full_name ?? '', username: row.username ?? '' }
+      }
+      if (cancelled) return
+      setPartner(p)
+      setPhone(ph)
+      setForm(f)
+      setSaved({ form: f, phone: ph, partner: p })
+    })()
+    return () => { cancelled = true }
+  }, []))
 
   async function save() {
     setSaving(true)
@@ -66,17 +78,7 @@ export default function ProfileScreen() {
       if (error) { setSaving(false); Alert.alert(t('error'), error.message); return }
     }
     setSaving(false)
-    setEditing(false)
-  }
-
-  function toggleEdit() {
-    if (editing) {
-      if (snapshot) { setForm(snapshot.form); setPhone(snapshot.phone); setPartner(snapshot.partner) }
-      setEditing(false)
-    } else {
-      setSnapshot({ form, phone, partner })
-      setEditing(true)
-    }
+    setSaved({ form, phone, partner })
   }
 
   function signOut() {
@@ -136,18 +138,9 @@ export default function ProfileScreen() {
           <Text style={styles.profileUsername}>{form.username ? `@${form.username}` : t('usernamePlaceholder')}</Text>
         </View>
 
-        <View style={styles.sectionLabelRow}>
-          <Text style={styles.sectionLabel}>{t('basicInfo')}</Text>
-          <TouchableOpacity style={styles.editBtn} onPress={toggleEdit} activeOpacity={0.7}>
-            <Ionicons
-              name={editing ? 'close' : 'pencil'}
-              size={14}
-              color={editing ? colors.textSecondary : colors.primaryDark}
-            />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.sectionLabel}>{t('basicInfo')}</Text>
 
-        <View style={[styles.fieldsCard, editing && styles.fieldsCardEditing]}>
+        <View style={styles.fieldsCard}>
           <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>{t('fullName')}</Text>
             <TextInput
@@ -156,7 +149,6 @@ export default function ProfileScreen() {
               onChangeText={set('full_name')}
               placeholder={t('fullNamePlaceholder')}
               placeholderTextColor={colors.textSecondary}
-              editable={editing}
             />
           </View>
 
@@ -173,7 +165,6 @@ export default function ProfileScreen() {
                 placeholder={t('usernameFieldPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 autoCapitalize="none"
-                editable={editing}
               />
             </View>
           </View>
@@ -189,7 +180,6 @@ export default function ProfileScreen() {
               placeholder={t('phonePlaceholder')}
               placeholderTextColor={colors.textSecondary}
               keyboardType="phone-pad"
-              editable={editing}
             />
           </View>
         </View>
@@ -197,7 +187,7 @@ export default function ProfileScreen() {
         <Text style={styles.sectionLabel}>{t('partner')}</Text>
         <Text style={styles.sectionHint}>{t('partnerHint')}</Text>
 
-        <View style={[styles.fieldsCard, editing && styles.fieldsCardEditing]}>
+        <View style={styles.fieldsCard}>
           <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>{t('partnerName')}</Text>
             <TextInput
@@ -206,7 +196,6 @@ export default function ProfileScreen() {
               onChangeText={setPartnerField('name')}
               placeholder={t('partnerNamePlaceholder')}
               placeholderTextColor={colors.textSecondary}
-              editable={editing}
             />
           </View>
 
@@ -222,12 +211,11 @@ export default function ProfileScreen() {
               placeholderTextColor={colors.textSecondary}
               autoCapitalize="none"
               keyboardType="email-address"
-              editable={editing}
             />
           </View>
         </View>
 
-        {editing && (
+        {isDirty && (
           <TouchableOpacity style={styles.saveBtn} onPress={save} disabled={saving}>
             {saving
               ? <ActivityIndicator color="#fff" />
@@ -293,12 +281,9 @@ const styles = StyleSheet.create({
 
   sectionLabel:    { fontSize: 12, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: spacing.xs, marginTop: spacing.xs },
   sectionHint:     { fontSize: 12, color: colors.textSecondary, marginTop: -4, marginBottom: spacing.xs, lineHeight: 16 },
-  sectionLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  editBtn:         { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.neutralChip, alignItems: 'center', justifyContent: 'center' },
 
-  fieldsCard:        { backgroundColor: colors.card, borderRadius: radius.lg, paddingHorizontal: spacing.sm, marginBottom: spacing.md, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
-  fieldsCardEditing: { marginBottom: spacing.xs },
-  fieldRow:     { paddingVertical: spacing.xs },
+  fieldsCard:   { backgroundColor: colors.card, borderRadius: radius.lg, paddingHorizontal: spacing.sm, marginBottom: spacing.md, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
+  fieldRow:     { paddingVertical: spacing.sm },
   fieldDivider: { height: 1, backgroundColor: colors.border },
   fieldLabel:   { fontSize: 11.5, fontWeight: '600', color: colors.textSecondary, marginBottom: 3 },
   fieldInput:   { fontSize: 16, fontWeight: '600', color: colors.textPrimary, padding: 0, textAlign: 'left' },
@@ -316,7 +301,7 @@ const styles = StyleSheet.create({
   langOptionText:   { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
   langOptionTextActive: { color: '#fff' },
 
-  actionsCard: { backgroundColor: colors.card, borderRadius: radius.lg, paddingHorizontal: spacing.sm, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
+  actionsCard: { backgroundColor: colors.card, borderRadius: radius.lg, paddingHorizontal: spacing.sm, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
   actionRow:      { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs },
   actionIconChip: { width: 36, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   actionText:        { flex: 1, fontSize: 14.5, fontWeight: '600', color: colors.textPrimary },
