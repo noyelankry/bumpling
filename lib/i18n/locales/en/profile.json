@@ -24,5 +24,6 @@
   "error": "Error",
   "language": "Language",
   "languageEnglish": "English",
-  "languageHebrew": "עברית"
+  "languageHebrew": "עברית",
+  "viewOnboardingAgain": "View onboarding again"
 }

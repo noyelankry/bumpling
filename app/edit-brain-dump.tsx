@@ -10,6 +10,7 @@ import { formatDate } from '../lib/pregnancy'
 import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, getItemTitle, type CareItemWithCustom } from '../lib/carePlan'
 import { type Entry, type EntryKind, loadEntries, updateEntry, removeEntry, SUGGESTED_TAGS } from '../lib/brainDump'
 import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
+import { useLanguage } from '../lib/i18n/LanguageProvider'
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name']
 type Section = 'details' | 'appointment' | 'tags' | null
@@ -19,6 +20,7 @@ export default function EditBrainDumpScreen() {
   const { t } = useTranslation('editBrainDump')
   const { t: tTag } = useTranslation('brainDump')
   const { forward } = useDirectionalIcon()
+  const { isRTL } = useLanguage()
   const KIND_OPTIONS: { kind: EntryKind; icon: IoniconsName; label: string }[] = [
     { kind: 'thought', icon: 'bulb-outline', label: t('kindThought') },
     { kind: 'doctor', icon: 'medical-outline', label: t('kindDoctor') },
@@ -148,7 +150,7 @@ export default function EditBrainDumpScreen() {
 
           <View style={styles.addCard}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, isRTL && styles.inputRTL]}
               value={text}
               onChangeText={setText}
               placeholder={t('placeholder')}
@@ -181,7 +183,7 @@ export default function EditBrainDumpScreen() {
             forwardIcon={forward}
           >
             <TextInput
-              style={styles.detailsInput}
+              style={[styles.detailsInput, isRTL && styles.inputRTL]}
               value={details}
               onChangeText={setDetails}
               placeholder={t('detailsPlaceholder')}
@@ -297,7 +299,8 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: spacing.md, paddingBottom: 56, paddingTop: spacing.xs },
 
   addCard: { backgroundColor: colors.lavender, borderRadius: radius.xl, padding: spacing.sm, marginBottom: spacing.md },
-  input:   { fontSize: 17, color: colors.textPrimary, minHeight: 90, textAlignVertical: 'top', marginBottom: spacing.sm },
+  input:   { fontSize: 17, color: colors.textPrimary, minHeight: 90, textAlignVertical: 'top', marginBottom: spacing.sm, textAlign: 'left' },
+  inputRTL: { textAlign: 'right' },
 
   typeToggle:      { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   typeChip:        { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: colors.card },
@@ -311,7 +314,7 @@ const styles = StyleSheet.create({
   optionSummary: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   optionBody: { paddingHorizontal: spacing.sm, paddingBottom: spacing.sm },
 
-  detailsInput: { fontSize: 14, color: colors.textPrimary, minHeight: 60, textAlignVertical: 'top', backgroundColor: colors.background, borderRadius: radius.md, padding: spacing.sm },
+  detailsInput: { fontSize: 14, color: colors.textPrimary, minHeight: 60, textAlignVertical: 'top', backgroundColor: colors.background, borderRadius: radius.md, padding: spacing.sm, textAlign: 'left' },
 
   emptyOptionText: { fontSize: 13, color: colors.textSecondary, lineHeight: 18 },
 

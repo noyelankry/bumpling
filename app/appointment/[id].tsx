@@ -12,12 +12,14 @@ import { shareAppointmentWithPartner } from '../../lib/shareAppointment'
 import { type Partner, loadPartner } from '../../lib/partner'
 import { goBack } from '../../lib/navigation'
 import { useDirectionalIcon } from '../../lib/i18n/useDirectionalIcon'
+import { useLanguage } from '../../lib/i18n/LanguageProvider'
 
 export default function AppointmentDetailScreen() {
   const router = useRouter()
   const { t } = useTranslation('appointmentDetail')
   const { t: tBusiness } = useTranslation('business')
   const { back: backIcon, forward } = useDirectionalIcon()
+  const { isRTL } = useLanguage()
   const back = () => goBack(router, '/(tabs)/plan')
   const { id } = useLocalSearchParams<{ id: string }>()
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
@@ -246,7 +248,7 @@ export default function AppointmentDetailScreen() {
           {notesEditing ? (
             <>
               <TextInput
-                style={styles.notesInput}
+                style={[styles.notesInput, isRTL && styles.notesInputRTL]}
                 value={notesDraft}
                 onChangeText={setNotesDraft}
                 placeholder={t('notesPlaceholder')}
@@ -362,7 +364,8 @@ const styles = StyleSheet.create({
   notesTitle: { fontFamily: fonts.headline, fontSize: 15, color: colors.textPrimary },
   notesText:  { fontSize: 13.5, color: colors.textPrimary, lineHeight: 19 },
   notesEmptyText: { fontSize: 13, color: colors.textSecondary, lineHeight: 18, fontStyle: 'italic' },
-  notesInput: { fontSize: 14, color: colors.textPrimary, minHeight: 70, textAlignVertical: 'top', backgroundColor: colors.background, borderRadius: radius.md, padding: spacing.sm },
+  notesInput: { fontSize: 14, color: colors.textPrimary, minHeight: 70, textAlignVertical: 'top', backgroundColor: colors.background, borderRadius: radius.md, padding: spacing.sm, textAlign: 'left' },
+  notesInputRTL: { textAlign: 'right' },
   notesActionRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.sm },
   notesCancelBtn: { paddingVertical: 8, paddingHorizontal: 12 },
   notesCancelBtnText: { fontSize: 13.5, fontWeight: '600', color: colors.textSecondary },

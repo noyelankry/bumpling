@@ -11,12 +11,14 @@ import { loadCareItems, loadLMP, scheduleItem, addCustomItem } from '../lib/care
 import { addAppointmentToCalendar } from '../lib/calendar'
 import { goBack } from '../lib/navigation'
 import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
+import { useLanguage } from '../lib/i18n/LanguageProvider'
 
 export default function AddItemScreen() {
   const router = useRouter()
   const { t } = useTranslation('addItem')
   const { t: tBusiness } = useTranslation('business')
   const { back: backIcon } = useDirectionalIcon()
+  const { isRTL } = useLanguage()
   const back = () => goBack(router, '/(tabs)/plan')
   const params = useLocalSearchParams<{ id?: string; title?: string; date?: string; time?: string; location?: string; prepNote?: string; windowStart?: string; windowEnd?: string }>()
   const isEditing = !!params.id
@@ -85,7 +87,7 @@ export default function AddItemScreen() {
             <View style={styles.inputRow}>
               <Ionicons name="document-text-outline" size={18} color={colors.textSecondary} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, isRTL && styles.inputRTL]}
                 value={title}
                 onChangeText={setTitle}
                 placeholder={t('titlePlaceholder')}
@@ -112,7 +114,7 @@ export default function AddItemScreen() {
             <View style={styles.inputRow}>
               <Ionicons name="time-outline" size={18} color={colors.textSecondary} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, isRTL && styles.inputRTL]}
                 value={time}
                 onChangeText={setTime}
                 placeholder={t('timePlaceholder')}
@@ -125,7 +127,7 @@ export default function AddItemScreen() {
             <View style={styles.inputRow}>
               <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, isRTL && styles.inputRTL]}
                 value={location}
                 onChangeText={setLocation}
                 placeholder={t('locationPlaceholder')}
@@ -138,7 +140,7 @@ export default function AddItemScreen() {
             <View style={[styles.inputRow, styles.multilineRow]}>
               <Ionicons name="reader-outline" size={18} color={colors.textSecondary} style={{ marginTop: 2 }} />
               <TextInput
-                style={[styles.input, styles.multiline]}
+                style={[styles.input, styles.multiline, isRTL && styles.inputRTL]}
                 value={prepNote}
                 onChangeText={setPrepNote}
                 placeholder={t('notesPlaceholder')}
@@ -192,7 +194,8 @@ const styles = StyleSheet.create({
 
   inputRow:     { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.xl, paddingHorizontal: 16, paddingVertical: 14 },
   multilineRow: { alignItems: 'flex-start' },
-  input:        { flex: 1, fontSize: 15, color: colors.textPrimary, padding: 0 },
+  input:        { flex: 1, fontSize: 15, color: colors.textPrimary, padding: 0, textAlign: 'left' },
+  inputRTL:     { textAlign: 'right' },
   multiline:    { minHeight: 60, textAlignVertical: 'top' },
 
   warningRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: colors.urgentBg, borderRadius: radius.md, padding: spacing.sm, marginTop: -4, marginBottom: spacing.md },

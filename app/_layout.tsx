@@ -11,6 +11,8 @@ import { hasLMP, hasCompletedCatchUp, hasCompletedBooked } from '../lib/carePlan
 import { fonts } from '../lib/theme'
 import '../lib/i18n'
 import { LanguageProvider } from '../lib/i18n/LanguageProvider'
+import { DesktopWebFrame } from '../components/DesktopWebFrame'
+import { ONBOARDING_KEY } from '../lib/onboarding'
 
 // Sets the bundled body font once at the root. On web this relies on real DOM
 // font-family inheritance to reach every Text without touching each screen's
@@ -18,8 +20,6 @@ import { LanguageProvider } from '../lib/i18n/LanguageProvider'
 // fontFamily, since RN Text (unlike web) doesn't inherit font-family from an
 // ancestor View.
 const rootFontStyle = { fontFamily: fonts.sans } as any
-
-const ONBOARDING_KEY = 'bumpling_onboarding_seen'
 
 export default function RootLayout() {
   // Non-blocking: don't gate the whole app on font load. If it hangs or fails
@@ -84,7 +84,7 @@ export default function RootLayout() {
               router.replace('/(auth)/booked')
               return
             }
-            if (bookedDone && inAuth) router.replace('/(tabs)')
+            if (bookedDone && inAuth && path !== '(auth)/onboarding') router.replace('/(tabs)')
           }
         }
         return
@@ -109,7 +109,9 @@ export default function RootLayout() {
   return (
     <LanguageProvider>
       <View style={[{ flex: 1 }, rootFontStyle]}>
-        <Stack screenOptions={{ headerShown: false }} />
+        <DesktopWebFrame>
+          <Stack screenOptions={{ headerShown: false }} />
+        </DesktopWebFrame>
       </View>
     </LanguageProvider>
   )

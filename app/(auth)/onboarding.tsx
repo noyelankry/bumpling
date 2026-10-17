@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
-  SafeAreaView, useWindowDimensions,
+  SafeAreaView,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -12,8 +12,9 @@ import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark, FetusIllustration, MoodFace } from '../../components/illustrations'
 import { useLanguage } from '../../lib/i18n/LanguageProvider'
 import { useDirectionalIcon } from '../../lib/i18n/useDirectionalIcon'
-
-const ONBOARDING_KEY = 'bumpling_onboarding_seen'
+import { useViewportSize } from '../../components/DesktopWebFrame'
+import { ONBOARDING_KEY } from '../../lib/onboarding'
+import { supabase } from '../../lib/supabase'
 
 function getSlides(t: TFunction<'onboarding'>) {
   return [
@@ -157,7 +158,7 @@ export default function OnboardingScreen() {
   const router = useRouter()
   const { t } = useTranslation('onboarding')
   const { arrowForward } = useDirectionalIcon()
-  const { width } = useWindowDimensions()
+  const { width } = useViewportSize()
   const [step, setStep] = useState<'welcome' | 'slides'>('welcome')
   const [slideIndex, setSlideIndex] = useState(0)
   const flatListRef = useRef<FlatList>(null)
@@ -165,7 +166,8 @@ export default function OnboardingScreen() {
 
   async function finishOnboarding() {
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true')
-    router.replace('/(auth)/login')
+    const { data } = await supabase.auth.getClaims()
+    router.replace(data?.claims ? '/(tabs)' : '/(auth)/login')
   }
 
   function goNext() {
@@ -223,6 +225,7 @@ export default function OnboardingScreen() {
         pagingEnabled
         scrollEnabled={false}
         showsHorizontalScrollIndicator={false}
+        getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
         renderItem={({ item }) => {
           const Preview = item.Preview
           return (
@@ -317,7 +320,7 @@ const styles = StyleSheet.create({
   loginLinkBold:     { color: colors.primary, fontWeight: '700' },
 
   slidesContainer:   { flex: 1, backgroundColor: colors.background },
-  skipBtn:           { alignSelf: 'flex-end', paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.xs },
+  skipBtn:           { alignSelf: 'flex-end', paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.xs },
   skipText:          { fontSize: 15, color: colors.textSecondary, fontWeight: '500' },
   slide:             { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
   slideTitle:        { fontFamily: fonts.headlineBold, fontSize: 28, color: colors.textPrimary, lineHeight: 36, marginBottom: spacing.sm },

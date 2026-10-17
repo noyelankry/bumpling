@@ -132,7 +132,7 @@ export default function BrainDumpScreen() {
 
         <View style={styles.addCard}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, isRTL && styles.inputRTL]}
             value={text}
             onChangeText={setText}
             placeholder={t('placeholder')}
@@ -259,14 +259,15 @@ const styles = StyleSheet.create({
   profileBtn: { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   bellBtn:    { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
 
-  heroRow:      { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginBottom: spacing.md },
+  heroRow:      { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
   heroIconChip: { width: 52, height: 52, borderRadius: radius.lg, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
   heroTitle:    { fontFamily: fonts.headline, fontSize: 19, color: colors.textPrimary },
   heroSub:      { fontSize: 12.5, color: colors.textSecondary, marginTop: 3, lineHeight: 17 },
   menuBtn:      { width: 30, height: 30, borderRadius: radius.pill, backgroundColor: colors.neutralChip, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
 
   addCard: { backgroundColor: colors.lavender, borderRadius: radius.xl, padding: spacing.sm, marginBottom: spacing.md },
-  input:   { fontSize: 15, color: colors.textPrimary, minHeight: 44, textAlignVertical: 'top', marginBottom: spacing.sm },
+  input:   { fontSize: 15, color: colors.textPrimary, minHeight: 44, textAlignVertical: 'top', marginBottom: spacing.sm, textAlign: 'left' },
+  inputRTL: { textAlign: 'right' },
   addRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 
   typeToggle:      { flexDirection: 'row', flexWrap: 'wrap', gap: 8, flex: 1 },

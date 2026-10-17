@@ -4,5 +4,7 @@
   "save": "Save",
   "ok": "OK",
   "restartTitle": "Restart needed",
-  "restartBody": "Close and reopen Bumpling to switch to a right-to-left layout for Hebrew."
+  "restartBody": "Close and reopen Bumpling to switch to a right-to-left layout for Hebrew.",
+  "webPreview": "Web preview",
+  "webFrameFooter": "Bumpling is built for your phone — this web version is here so you can try it before launch."
 }

@@ -19,6 +19,7 @@ const STAGE_HEIGHT = 100
 const PILL_HEIGHT = 44
 const PILL_ROW_BOTTOM_PADDING = 20
 const BUBBLE = 46
+const LABEL_WIDTH = BUBBLE + 20
 // Explicit (dx, dy) offsets from the pill's top-center, rather than one
 // shared polar radius — a circular arc ties horizontal spread and vertical
 // reach to the same number, so shrinking the line length always crowded the
@@ -75,7 +76,7 @@ export default function RadialTabBar({ state, descriptors, navigation }: BottomT
           const label = options.title ?? route.name
           const focused = route.key === activeKey
           return (
-            <View key={route.key} style={{ position: 'absolute', left: cx - BUBBLE / 2, top: cy - BUBBLE / 2 }}>
+            <View key={route.key} style={{ position: 'absolute', left: cx - LABEL_WIDTH / 2, top: cy - BUBBLE / 2, width: LABEL_WIDTH, alignItems: 'center' }}>
               <TouchableOpacity
                 style={[styles.bubble, focused && { backgroundColor: icon.color, borderColor: icon.color }]}
                 activeOpacity={0.8}
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5, shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
-  bubbleLabel: { marginTop: 4, fontSize: 10, fontWeight: '600', color: colors.textPrimary, textAlign: 'center', width: BUBBLE + 20, marginLeft: -10 },
+  bubbleLabel: { marginTop: 4, fontSize: 10, fontWeight: '600', color: colors.textPrimary, textAlign: 'center' },
 
   pillRow: { alignItems: 'center' },
   pill: {

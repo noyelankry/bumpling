@@ -10,6 +10,7 @@ import { BabyMark } from '../components/illustrations'
 import { supabase } from '../lib/supabase'
 import { clearCarePlanData } from '../lib/carePlan'
 import { DEV_BYPASS_KEY } from '../lib/devBypass'
+import { ONBOARDING_KEY } from '../lib/onboarding'
 import { goBack } from '../lib/navigation'
 import { clearHealthData } from './(tabs)/health'
 import { clearBrainDumpData } from '../lib/brainDump'
@@ -102,6 +103,11 @@ export default function ProfileScreen() {
     }
   }
 
+  async function replayOnboarding() {
+    await AsyncStorage.removeItem(ONBOARDING_KEY)
+    router.push('/(auth)/onboarding')
+  }
+
   const set = (k: keyof Profile) => (v: string) => setForm(f => ({ ...f, [k]: v }))
   const setPartnerField = (k: keyof Partner) => (v: string) => setPartner(p => ({ ...p, [k]: v }))
 
@@ -151,7 +157,7 @@ export default function ProfileScreen() {
           <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>{t('fullName')}</Text>
             <TextInput
-              style={styles.fieldInput}
+              style={[styles.fieldInput, isRTL && styles.fieldInputRTL]}
               value={form.full_name}
               onChangeText={set('full_name')}
               placeholder={t('fullNamePlaceholder')}
@@ -167,7 +173,7 @@ export default function ProfileScreen() {
             <View style={styles.usernameInputRow}>
               <Text style={styles.usernamePrefix}>@</Text>
               <TextInput
-                style={[styles.fieldInput, styles.usernameInput]}
+                style={[styles.fieldInput, styles.usernameInput, isRTL && styles.fieldInputRTL]}
                 value={form.username}
                 onChangeText={v => set('username')(v.replace(/^@+/, ''))}
                 placeholder={t('usernameFieldPlaceholder')}
@@ -183,7 +189,7 @@ export default function ProfileScreen() {
           <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>{t('phone')}</Text>
             <TextInput
-              style={styles.fieldInput}
+              style={[styles.fieldInput, isRTL && styles.fieldInputRTL]}
               value={phone}
               onChangeText={setPhone}
               placeholder={t('phonePlaceholder')}
@@ -201,7 +207,7 @@ export default function ProfileScreen() {
           <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>{t('partnerName')}</Text>
             <TextInput
-              style={styles.fieldInput}
+              style={[styles.fieldInput, isRTL && styles.fieldInputRTL]}
               value={partner.name}
               onChangeText={setPartnerField('name')}
               placeholder={t('partnerNamePlaceholder')}
@@ -215,7 +221,7 @@ export default function ProfileScreen() {
           <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>{t('partnerEmail')}</Text>
             <TextInput
-              style={styles.fieldInput}
+              style={[styles.fieldInput, isRTL && styles.fieldInputRTL]}
               value={partner.email}
               onChangeText={setPartnerField('email')}
               placeholder={t('partnerEmailPlaceholder')}
@@ -254,6 +260,11 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        <TouchableOpacity style={styles.helpRow} onPress={replayOnboarding} activeOpacity={0.7}>
+          <Ionicons name="play-circle-outline" size={20} color={colors.textSecondary} />
+          <Text style={styles.helpText}>{t('viewOnboardingAgain')}</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.logoutRow} onPress={signOut} activeOpacity={0.7}>
           <Ionicons name="log-out-outline" size={20} color={colors.urgent} />
           <Text style={styles.logoutText}>{t('logOut')}</Text>
@@ -291,10 +302,11 @@ const styles = StyleSheet.create({
   fieldRow:     { paddingVertical: spacing.xs },
   fieldDivider: { height: 1, backgroundColor: colors.border },
   fieldLabel:   { fontSize: 11.5, fontWeight: '600', color: colors.textSecondary, marginBottom: 3 },
-  fieldInput:   { fontSize: 16, fontWeight: '600', color: colors.textPrimary, padding: 0 },
-  usernameInputRow: { flexDirection: 'row', alignItems: 'center' },
+  fieldInput:   { fontSize: 16, fontWeight: '600', color: colors.textPrimary, padding: 0, textAlign: 'left' },
+  fieldInputRTL: { textAlign: 'right' },
+  usernameInputRow: { flexDirection: 'row', alignItems: 'center', gap: 1 },
   usernamePrefix:   { fontSize: 16, fontWeight: '600', color: colors.textSecondary },
-  usernameInput:    { flex: 1, marginLeft: 1 },
+  usernameInput:    { flex: 1 },
 
   saveBtn:     { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 14, alignItems: 'center', marginBottom: spacing.md },
   saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
@@ -305,6 +317,8 @@ const styles = StyleSheet.create({
   langOptionText:   { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
   langOptionTextActive: { color: '#fff' },
 
+  helpRow:    { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: spacing.xs, marginTop: spacing.sm },
+  helpText:   { fontSize: 15, fontWeight: '600', color: colors.textSecondary },
   logoutRow:  { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: spacing.xs, marginTop: spacing.xs },
   logoutText: { fontSize: 15, fontWeight: '700', color: colors.urgent },
 })
