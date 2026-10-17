@@ -19,6 +19,11 @@
     "titleGreen": "all for you",
     "body": "Your plan, your health, and your profile — all in one calm, simple place."
   },
+  "slideDisclaimer": {
+    "titleBlack": "A place to stay organized,",
+    "titleGreen": "not a doctor",
+    "body": "Bumpling helps you keep track and never forget what matters — but it's not medical advice. For anything about your health or your baby's, always check with your doctor or midwife."
+  },
   "preview": {
     "needsAttention": "What needs your attention",
     "cvs": "Chorionic villus sampling",
@@ -35,7 +40,9 @@
     "fatigue": "Fatigue",
     "backache": "Backache",
     "thingsNeedAttention": "2 things need your attention",
-    "earlyAnatomyScan": "Early anatomy scan"
+    "earlyAnatomyScan": "Early anatomy scan",
+    "notADoctor": "A tool, not a doctor",
+    "alwaysAsk": "Always check anything important with your care provider."
   },
   "tagline": "We help you book the right tests on time.",
   "getStarted": "Get Started",
