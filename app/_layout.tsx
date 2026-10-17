@@ -6,7 +6,7 @@ import { useFonts as usePoppinsFonts, Poppins_600SemiBold } from '@expo-google-f
 import { useFonts as useDMSansFonts, DMSans_400Regular } from '@expo-google-fonts/dm-sans'
 import { useFonts as useNotoSansHebrewFonts, NotoSansHebrew_400Regular, NotoSansHebrew_600SemiBold, NotoSansHebrew_700Bold } from '@expo-google-fonts/noto-sans-hebrew'
 import { supabase } from '../lib/supabase'
-import { DEV_BYPASS_KEY } from '../lib/devBypass'
+import { DEV_BYPASS_KEY, allowDevBypass } from '../lib/devBypass'
 import { hasLMP, hasCompletedCatchUp, hasCompletedBooked } from '../lib/carePlan'
 import { fonts } from '../lib/theme'
 import '../lib/i18n'
@@ -53,7 +53,7 @@ export default function RootLayout() {
     let cancelled = false
     ;(async () => {
       const inAuth = segments[0] === '(auth)'
-      const devBypass = __DEV__ && (await AsyncStorage.getItem(DEV_BYPASS_KEY)) === 'true'
+      const devBypass = allowDevBypass && (await AsyncStorage.getItem(DEV_BYPASS_KEY)) === 'true'
       if (cancelled) return
 
       if (userId || devBypass) {

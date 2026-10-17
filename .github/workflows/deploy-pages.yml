@@ -1,0 +1,79 @@
+name: Deploy web preview to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # GitHub Pages serves a project site from /<repo-name>/, not the
+      # domain root, so Expo Router needs to know that prefix to generate
+      # correct asset and route URLs. Patched here (CI checkout only) rather
+      # than baked into app.json, so local dev keeps serving from root.
+      - name: Set base URL for GitHub Pages subpath
+        run: |
+          node -e "
+            const fs = require('fs');
+            const path = 'app.json';
+            const config = JSON.parse(fs.readFileSync(path, 'utf8'));
+            config.expo.experiments = { ...config.expo.experiments, baseUrl: '/${{ github.event.repository.name }}' };
+            fs.writeFileSync(path, JSON.stringify(config, null, 2));
+          "
+
+      - name: Export static web build
+        env:
+          # No live Supabase project is wired up yet (see BACKEND.md) — these
+          # are placeholders, same as the gitignored local .env. The publishable
+          # key is meant to be client-visible by design, same as it already is
+          # in any local web build.
+          EXPO_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-key
+          # Lets the "Skip sign-in" dev-bypass button show up on this public
+          # preview build specifically — see lib/devBypass.ts.
+          EXPO_PUBLIC_PREVIEW_BUILD: "true"
+        run: npx expo export -p web
+
+      # Client-side routing can't be resolved by GitHub Pages' static file
+      # server on a deep link or refresh (e.g. /bumpling/profile) — serving
+      # the same app shell as the 404 page lets expo-router take over and
+      # render the right screen from the URL once it loads.
+      - name: Add SPA fallback and disable Jekyll processing
+        run: |
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

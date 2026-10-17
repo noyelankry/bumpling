@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../lib/supabase'
 import { colors, spacing, radius, fonts } from '../lib/theme'
-import { DEV_BYPASS_KEY } from '../lib/devBypass'
+import { DEV_BYPASS_KEY, allowDevBypass } from '../lib/devBypass'
 import { useLanguage } from '../lib/i18n/LanguageProvider'
 import { TERMS_VERSION, PRIVACY_VERSION, HEALTH_CONSENT_VERSION } from '../lib/legal'
 import { BabyMark } from './illustrations'
@@ -170,7 +170,7 @@ export default function Auth() {
             </TouchableOpacity>
           </View>
 
-          {__DEV__ && (
+          {allowDevBypass && (
             <TouchableOpacity style={styles.devSkip} onPress={devSkip}>
               <Text style={styles.devSkipText}>{t('devSkip')}</Text>
             </TouchableOpacity>
