@@ -25,5 +25,9 @@
   "language": "Language",
   "languageEnglish": "English",
   "languageHebrew": "עברית",
-  "viewOnboardingAgain": "View onboarding again"
+  "viewOnboardingAgain": "View onboarding again",
+  "unsavedChangesTitle": "Unsaved changes",
+  "unsavedChangesBody": "You have changes that haven't been saved yet.",
+  "unsavedChangesConfirmWeb": "You have unsaved changes. Leave without saving?",
+  "discard": "Leave without saving"
 }

@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useRouter } from 'expo-router'
+import { useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTranslation } from 'react-i18next'
@@ -25,6 +26,7 @@ type Profile = { full_name: string; username: string }
 
 export default function ProfileScreen() {
   const router = useRouter()
+  const navigation = useNavigation()
   const { t } = useTranslation('profile')
   const { language, isRTL, setLanguage } = useLanguage()
   const { back: backIcon, forward } = useDirectionalIcon()
@@ -40,6 +42,40 @@ export default function ProfileScreen() {
     saved.form.full_name !== form.full_name || saved.form.username !== form.username ||
     saved.phone !== phone || saved.partner.name !== partner.name || saved.partner.email !== partner.email
   )
+
+  // Catches every way this screen can be left with unsaved changes — the
+  // header back button, the iOS swipe-back gesture, Android's hardware back —
+  // since all of them remove this screen via the same navigator action that
+  // `beforeRemove` observes, not just the one button we render ourselves.
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
+      if (!isDirty) return
+      e.preventDefault()
+      const leave = () => navigation.dispatch(e.data.action)
+      if (Platform.OS === 'web') {
+        if (window.confirm(t('unsavedChangesConfirmWeb'))) leave()
+      } else {
+        Alert.alert(t('unsavedChangesTitle'), t('unsavedChangesBody'), [
+          { text: t('cancel'), style: 'cancel' },
+          { text: t('discard'), style: 'destructive', onPress: leave },
+        ])
+      }
+    })
+    return unsubscribe
+  }, [navigation, isDirty, t])
+
+  // Browser tab close / refresh / outside-app navigation isn't a React
+  // Navigation event at all — only the browser's own beforeunload covers it.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!isDirty) return
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isDirty])
 
   useFocusEffect(useCallback(() => {
     let cancelled = false

@@ -25,5 +25,9 @@
   "language": "שפה",
   "languageEnglish": "English",
   "languageHebrew": "עברית",
-  "viewOnboardingAgain": "צפי שוב בסיור ההיכרות"
+  "viewOnboardingAgain": "צפי שוב בסיור ההיכרות",
+  "unsavedChangesTitle": "שינויים שלא נשמרו",
+  "unsavedChangesBody": "יש לך שינויים שעדיין לא נשמרו.",
+  "unsavedChangesConfirmWeb": "יש לך שינויים שלא נשמרו. לצאת בלי לשמור?",
+  "discard": "לצאת בלי לשמור"
 }
