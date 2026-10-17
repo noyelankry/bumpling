@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
   bellBtn:    { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
 
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
-  title:    { fontFamily: fonts.headline, fontSize: 28, color: colors.textPrimary },
+  title:    { fontFamily: fonts.headlineBold, fontSize: 28, color: colors.textPrimary },
   subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 4, marginBottom: spacing.md },
   addBtn:   { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
 
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
 
   journeyCard: { backgroundColor: colors.card, borderRadius: radius.xl, padding: spacing.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
   journeyHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
-  journeyTitle: { fontFamily: fonts.headline, fontSize: 24, color: colors.textPrimary },
+  journeyTitle: { fontFamily: fonts.headlineBold, fontSize: 24, color: colors.textPrimary },
   weekChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.peach, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.pill },
   weekChipText: { fontSize: 13, fontWeight: '700', color: colors.primaryDark },
 

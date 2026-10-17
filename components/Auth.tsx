@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   mascotWrap:  { width: 130, height: 130, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
   heartAccent: { position: 'absolute', top: 4, right: -6 },
   heartAccentRTL: { right: undefined, left: -6 },
-  logoText:    { fontFamily: fonts.headline, fontSize: 38, color: colors.primary, letterSpacing: 1 },
+  logoText:    { fontFamily: fonts.headlineBold, fontSize: 38, color: colors.primary, letterSpacing: 1 },
   logoSub:     { fontFamily: fonts.headline, fontSize: 18, color: colors.textSecondary, marginTop: 4 },
 
   form:       { gap: spacing.md },

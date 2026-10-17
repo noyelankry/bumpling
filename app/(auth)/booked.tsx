@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   bellDot:      { position: 'absolute', top: 4, right: 4, width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.background },
   bellDotRTL:   { right: undefined, left: 4 },
 
-  title:    { fontFamily: fonts.headline, fontSize: 28, color: colors.textPrimary, lineHeight: 34 },
+  title:    { fontFamily: fonts.headlineBold, fontSize: 28, color: colors.textPrimary, lineHeight: 34 },
   subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.md, lineHeight: 20 },
 
   heroCard:      { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.sage, borderRadius: radius.xl, padding: spacing.sm, marginBottom: spacing.md, overflow: 'hidden' },

@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
 
   scroll: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, paddingBottom: 56 },
 
-  title:    { fontFamily: fonts.headline, fontSize: 26, color: colors.textPrimary },
+  title:    { fontFamily: fonts.headlineBold, fontSize: 26, color: colors.textPrimary },
   subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 4, marginBottom: spacing.sm },
 
   progressRow:  { marginBottom: 6 },

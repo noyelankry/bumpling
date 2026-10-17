@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
   weekRow:       { flexDirection: 'row', alignItems: 'center', gap: 2, marginBottom: spacing.md },
   weekTextCol:   { flex: 1 },
 
-  heroNumber:     { fontFamily: fonts.headline, fontSize: 96, color: colors.textPrimary, lineHeight: 92, marginTop: 4 },
+  heroNumber:     { fontFamily: fonts.headlineBold, fontSize: 96, color: colors.textPrimary, lineHeight: 92, marginTop: 4 },
   heroWeeksLabel: { fontFamily: fonts.headline, fontSize: 20, color: colors.textPrimary, marginTop: -10 },
   heroDaysLine:   { marginTop: 4, alignSelf: 'flex-start', marginLeft: 30 },
   heroDaysLineRTL: { marginLeft: 0, marginRight: 30 },

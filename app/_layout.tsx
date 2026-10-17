@@ -3,7 +3,8 @@ import { View } from 'react-native'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useFonts as usePoppinsFonts, Poppins_600SemiBold } from '@expo-google-fonts/poppins'
-import { useFonts as useDMSansFonts, DM_Sans_400Regular } from '@expo-google-fonts/dm-sans'
+import { useFonts as useDMSansFonts, DMSans_400Regular } from '@expo-google-fonts/dm-sans'
+import { useFonts as useNotoSansHebrewFonts, NotoSansHebrew_400Regular, NotoSansHebrew_600SemiBold, NotoSansHebrew_700Bold } from '@expo-google-fonts/noto-sans-hebrew'
 import { supabase } from '../lib/supabase'
 import { DEV_BYPASS_KEY } from '../lib/devBypass'
 import { hasLMP, hasCompletedCatchUp, hasCompletedBooked } from '../lib/carePlan'
@@ -27,7 +28,8 @@ export default function RootLayout() {
   // once ready — standard web font-loading behavior, and it means a font
   // issue can never present as a fully blank app.
   usePoppinsFonts({ Poppins_600SemiBold })
-  useDMSansFonts({ DM_Sans_400Regular })
+  useDMSansFonts({ DMSans_400Regular })
+  useNotoSansHebrewFonts({ NotoSansHebrew_400Regular, NotoSansHebrew_600SemiBold, NotoSansHebrew_700Bold })
   const [userId, setUserId] = useState<string | null | undefined>(undefined)
   const router = useRouter()
   const segments = useSegments()

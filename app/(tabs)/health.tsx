@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
   bellDotRTL: { right: undefined, left: 6 },
 
   heroRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs },
-  title: { fontFamily: fonts.headline, fontSize: 34, color: colors.textPrimary },
+  title: { fontFamily: fonts.headlineBold, fontSize: 34, color: colors.textPrimary },
   heroSubtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 4 },
 
   card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginTop: -28, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },

@@ -44,7 +44,22 @@ export const spacing = { xs: 8, sm: 12, md: 28, lg: 36 }
 // Body: DM Sans. Headline (week/day hero numbers, appointment titles): Poppins
 // SemiBold. Both bundled via @expo-google-fonts so they render identically on
 // every device rather than depending on the OS/browser having a match.
+//
+// Neither has Hebrew glyphs, so Hebrew text always falls through to a
+// fallback font. On web that fallback can be pinned to Noto Sans Hebrew (at
+// the right weight per tier) via a comma-separated CSS font stack — the
+// browser uses Poppins/DM Sans for every Latin glyph and only drops to Noto
+// Sans Hebrew for the Hebrew ones. Native RN doesn't support stacked
+// fontFamily strings (it looks for one exact font name), so native keeps the
+// single English font and leaves Hebrew to whatever the OS substitutes —
+// true native enforcement would need real per-language font switching, not
+// just a stack.
+import { Platform } from 'react-native'
+
+const stack = (base: string, hebrew: string) => (Platform.OS === 'web' ? `${base}, ${hebrew}` : base)
+
 export const fonts = {
-  sans:     'DM_Sans_400Regular',
-  headline: 'Poppins_600SemiBold',
+  sans:         stack('DMSans_400Regular', 'NotoSansHebrew_400Regular'),
+  headline:     stack('Poppins_600SemiBold', 'NotoSansHebrew_600SemiBold'),
+  headlineBold: stack('Poppins_600SemiBold', 'NotoSansHebrew_700Bold'),
 }

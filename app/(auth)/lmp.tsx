@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   heartAccent: { position: 'absolute', top: 2, right: -4 },
   heartAccentRTL: { right: undefined, left: -4 },
 
-  title:    { fontFamily: fonts.headline, fontSize: 26, color: colors.textPrimary, textAlign: 'center', lineHeight: 32 },
+  title:    { fontFamily: fonts.headlineBold, fontSize: 26, color: colors.textPrimary, textAlign: 'center', lineHeight: 32 },
   subtitle: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs, marginBottom: spacing.lg, lineHeight: 20 },
 
   errorText: { fontSize: 12.5, color: colors.urgent, marginTop: 6, textAlign: 'center' },
