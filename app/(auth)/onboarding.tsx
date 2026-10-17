@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList,
+  View, Text, StyleSheet, TouchableOpacity, Animated,
   SafeAreaView,
 } from 'react-native'
 import { useRouter } from 'expo-router'
@@ -161,7 +161,13 @@ export default function OnboardingScreen() {
   const { width } = useViewportSize()
   const [step, setStep] = useState<'welcome' | 'slides'>('welcome')
   const [slideIndex, setSlideIndex] = useState(0)
-  const flatListRef = useRef<FlatList>(null)
+  // A manually-animated track instead of FlatList.scrollToIndex: react-native-web's
+  // RTL scroll handling doesn't reliably move the underlying scroll position when
+  // the document direction is rtl (scrollToIndex becomes a silent no-op). Each
+  // slide is positioned with a literal `left` offset — never auto-mirrored — and
+  // the whole track slides via `transform`, which RN also never flips for RTL, so
+  // the same math works unchanged in both reading directions.
+  const translateX = useRef(new Animated.Value(0)).current
   const SLIDES = getSlides(t)
 
   async function finishOnboarding() {
@@ -173,8 +179,8 @@ export default function OnboardingScreen() {
   function goNext() {
     if (slideIndex < SLIDES.length - 1) {
       const next = slideIndex + 1
-      flatListRef.current?.scrollToIndex({ index: next, animated: true })
       setSlideIndex(next)
+      Animated.timing(translateX, { toValue: -next * width, duration: 300, useNativeDriver: true }).start()
     } else {
       finishOnboarding()
     }
@@ -217,31 +223,25 @@ export default function OnboardingScreen() {
         <Text style={styles.skipText}>{t('skip')}</Text>
       </TouchableOpacity>
 
-      <FlatList
-        ref={flatListRef}
-        data={SLIDES}
-        keyExtractor={item => item.key}
-        horizontal
-        pagingEnabled
-        scrollEnabled={false}
-        showsHorizontalScrollIndicator={false}
-        getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
-        renderItem={({ item }) => {
-          const Preview = item.Preview
-          return (
-            <View style={[styles.slide, { width }]}>
-              <Text style={styles.slideTitle}>
-                {item.titleBlack}{'\n'}
-                <Text style={styles.slideTitleGreen}>{item.titleGreen}</Text>
-              </Text>
-              <Text style={styles.slideBody}>{item.body}</Text>
-              <View style={styles.previewContainer}>
-                <Preview />
+      <View style={styles.track}>
+        <Animated.View style={[styles.trackInner, { transform: [{ translateX }] }]}>
+          {SLIDES.map((item, i) => {
+            const Preview = item.Preview
+            return (
+              <View key={item.key} style={[styles.slide, { width, left: i * width }]}>
+                <Text style={styles.slideTitle}>
+                  {item.titleBlack}{'\n'}
+                  <Text style={styles.slideTitleGreen}>{item.titleGreen}</Text>
+                </Text>
+                <Text style={styles.slideBody}>{item.body}</Text>
+                <View style={styles.previewContainer}>
+                  <Preview />
+                </View>
               </View>
-            </View>
-          )
-        }}
-      />
+            )
+          })}
+        </Animated.View>
+      </View>
 
       <View style={styles.footer}>
         <View style={styles.dots}>
@@ -322,7 +322,9 @@ const styles = StyleSheet.create({
   slidesContainer:   { flex: 1, backgroundColor: colors.background },
   skipBtn:           { alignSelf: 'flex-end', paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.xs },
   skipText:          { fontSize: 15, color: colors.textSecondary, fontWeight: '500' },
-  slide:             { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
+  track:             { flex: 1, overflow: 'hidden' },
+  trackInner:        { flex: 1 },
+  slide:             { position: 'absolute', top: 0, bottom: 0, paddingHorizontal: spacing.md, paddingTop: spacing.sm },
   slideTitle:        { fontFamily: fonts.headlineBold, fontSize: 28, color: colors.textPrimary, lineHeight: 36, marginBottom: spacing.sm },
   slideTitleGreen:   { color: colors.primary },
   slideBody:         { fontSize: 15, color: colors.textSecondary, lineHeight: 22, marginBottom: spacing.md },
