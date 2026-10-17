@@ -21,6 +21,9 @@ import { loadMomPhone, saveMomPhone, clearMomContactData } from '../lib/momConta
 import { useLanguage } from '../lib/i18n/LanguageProvider'
 import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 import type { Language } from '../lib/i18n/languageStorage'
+import { isValidEmail, isValidPhoneNumber } from '../lib/validation'
+import { splitPhone, joinPhone, DEFAULT_PHONE_COUNTRY, type PhoneCountry } from '../lib/phoneCountries'
+import PhoneCountryPicker from '../components/PhoneCountryPicker'
 
 type Profile = { full_name: string; username: string }
 
@@ -32,16 +35,22 @@ export default function ProfileScreen() {
   const { back: backIcon, forward } = useDirectionalIcon()
   const back = () => goBack(router, '/(tabs)')
   const [form, setForm] = useState<Profile>({ full_name: '', username: '' })
-  const [phone, setPhone] = useState('')
+  const [phoneCountry, setPhoneCountry] = useState<PhoneCountry>(DEFAULT_PHONE_COUNTRY)
+  const [phoneNumber, setPhoneNumber] = useState('')
   const [partner, setPartner] = useState<Partner>({ name: '', email: '' })
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   // The last-saved values, so fields can just always be editable — no edit-mode
   // toggle — while still only showing "Save changes" once something actually differs.
-  const [saved, setSaved] = useState<{ form: Profile; phone: string; partner: Partner } | null>(null)
+  const [saved, setSaved] = useState<{ form: Profile; phoneCountry: PhoneCountry; phoneNumber: string; partner: Partner } | null>(null)
+  const phoneError = phoneNumber.trim() !== '' && !isValidPhoneNumber(phoneNumber)
+  const partnerEmailError = partner.email.trim() !== '' && !isValidEmail(partner.email)
   const isDirty = !!saved && (
     saved.form.full_name !== form.full_name || saved.form.username !== form.username ||
-    saved.phone !== phone || saved.partner.name !== partner.name || saved.partner.email !== partner.email
+    saved.phoneCountry.iso !== phoneCountry.iso || saved.phoneNumber !== phoneNumber ||
+    saved.partner.name !== partner.name || saved.partner.email !== partner.email
   )
+  const canSave = isDirty && !phoneError && !partnerEmailError
 
   // Catches every way this screen can be left with unsaved changes — the
   // header back button, the iOS swipe-back gesture, Android's hardware back —
@@ -88,10 +97,12 @@ export default function ProfileScreen() {
         if (row) f = { full_name: row.full_name ?? '', username: row.username ?? '' }
       }
       if (cancelled) return
+      const { country, number } = splitPhone(ph)
       setPartner(p)
-      setPhone(ph)
+      setPhoneCountry(country)
+      setPhoneNumber(number)
       setForm(f)
-      setSaved({ form: f, phone: ph, partner: p })
+      setSaved({ form: f, phoneCountry: country, phoneNumber: number, partner: p })
     })()
     return () => { cancelled = true }
   }, []))
@@ -103,7 +114,7 @@ export default function ProfileScreen() {
     // session state, unlike the profile fields below which need a signed-in
     // user to write to.
     await savePartner(partner)
-    await saveMomPhone(phone.trim())
+    await saveMomPhone(joinPhone(phoneCountry, phoneNumber))
     const { data } = await supabase.auth.getClaims()
     if (data?.claims) {
       const { error } = await supabase.from('profiles').update({
@@ -114,7 +125,39 @@ export default function ProfileScreen() {
       if (error) { setSaving(false); Alert.alert(t('error'), error.message); return }
     }
     setSaving(false)
-    setSaved({ form, phone, partner })
+    setSaved({ form, phoneCountry, phoneNumber, partner })
+  }
+
+  async function deleteAccount() {
+    setDeleting(true)
+    const { error } = await supabase.rpc('delete_my_account')
+    if (error) {
+      setDeleting(false)
+      Alert.alert(t('error'), error.message)
+      return
+    }
+    await supabase.auth.signOut()
+    await Promise.all([
+      clearCarePlanData(),
+      clearHealthData(),
+      clearBrainDumpData(),
+      clearPartnerData(),
+      clearBirthPrefsData(),
+      clearMomContactData(),
+      AsyncStorage.removeItem(DEV_BYPASS_KEY),
+    ])
+    router.replace('/(auth)/login')
+  }
+
+  function confirmDeleteAccount() {
+    if (Platform.OS === 'web') {
+      if (window.confirm(t('deleteAccountConfirmWeb'))) deleteAccount()
+    } else {
+      Alert.alert(t('deleteAccountTitle'), t('deleteAccountConfirm'), [
+        { text: t('cancel'), style: 'cancel' },
+        { text: t('deleteAccountTitle'), style: 'destructive', onPress: deleteAccount },
+      ])
+    }
   }
 
   function signOut() {
@@ -151,32 +194,28 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <View style={styles.blobBottomLeft} pointerEvents="none" />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
-          <TouchableOpacity onPress={back} hitSlop={8}>
-            <Ionicons name={backIcon} size={26} color={colors.textPrimary} />
+          <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8}>
+            <Ionicons name={backIcon} size={22} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('title')}</Text>
-          <View style={{ width: 26 }} />
         </View>
 
-        <View style={styles.heroCard}>
-          <View style={styles.avatarWrap}>
-            <View style={styles.avatar}>
-              <BabyMark size={52} />
-            </View>
+        <View style={styles.heroWrap}>
+          <View style={styles.avatar}>
+            <BabyMark size={60} />
             <TouchableOpacity style={[styles.cameraBtn, isRTL && styles.cameraBtnRTL]} activeOpacity={0.8}>
               <Ionicons name="camera-outline" size={14} color={colors.textPrimary} />
             </TouchableOpacity>
           </View>
-          <Text style={styles.profileName}>{form.full_name || t('addYourName')}</Text>
+          <Text style={styles.pageTitle} numberOfLines={1}>{form.full_name || t('addYourName')}</Text>
           <Text style={styles.profileUsername}>{form.username ? `@${form.username}` : t('usernamePlaceholder')}</Text>
         </View>
 
         <Text style={styles.sectionLabel}>{t('basicInfo')}</Text>
-
-        <View style={styles.fieldsCard}>
+        <View style={styles.list}>
           <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>{t('fullName')}</Text>
             <TextInput
@@ -187,8 +226,6 @@ export default function ProfileScreen() {
               placeholderTextColor={colors.textSecondary}
             />
           </View>
-
-          <View style={styles.fieldDivider} />
 
           <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>{t('username')}</Text>
@@ -205,25 +242,27 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          <View style={styles.fieldDivider} />
-
           <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>{t('phone')}</Text>
-            <TextInput
-              style={[styles.fieldInput, isRTL && styles.fieldInputRTL]}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder={t('phonePlaceholder')}
-              placeholderTextColor={colors.textSecondary}
-              keyboardType="phone-pad"
-            />
+            <View style={styles.phoneRow}>
+              <PhoneCountryPicker value={phoneCountry} onChange={setPhoneCountry} label={t('phoneCountryLabel')} />
+              <TextInput
+                style={[styles.fieldInput, styles.phoneInput, isRTL && styles.fieldInputRTL]}
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                placeholder={t('phonePlaceholder')}
+                placeholderTextColor={colors.textSecondary}
+                keyboardType="phone-pad"
+              />
+            </View>
+            {phoneError && <Text style={styles.fieldError}>{t('phoneInvalid')}</Text>}
           </View>
         </View>
 
         <Text style={styles.sectionLabel}>{t('partner')}</Text>
         <Text style={styles.sectionHint}>{t('partnerHint')}</Text>
 
-        <View style={styles.fieldsCard}>
+        <View style={styles.list}>
           <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>{t('partnerName')}</Text>
             <TextInput
@@ -234,8 +273,6 @@ export default function ProfileScreen() {
               placeholderTextColor={colors.textSecondary}
             />
           </View>
-
-          <View style={styles.fieldDivider} />
 
           <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>{t('partnerEmail')}</Text>
@@ -248,11 +285,12 @@ export default function ProfileScreen() {
               autoCapitalize="none"
               keyboardType="email-address"
             />
+            {partnerEmailError && <Text style={styles.fieldError}>{t('emailInvalid')}</Text>}
           </View>
         </View>
 
         {isDirty && (
-          <TouchableOpacity style={styles.saveBtn} onPress={save} disabled={saving}>
+          <TouchableOpacity style={[styles.saveBtn, !canSave && styles.saveBtnDisabled]} onPress={save} disabled={saving || !canSave}>
             {saving
               ? <ActivityIndicator color="#fff" />
               : <Text style={styles.saveBtnText}>{t('saveChanges')}</Text>
@@ -276,22 +314,33 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        <View style={styles.actionsCard}>
-          <TouchableOpacity style={styles.actionRow} onPress={replayOnboarding} activeOpacity={0.7}>
-            <View style={[styles.actionIconChip, { backgroundColor: colors.lavender }]}>
-              <Ionicons name="play-outline" size={17} color={colors.lavenderDeep} />
-            </View>
-            <Text style={styles.actionText}>{t('viewOnboardingAgain')}</Text>
-            <Ionicons name={forward} size={17} color={colors.textSecondary} />
+        <View style={styles.list}>
+          <TouchableOpacity style={styles.subRow} onPress={replayOnboarding} activeOpacity={0.6}>
+            <Text style={styles.subRowTitle}>{t('viewOnboardingAgain')}</Text>
+            <Ionicons name={forward} size={16} color={colors.textSecondary} />
           </TouchableOpacity>
 
-          <View style={styles.fieldDivider} />
+          <TouchableOpacity style={styles.subRow} onPress={() => router.push('/change-password')} activeOpacity={0.6}>
+            <Text style={styles.subRowTitle}>{t('changePassword')}</Text>
+            <Ionicons name={forward} size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionRow} onPress={signOut} activeOpacity={0.7}>
-            <View style={[styles.actionIconChip, { backgroundColor: colors.urgentBg }]}>
-              <Ionicons name="log-out-outline" size={17} color={colors.urgent} />
-            </View>
-            <Text style={[styles.actionText, styles.actionTextUrgent]}>{t('logOut')}</Text>
+          <TouchableOpacity style={styles.subRow} onPress={() => router.push('/legal')} activeOpacity={0.6}>
+            <Text style={styles.subRowTitle}>{t('aboutAndLegal')}</Text>
+            <Ionicons name={forward} size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.subRow} onPress={signOut} activeOpacity={0.6}>
+            <Text style={[styles.subRowTitle, styles.urgentText]}>{t('logOut')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.list}>
+          <TouchableOpacity style={styles.subRow} onPress={confirmDeleteAccount} activeOpacity={0.6} disabled={deleting}>
+            {deleting
+              ? <ActivityIndicator color={colors.urgent} size="small" />
+              : <Text style={[styles.subRowTitle, styles.urgentText]}>{t('deleteAccount')}</Text>
+            }
           </TouchableOpacity>
         </View>
 
@@ -301,45 +350,54 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, paddingBottom: 24 },
+  safe:   { flex: 1, backgroundColor: colors.background, position: 'relative', overflow: 'hidden' },
 
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.sm, marginBottom: spacing.xs },
-  headerTitle: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary },
+  // Same corner-wash as Brain Dump — top-right only, for the same reason:
+  // a bottom one would sit behind the floating tab bar's own shapes.
+  // Inset from the bottom (positive, not negative) rather than hanging off
+  // the edge — that's what caused the Brain Dump glitch: a shape clipped
+  // right at the boundary next to the floating tab bar's own curves reads
+  // as a rendering bug. Kept fully inside the container and only clipped
+  // on the left, it's a clean half-circle with no boundary interaction.
+  blobBottomLeft: { position: 'absolute', bottom: 50, left: -160, width: 300, height: 300, borderRadius: 150, backgroundColor: colors.lavender, opacity: 0.3 },
+  scroll: { paddingHorizontal: spacing.md, paddingBottom: 56 },
 
-  heroCard:    { alignItems: 'center', backgroundColor: colors.peach, borderRadius: radius.xl, paddingVertical: spacing.lg, paddingHorizontal: spacing.md, marginBottom: spacing.md },
-  avatarWrap:  { marginBottom: spacing.sm },
-  avatar:      { width: 88, height: 88, borderRadius: 44, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
+  header:  { flexDirection: 'row', alignItems: 'center', marginHorizontal: -spacing.xs, paddingTop: spacing.xs },
+  backBtn: { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+
+  heroWrap:    { alignItems: 'center', marginTop: spacing.md, marginBottom: spacing.lg },
+  avatar:      { width: 92, height: 92, borderRadius: 46, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
   cameraBtn:   { position: 'absolute', bottom: -2, right: -2, width: 30, height: 30, borderRadius: 15, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
   cameraBtnRTL: { right: undefined, left: -2 },
-  profileName: { fontFamily: fonts.headline, fontSize: 20, color: colors.textPrimary },
-  profileUsername: { fontSize: 13, color: colors.textPrimary, opacity: 0.6, marginTop: 3 },
+  pageTitle:   { fontFamily: fonts.headlineBold, fontSize: 22, color: colors.textPrimary, textAlign: 'center' },
+  profileUsername: { fontSize: 13.5, color: colors.textSecondary, marginTop: 3, textAlign: 'center' },
 
-  sectionLabel:    { fontSize: 12, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: spacing.xs, marginTop: spacing.xs },
-  sectionHint:     { fontSize: 12, color: colors.textSecondary, marginTop: -4, marginBottom: spacing.xs, lineHeight: 16 },
+  sectionLabel: { fontSize: 11.5, fontWeight: '600', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginTop: spacing.lg, marginBottom: 4 },
+  sectionHint:  { fontSize: 12.5, color: colors.textSecondary, lineHeight: 17, marginBottom: 4 },
 
-  fieldsCard:   { backgroundColor: colors.card, borderRadius: radius.lg, paddingHorizontal: spacing.sm, marginBottom: spacing.md, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
-  fieldRow:     { paddingVertical: spacing.sm },
-  fieldDivider: { height: 1, backgroundColor: colors.border },
+  list:         { borderTopWidth: 1, borderTopColor: colors.border },
+  fieldRow:     { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
   fieldLabel:   { fontSize: 11.5, fontWeight: '600', color: colors.textSecondary, marginBottom: 3 },
-  fieldInput:   { fontSize: 16, fontWeight: '600', color: colors.textPrimary, padding: 0, textAlign: 'left' },
+  fieldInput:   { fontSize: 16, color: colors.textPrimary, padding: 0, textAlign: 'left' },
   fieldInputRTL: { textAlign: 'right' },
   usernameInputRow: { flexDirection: 'row', alignItems: 'center', gap: 1 },
-  usernamePrefix:   { fontSize: 16, fontWeight: '600', color: colors.textSecondary },
+  usernamePrefix:   { fontSize: 16, color: colors.textSecondary },
   usernameInput:    { flex: 1 },
+  phoneRow:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  phoneInput:  { flex: 1 },
+  fieldError:  { fontSize: 12, color: colors.urgent, marginTop: 4 },
 
-  saveBtn:     { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 14, alignItems: 'center', marginBottom: spacing.md },
+  saveBtn:     { backgroundColor: colors.textPrimary, borderRadius: radius.pill, paddingVertical: 14, alignItems: 'center', marginTop: spacing.md },
+  saveBtnDisabled: { opacity: 0.5 },
   saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 
-  languageRow: { flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.md },
-  langOption:  { flex: 1, paddingVertical: 12, borderRadius: radius.md, alignItems: 'center', backgroundColor: colors.neutralChip },
-  langOptionActive: { backgroundColor: colors.primary },
-  langOptionText:   { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
-  langOptionTextActive: { color: '#fff' },
+  languageRow: { flexDirection: 'row', gap: spacing.lg, paddingVertical: 4 },
+  langOption:  { paddingVertical: 8 },
+  langOptionActive: {},
+  langOptionText:   { fontSize: 14.5, fontWeight: '600', color: colors.textSecondary },
+  langOptionTextActive: { color: colors.textPrimary, fontWeight: '700' },
 
-  actionsCard: { backgroundColor: colors.card, borderRadius: radius.lg, paddingHorizontal: spacing.sm, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
-  actionRow:      { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs },
-  actionIconChip: { width: 36, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  actionText:        { flex: 1, fontSize: 14.5, fontWeight: '600', color: colors.textPrimary },
-  actionTextUrgent:  { color: colors.urgent },
+  subRow:      { paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  subRowTitle: { fontSize: 15, color: colors.textPrimary },
+  urgentText:  { color: colors.urgent },
 })

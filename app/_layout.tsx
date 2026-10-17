@@ -93,6 +93,11 @@ export default function RootLayout() {
       const onboardingSeen = (await AsyncStorage.getItem(ONBOARDING_KEY)) === 'true'
       if (cancelled) return
 
+      // Reachable without an account — e.g. tapped from the signup consent
+      // checkboxes — so they can't bounce the visitor back to onboarding/login.
+      const path = (segments as string[]).join('/')
+      if (path === 'privacy-policy' || path === 'terms-of-service') return
+
       if (!onboardingSeen && segments[0] !== '(auth)') {
         router.replace('/(auth)/onboarding')
         return
