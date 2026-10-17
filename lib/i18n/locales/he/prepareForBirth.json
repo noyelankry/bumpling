@@ -1,0 +1,12 @@
+{
+  "title": "התכוננות ללידה",
+  "subtitle": "גלי את ההעדפות שלך בקצב שלך.",
+  "topicsExplored": "{{done}} מתוך {{total}} נושאים נסקרו",
+  "introTitle": "העדפות לידה",
+  "introSub": "מדריך גמיש שעוזר לך לחשוב על מה שחשוב לך.",
+  "done": "הושלם",
+  "notStarted": "טרם התחיל",
+  "viewSummary": "צפייה בסיכום",
+  "continueWith": "המשך · {{topic}}",
+  "continue": "המשך"
+}

@@ -4,7 +4,9 @@
 import { Platform } from 'react-native'
 import * as Print from 'expo-print'
 import * as Sharing from 'expo-sharing'
-import { TOPICS, optionFor, relationshipOption, type BirthPrefsData } from './birthPrefs'
+import i18n from './i18n'
+import { getDateLocale } from './i18n/dateLocale'
+import { optionFor, relationshipOption, type BirthPrefsData, type Topic, type TopicOption } from './birthPrefs'
 
 export type BirthPlanDetails = {
   momName: string
@@ -15,31 +17,34 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
 }
 
-export function buildBirthPlanHtml(data: BirthPrefsData, details: BirthPlanDetails): string {
-  const preparedOn = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-  const momName = escapeHtml(details.momName.trim() || 'Mom')
+export function buildBirthPlanHtml(data: BirthPrefsData, details: BirthPlanDetails, topics: Topic[], relationshipOptions: TopicOption[]): string {
+  const t = i18n.getFixedT(null, 'birthPlanDocument')
+  const preparedOn = new Date().toLocaleDateString(getDateLocale(), { month: 'long', day: 'numeric', year: 'numeric' })
+  const momName = escapeHtml(details.momName.trim() || t('defaultMomName'))
   const momPhone = escapeHtml(details.momPhone.trim())
 
   const contactRows = data.supportContacts.map(c => `
     <tr>
-      <td class="name">${escapeHtml(c.name || 'Unnamed')}</td>
-      <td>${escapeHtml(relationshipOption(c.relationship)?.label ?? c.relationship)}</td>
+      <td class="name">${escapeHtml(c.name || t('unnamed'))}</td>
+      <td>${escapeHtml(relationshipOption(relationshipOptions, c.relationship)?.label ?? c.relationship)}</td>
       <td>${escapeHtml(c.phone || '—')}</td>
     </tr>`).join('')
 
-  const topicSections = TOPICS.filter(t => t.kind !== 'contacts').map(topic => {
+  const topicSections = topics.filter(topic => topic.kind !== 'contacts').map(topic => {
     const option = optionFor(topic, data.answers[topic.id])
     return `
     <div class="topic">
       <div class="topic-label">${escapeHtml(topic.navLabel)}</div>
       <div class="topic-question">${escapeHtml(topic.question)}</div>
-      <div class="topic-answer ${option ? '' : 'unset'}">${escapeHtml(option ? option.label : 'Not set yet')}</div>
+      <div class="topic-answer ${option ? '' : 'unset'}">${escapeHtml(option ? option.label : t('notSetYet'))}</div>
     </div>`
   }).join('')
 
+  const dir = i18n.language === 'he' ? 'rtl' : 'ltr'
+
   return `
 <!doctype html>
-<html>
+<html dir="${dir}">
 <head>
 <meta charset="utf-8" />
 <style>
@@ -57,7 +62,7 @@ export function buildBirthPlanHtml(data: BirthPrefsData, details: BirthPlanDetai
   .contact-card .value { font-size: 15px; font-weight: 700; margin-top: 2px; }
 
   table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-  th { text-align: left; font-size: 11px; color: #8C8078; text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 10px; border-bottom: 1px solid #EFE4D8; }
+  th { text-align: start; font-size: 11px; color: #8C8078; text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 10px; border-bottom: 1px solid #EFE4D8; }
   td { font-size: 14px; padding: 10px; border-bottom: 1px solid #F3EAD8; }
   td.name { font-weight: 700; }
   .empty { font-size: 13px; color: #8C8078; font-style: italic; }
@@ -74,30 +79,30 @@ export function buildBirthPlanHtml(data: BirthPrefsData, details: BirthPlanDetai
 <body>
   <div class="header">
     <div>
-      <h1>Birth Plan — ${momName}</h1>
-      <div class="date">Prepared with Bumpling on ${preparedOn}</div>
+      <h1>${t('headerTitle', { name: momName })}</h1>
+      <div class="date">${escapeHtml(t('preparedOn', { date: preparedOn }))}</div>
     </div>
-    <div class="badge">For my care team</div>
+    <div class="badge">${escapeHtml(t('forCareTeam'))}</div>
   </div>
 
-  <div class="section-title">Mom's contact</div>
+  <div class="section-title">${escapeHtml(t('momsContact'))}</div>
   <div class="contact-card">
-    <div class="label">Name</div>
+    <div class="label">${escapeHtml(t('name'))}</div>
     <div class="value">${momName}</div>
-    ${momPhone ? `<div class="label" style="margin-top:8px">Phone</div><div class="value">${momPhone}</div>` : ''}
+    ${momPhone ? `<div class="label" style="margin-top:8px">${escapeHtml(t('phone'))}</div><div class="value">${momPhone}</div>` : ''}
   </div>
 
-  <div class="section-title">Support team</div>
+  <div class="section-title">${escapeHtml(t('supportTeam'))}</div>
   ${contactRows ? `
   <table>
-    <tr><th>Name</th><th>Relationship</th><th>Phone</th></tr>
+    <tr><th>${escapeHtml(t('name'))}</th><th>${escapeHtml(t('relationship'))}</th><th>${escapeHtml(t('phone'))}</th></tr>
     ${contactRows}
-  </table>` : '<div class="empty">No support contacts added yet.</div>'}
+  </table>` : `<div class="empty">${escapeHtml(t('noContactsYet'))}</div>`}
 
-  <div class="section-title">Preferences</div>
+  <div class="section-title">${escapeHtml(t('preferences'))}</div>
   ${topicSections}
 
-  <div class="footer-note">Birth can be unpredictable — these preferences may change, and that's okay.</div>
+  <div class="footer-note">${escapeHtml(t('unpredictableNote'))}</div>
 </body>
 </html>`
 }
@@ -106,6 +111,7 @@ export type ExportResult = { ok: boolean; message?: string }
 
 /** Web opens the browser print dialog (user saves as PDF); native generates a PDF file and opens the share sheet. */
 export async function exportBirthPlanPdf(html: string): Promise<ExportResult> {
+  const t = i18n.getFixedT(null, 'birthPlanDocument')
   try {
     if (Platform.OS === 'web') {
       await Print.printAsync({ html })
@@ -113,10 +119,10 @@ export async function exportBirthPlanPdf(html: string): Promise<ExportResult> {
     }
     const { uri } = await Print.printToFileAsync({ html })
     if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'Share birth plan' })
+      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: t('shareDialogTitle') })
     }
     return { ok: true }
   } catch {
-    return { ok: false, message: "Couldn't create the PDF. Please try again." }
+    return { ok: false, message: t('exportError') }
   }
 }

@@ -1,0 +1,12 @@
+{
+  "title": "Prepare for birth",
+  "subtitle": "Explore your preferences at your own pace.",
+  "topicsExplored": "{{done}} of {{total}} topics explored",
+  "introTitle": "Birth preferences",
+  "introSub": "A flexible guide to help you think through what matters to you.",
+  "done": "Done",
+  "notStarted": "Not started",
+  "viewSummary": "View summary",
+  "continueWith": "Continue · {{topic}}",
+  "continue": "Continue"
+}

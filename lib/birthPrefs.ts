@@ -33,115 +33,131 @@ export type SupportContact = { id: string; name: string; relationship: string; p
 export type BirthPrefAnswers = Partial<Record<TopicId, string>>
 export type BirthPrefsData = { answers: BirthPrefAnswers; supportContacts: SupportContact[] }
 
-export const RELATIONSHIP_OPTIONS: TopicOption[] = [
-  { id: 'partner', icon: 'heart-outline', label: 'Partner', summary: 'Partner' },
-  { id: 'family', icon: 'people-outline', label: 'Family', summary: 'Family' },
-  { id: 'doula', icon: 'leaf-outline', label: 'Doula', summary: 'Doula' },
-  { id: 'other', icon: 'person-outline', label: 'Other', summary: 'Other' },
-]
+// The 'birthPrefs' namespace's option labels are addressed by dynamically
+// built keys (topic + option id), which i18next's literal-union key typing
+// can't verify statically, and whose generated overload set isn't
+// structurally assignable from a simpler function type either — `any`
+// sidesteps that without losing real type-checking anywhere else `t` is
+// used directly (the useTranslation() call sites that produce this value).
+type BirthPrefsT = any
 
-export const TOPICS: Topic[] = [
-  {
-    id: 'environment',
-    icon: 'leaf-outline',
-    navLabel: 'Environment',
-    question: 'What kind of environment helps you feel calm?',
-    subtitle: "Think about lighting, sound, and who's around you.",
-    options: [
-      { id: 'calm-quiet', icon: 'moon-outline', label: 'Calm, low-light if possible', summary: 'Calm, low-light if possible' },
-      { id: 'music', icon: 'musical-notes-outline', label: 'Music or sounds I choose', summary: 'Music or sounds I choose' },
-      { id: 'doesnt-matter', icon: 'sunny-outline', label: "Doesn't matter much to me", summary: "Doesn't matter much to me" },
-      { id: 'not-sure', icon: 'help-circle-outline', label: 'Not sure yet', summary: 'Not sure yet' },
-    ],
-    tips: ['Who do you want in the room?', 'Do you want dim lighting or bright?', 'Quiet space, or okay with chatter?'],
-  },
-  {
-    id: 'pain-relief',
-    icon: 'medkit-outline',
-    navLabel: 'Pain relief',
-    question: 'What kind of pain relief approach feels most like you?',
-    subtitle: "You don't need to decide everything now — this just helps you reflect.",
-    options: [
-      { id: 'know-options', icon: 'book-outline', label: "I'd like to know all my options", summary: 'Open to options, unsure about epidural' },
-      { id: 'open-epidural', icon: 'leaf-outline', label: 'Open to epidural', summary: 'Open to epidural' },
-      { id: 'avoid-epidural', icon: 'close-circle-outline', label: 'Prefer to avoid epidural if possible', summary: 'Prefer to avoid epidural' },
-      { id: 'not-sure', icon: 'help-circle-outline', label: 'Not sure yet', summary: 'Not sure yet' },
-    ],
-  },
-  {
-    id: 'movement',
-    icon: 'walk-outline',
-    navLabel: 'Movement & positions',
-    question: 'How do you feel about moving around during labor?',
-    subtitle: 'Positions and movement can help with comfort and progress.',
-    options: [
-      { id: 'freedom', icon: 'walk-outline', label: 'Freedom to move and change positions', summary: 'Wants freedom to move' },
-      { id: 'limited-ok', icon: 'body-outline', label: 'Comfortable with monitoring that limits movement', summary: 'Okay with limited movement' },
-      { id: 'guidance', icon: 'compass-outline', label: "Open to my care team's guidance", summary: "Open to care team's guidance" },
-      { id: 'not-sure', icon: 'help-circle-outline', label: 'Not sure yet', summary: 'Not sure yet' },
-    ],
-  },
-  {
-    id: 'support-people',
-    icon: 'people-outline',
-    navLabel: 'Support people',
-    question: 'Who would you like with you during labor and birth?',
-    subtitle: 'Add anyone you want your care team and hospital to know about, with a way to reach them.',
-    kind: 'contacts',
-    options: RELATIONSHIP_OPTIONS,
-    tips: ['Who helps you feel calm?', 'Who can advocate for you?', 'Do you want quiet or active support?'],
-  },
-  {
-    id: 'monitoring',
-    icon: 'pulse-outline',
-    navLabel: 'Monitoring & interventions',
-    question: 'How do you feel about monitoring and interventions?',
-    subtitle: 'Think about how closely you want your labor monitored.',
-    options: [
-      { id: 'continuous', icon: 'pulse-outline', label: 'Continuous monitoring feels reassuring', summary: 'Prefers continuous monitoring' },
-      { id: 'intermittent', icon: 'time-outline', label: 'Prefer intermittent monitoring if possible', summary: 'Prefers intermittent monitoring' },
-      { id: 'care-team', icon: 'medical-outline', label: "Open to my care team's recommendation", summary: "Open to care team's call" },
-      { id: 'not-sure', icon: 'help-circle-outline', label: 'Not sure yet', summary: 'Not sure yet' },
-    ],
-  },
-  {
-    id: 'after-birth',
-    icon: 'heart-outline',
-    navLabel: 'After birth',
-    question: 'What matters most to you right after birth?',
-    subtitle: 'The first moments can look different ways — what feels right to you?',
-    options: [
-      { id: 'skin-to-skin', icon: 'heart-outline', label: 'Skin-to-skin as soon as possible', summary: 'Skin-to-skin if possible' },
-      { id: 'delayed-cord', icon: 'infinite-outline', label: 'Delayed cord clamping', summary: 'Delayed cord clamping' },
-      { id: 'guide', icon: 'compass-outline', label: 'Let my care team guide the first steps', summary: "Care team's lead" },
-      { id: 'not-sure', icon: 'help-circle-outline', label: 'Not sure yet', summary: 'Not sure yet' },
-    ],
-  },
-  {
-    id: 'feeding',
-    icon: 'nutrition-outline',
-    navLabel: 'Feeding',
-    question: 'How are you thinking about feeding?',
-    subtitle: 'This is just a starting point — babies change the plan often!',
-    options: [
-      { id: 'breast', icon: 'leaf-outline', label: 'Breastfeeding if possible', summary: 'Breastfeeding if possible' },
-      { id: 'combo', icon: 'swap-horizontal-outline', label: 'Combination feeding', summary: 'Combination feeding' },
-      { id: 'formula', icon: 'water-outline', label: 'Formula feeding', summary: 'Formula feeding' },
-      { id: 'deciding', icon: 'help-circle-outline', label: 'Still deciding', summary: 'Still deciding' },
-    ],
-  },
-]
+export function getRelationshipOptions(t: BirthPrefsT): TopicOption[] {
+  return [
+    { id: 'partner', icon: 'heart-outline', label: t('relationship.partner'), summary: t('relationship.partner') },
+    { id: 'family', icon: 'people-outline', label: t('relationship.family'), summary: t('relationship.family') },
+    { id: 'doula', icon: 'leaf-outline', label: t('relationship.doula'), summary: t('relationship.doula') },
+    { id: 'other', icon: 'person-outline', label: t('relationship.other'), summary: t('relationship.other') },
+  ]
+}
 
-export function topicById(id: TopicId): Topic {
-  return TOPICS.find(t => t.id === id)!
+export function getTopics(t: BirthPrefsT): Topic[] {
+  return [
+    {
+      id: 'environment',
+      icon: 'leaf-outline',
+      navLabel: t('environment.navLabel'),
+      question: t('environment.question'),
+      subtitle: t('environment.subtitle'),
+      options: [
+        { id: 'calm-quiet', icon: 'moon-outline', ...splitLS(t, 'environment', 'calmQuiet') },
+        { id: 'music', icon: 'musical-notes-outline', ...splitLS(t, 'environment', 'music') },
+        { id: 'doesnt-matter', icon: 'sunny-outline', ...splitLS(t, 'environment', 'doesntMatter') },
+        { id: 'not-sure', icon: 'help-circle-outline', ...splitLS(t, 'environment', 'notSure') },
+      ],
+      tips: t('environment.tips', { returnObjects: true }) as string[],
+    },
+    {
+      id: 'pain-relief',
+      icon: 'medkit-outline',
+      navLabel: t('painRelief.navLabel'),
+      question: t('painRelief.question'),
+      subtitle: t('painRelief.subtitle'),
+      options: [
+        { id: 'know-options', icon: 'book-outline', ...splitLS(t, 'painRelief', 'knowOptions') },
+        { id: 'open-epidural', icon: 'leaf-outline', ...splitLS(t, 'painRelief', 'openEpidural') },
+        { id: 'avoid-epidural', icon: 'close-circle-outline', ...splitLS(t, 'painRelief', 'avoidEpidural') },
+        { id: 'not-sure', icon: 'help-circle-outline', ...splitLS(t, 'painRelief', 'notSure') },
+      ],
+    },
+    {
+      id: 'movement',
+      icon: 'walk-outline',
+      navLabel: t('movement.navLabel'),
+      question: t('movement.question'),
+      subtitle: t('movement.subtitle'),
+      options: [
+        { id: 'freedom', icon: 'walk-outline', ...splitLS(t, 'movement', 'freedom') },
+        { id: 'limited-ok', icon: 'body-outline', ...splitLS(t, 'movement', 'limitedOk') },
+        { id: 'guidance', icon: 'compass-outline', ...splitLS(t, 'movement', 'guidance') },
+        { id: 'not-sure', icon: 'help-circle-outline', ...splitLS(t, 'movement', 'notSure') },
+      ],
+    },
+    {
+      id: 'support-people',
+      icon: 'people-outline',
+      navLabel: t('supportPeople.navLabel'),
+      question: t('supportPeople.question'),
+      subtitle: t('supportPeople.subtitle'),
+      kind: 'contacts',
+      options: getRelationshipOptions(t),
+      tips: t('supportPeople.tips', { returnObjects: true }) as string[],
+    },
+    {
+      id: 'monitoring',
+      icon: 'pulse-outline',
+      navLabel: t('monitoring.navLabel'),
+      question: t('monitoring.question'),
+      subtitle: t('monitoring.subtitle'),
+      options: [
+        { id: 'continuous', icon: 'pulse-outline', ...splitLS(t, 'monitoring', 'continuous') },
+        { id: 'intermittent', icon: 'time-outline', ...splitLS(t, 'monitoring', 'intermittent') },
+        { id: 'care-team', icon: 'medical-outline', ...splitLS(t, 'monitoring', 'careTeam') },
+        { id: 'not-sure', icon: 'help-circle-outline', ...splitLS(t, 'monitoring', 'notSure') },
+      ],
+    },
+    {
+      id: 'after-birth',
+      icon: 'heart-outline',
+      navLabel: t('afterBirth.navLabel'),
+      question: t('afterBirth.question'),
+      subtitle: t('afterBirth.subtitle'),
+      options: [
+        { id: 'skin-to-skin', icon: 'heart-outline', ...splitLS(t, 'afterBirth', 'skinToSkin') },
+        { id: 'delayed-cord', icon: 'infinite-outline', ...splitLS(t, 'afterBirth', 'delayedCord') },
+        { id: 'guide', icon: 'compass-outline', ...splitLS(t, 'afterBirth', 'guide') },
+        { id: 'not-sure', icon: 'help-circle-outline', ...splitLS(t, 'afterBirth', 'notSure') },
+      ],
+    },
+    {
+      id: 'feeding',
+      icon: 'nutrition-outline',
+      navLabel: t('feeding.navLabel'),
+      question: t('feeding.question'),
+      subtitle: t('feeding.subtitle'),
+      options: [
+        { id: 'breast', icon: 'leaf-outline', ...splitLS(t, 'feeding', 'breast') },
+        { id: 'combo', icon: 'swap-horizontal-outline', ...splitLS(t, 'feeding', 'combo') },
+        { id: 'formula', icon: 'water-outline', ...splitLS(t, 'feeding', 'formula') },
+        { id: 'deciding', icon: 'help-circle-outline', ...splitLS(t, 'feeding', 'deciding') },
+      ],
+    },
+  ]
+}
+
+function splitLS(t: BirthPrefsT, topicKey: string, optionKey: string): { label: string; summary: string } {
+  return { label: t(`${topicKey}.options.${optionKey}.label`), summary: t(`${topicKey}.options.${optionKey}.summary`) }
+}
+
+export function topicById(topics: Topic[], id: TopicId): Topic {
+  return topics.find(t => t.id === id)!
 }
 
 export function optionFor(topic: Topic, optionId: string | undefined): TopicOption | undefined {
   return topic.options.find(o => o.id === optionId)
 }
 
-export function relationshipOption(id: string): TopicOption | undefined {
-  return RELATIONSHIP_OPTIONS.find(o => o.id === id)
+export function relationshipOption(options: TopicOption[], id: string): TopicOption | undefined {
+  return options.find(o => o.id === id)
 }
 
 const EMPTY: BirthPrefsData = { answers: {}, supportContacts: [] }

@@ -19,6 +19,11 @@ import enAppointments from './locales/en/appointments.json'
 import enEditBrainDump from './locales/en/editBrainDump.json'
 import enProfile from './locales/en/profile.json'
 import enTabs from './locales/en/tabs.json'
+import enBirthPrefs from './locales/en/birthPrefs.json'
+import enPrepareForBirth from './locales/en/prepareForBirth.json'
+import enBirthPreferences from './locales/en/birthPreferences.json'
+import enBirthPreferencesSummary from './locales/en/birthPreferencesSummary.json'
+import enBirthPlanDocument from './locales/en/birthPlanDocument.json'
 import heCommon from './locales/he/common.json'
 import heAuth from './locales/he/auth.json'
 import heOnboarding from './locales/he/onboarding.json'
@@ -37,12 +42,17 @@ import heAppointments from './locales/he/appointments.json'
 import heEditBrainDump from './locales/he/editBrainDump.json'
 import heProfile from './locales/he/profile.json'
 import heTabs from './locales/he/tabs.json'
+import heBirthPrefs from './locales/he/birthPrefs.json'
+import hePrepareForBirth from './locales/he/prepareForBirth.json'
+import heBirthPreferences from './locales/he/birthPreferences.json'
+import heBirthPreferencesSummary from './locales/he/birthPreferencesSummary.json'
+import heBirthPlanDocument from './locales/he/birthPlanDocument.json'
 
 export const defaultNS = 'common'
 
 export const resources = {
-  en: { common: enCommon, auth: enAuth, onboarding: enOnboarding, lmp: enLmp, carePlan: enCarePlan, catchUp: enCatchUp, booked: enBooked, home: enHome, plan: enPlan, health: enHealth, brainDump: enBrainDump, business: enBusiness, appointmentDetail: enAppointmentDetail, addItem: enAddItem, appointments: enAppointments, editBrainDump: enEditBrainDump, profile: enProfile, tabs: enTabs },
-  he: { common: heCommon, auth: heAuth, onboarding: heOnboarding, lmp: heLmp, carePlan: heCarePlan, catchUp: heCatchUp, booked: heBooked, home: heHome, plan: hePlan, health: heHealth, brainDump: heBrainDump, business: heBusiness, appointmentDetail: heAppointmentDetail, addItem: heAddItem, appointments: heAppointments, editBrainDump: heEditBrainDump, profile: heProfile, tabs: heTabs },
+  en: { common: enCommon, auth: enAuth, onboarding: enOnboarding, lmp: enLmp, carePlan: enCarePlan, catchUp: enCatchUp, booked: enBooked, home: enHome, plan: enPlan, health: enHealth, brainDump: enBrainDump, business: enBusiness, appointmentDetail: enAppointmentDetail, addItem: enAddItem, appointments: enAppointments, editBrainDump: enEditBrainDump, profile: enProfile, tabs: enTabs, birthPrefs: enBirthPrefs, prepareForBirth: enPrepareForBirth, birthPreferences: enBirthPreferences, birthPreferencesSummary: enBirthPreferencesSummary, birthPlanDocument: enBirthPlanDocument },
+  he: { common: heCommon, auth: heAuth, onboarding: heOnboarding, lmp: heLmp, carePlan: heCarePlan, catchUp: heCatchUp, booked: heBooked, home: heHome, plan: hePlan, health: heHealth, brainDump: heBrainDump, business: heBusiness, appointmentDetail: heAppointmentDetail, addItem: heAddItem, appointments: heAppointments, editBrainDump: heEditBrainDump, profile: heProfile, tabs: heTabs, birthPrefs: heBirthPrefs, prepareForBirth: hePrepareForBirth, birthPreferences: heBirthPreferences, birthPreferencesSummary: heBirthPreferencesSummary, birthPlanDocument: heBirthPlanDocument },
 } as const
 
 i18next.use(initReactI18next).init({

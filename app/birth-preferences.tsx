@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import { goBack } from '../lib/navigation'
+import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
+import { useLanguage } from '../lib/i18n/LanguageProvider'
 import {
-  TOPICS, RELATIONSHIP_OPTIONS, loadBirthPrefs, saveBirthPrefAnswer, saveSupportContacts, isTopicDone,
+  getTopics, getRelationshipOptions, loadBirthPrefs, saveBirthPrefAnswer, saveSupportContacts, isTopicDone,
   relationshipOption, type BirthPrefsData, type TopicId, type SupportContact,
 } from '../lib/birthPrefs'
 
@@ -17,6 +20,12 @@ const EMPTY_DRAFT = { name: '', relationship: 'partner', phone: '' }
 
 export default function BirthPreferencesScreen() {
   const router = useRouter()
+  const { t } = useTranslation('birthPreferences')
+  const { t: tTopics } = useTranslation('birthPrefs')
+  const { back: backIcon, forward } = useDirectionalIcon()
+  const { isRTL } = useLanguage()
+  const TOPICS = useMemo(() => getTopics(tTopics), [tTopics])
+  const RELATIONSHIP_OPTIONS = useMemo(() => getRelationshipOptions(tTopics), [tTopics])
   const params = useLocalSearchParams<{ topic?: TopicId }>()
   const [prefs, setPrefs] = useState<BirthPrefsData>(EMPTY_PREFS)
   const [loaded, setLoaded] = useState(false)
@@ -113,11 +122,11 @@ export default function BirthPreferencesScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={back} hitSlop={8}>
-          <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
+          <Ionicons name={backIcon} size={26} color={colors.textPrimary} />
         </TouchableOpacity>
         <View style={{ alignItems: 'center' }}>
-          <Text style={styles.headerTitle}>Birth preferences</Text>
-          <Text style={styles.headerSub}>Topic {step + 1} of {TOPICS.length}</Text>
+          <Text style={styles.headerTitle}>{t('title')}</Text>
+          <Text style={styles.headerSub}>{t('topicOf', { current: step + 1, total: TOPICS.length })}</Text>
         </View>
         <View style={{ width: 26 }} />
       </View>
@@ -150,7 +159,7 @@ export default function BirthPreferencesScreen() {
             {contacts.length > 0 && (
               <View style={{ gap: spacing.xs, marginBottom: spacing.sm }}>
                 {contacts.map(contact => {
-                  const rel = relationshipOption(contact.relationship)
+                  const rel = relationshipOption(RELATIONSHIP_OPTIONS, contact.relationship)
                   return (
                     <View key={contact.id} style={styles.contactCard}>
                       <View style={styles.contactIconChip}>
@@ -160,7 +169,7 @@ export default function BirthPreferencesScreen() {
                         <Text style={styles.contactName}>{contact.name}</Text>
                         <Text style={styles.contactMeta}>{rel?.label ?? contact.relationship}{contact.phone ? ` · ${contact.phone}` : ''}</Text>
                       </View>
-                      <TouchableOpacity onPress={() => openEditForm(contact)} hitSlop={8} style={{ marginRight: 4 }}>
+                      <TouchableOpacity onPress={() => openEditForm(contact)} hitSlop={8}>
                         <Ionicons name="pencil-outline" size={17} color={colors.textSecondary} />
                       </TouchableOpacity>
                       <TouchableOpacity onPress={() => removeContact(contact.id)} hitSlop={8}>
@@ -174,16 +183,16 @@ export default function BirthPreferencesScreen() {
 
             {formOpen ? (
               <View style={styles.formCard}>
-                <Text style={styles.formLabel}>Name</Text>
+                <Text style={styles.formLabel}>{t('nameLabel')}</Text>
                 <TextInput
-                  style={styles.formInput}
+                  style={[styles.formInput, isRTL && styles.formInputRTL]}
                   value={draft.name}
                   onChangeText={v => setDraft(d => ({ ...d, name: v }))}
-                  placeholder="Their name"
+                  placeholder={t('namePlaceholder')}
                   placeholderTextColor={colors.textSecondary}
                 />
 
-                <Text style={[styles.formLabel, { marginTop: spacing.sm }]}>Relationship</Text>
+                <Text style={[styles.formLabel, { marginTop: spacing.sm }]}>{t('relationshipLabel')}</Text>
                 <View style={styles.chipRow}>
                   {RELATIONSHIP_OPTIONS.map(opt => {
                     const selected = draft.relationship === opt.id
@@ -200,29 +209,29 @@ export default function BirthPreferencesScreen() {
                   })}
                 </View>
 
-                <Text style={[styles.formLabel, { marginTop: spacing.sm }]}>Phone</Text>
+                <Text style={[styles.formLabel, { marginTop: spacing.sm }]}>{t('phoneLabel')}</Text>
                 <TextInput
-                  style={styles.formInput}
+                  style={[styles.formInput, isRTL && styles.formInputRTL]}
                   value={draft.phone}
                   onChangeText={v => setDraft(d => ({ ...d, phone: v }))}
-                  placeholder="Their phone number"
+                  placeholder={t('phonePlaceholder')}
                   placeholderTextColor={colors.textSecondary}
                   keyboardType="phone-pad"
                 />
 
                 <View style={styles.formFooterRow}>
                   <TouchableOpacity style={styles.formCancelBtn} onPress={() => { setFormOpen(false); setEditingContactId(null) }}>
-                    <Text style={styles.formCancelBtnText}>Cancel</Text>
+                    <Text style={styles.formCancelBtnText}>{t('cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={[styles.formSaveBtn, !draft.name.trim() && styles.nextBtnDisabled]} disabled={!draft.name.trim()} onPress={saveDraft}>
-                    <Text style={styles.formSaveBtnText}>{editingContactId ? 'Save changes' : 'Add person'}</Text>
+                    <Text style={styles.formSaveBtnText}>{editingContactId ? t('saveChanges') : t('addPerson')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             ) : (
               <TouchableOpacity style={styles.addPersonBtn} onPress={openAddForm}>
                 <Ionicons name="add" size={18} color={colors.primaryDark} />
-                <Text style={styles.addPersonBtnText}>Add a person</Text>
+                <Text style={styles.addPersonBtnText}>{t('addAPerson')}</Text>
               </TouchableOpacity>
             )}
           </>
@@ -254,7 +263,7 @@ export default function BirthPreferencesScreen() {
           <View style={styles.tipsCard}>
             <View style={styles.tipsHeaderRow}>
               <Ionicons name="bulb-outline" size={16} color={colors.lavenderDeep} />
-              <Text style={styles.tipsTitle}>Helpful to think about</Text>
+              <Text style={styles.tipsTitle}>{t('helpfulToThinkAbout')}</Text>
             </View>
             {topic.tips.map(tip => (
               <View key={tip} style={styles.tipRow}>
@@ -267,14 +276,14 @@ export default function BirthPreferencesScreen() {
 
         {!isContacts && (
           <TouchableOpacity style={styles.laterLink} onPress={askDoctorLater}>
-            <Text style={styles.laterLinkText}>Ask my doctor later</Text>
+            <Text style={styles.laterLinkText}>{t('askDoctorLater')}</Text>
           </TouchableOpacity>
         )}
 
         <View style={styles.footerRow}>
           {!isFirst && (
             <TouchableOpacity style={styles.backBtn} onPress={back}>
-              <Text style={styles.backBtnText}>Back</Text>
+              <Text style={styles.backBtnText}>{t('back')}</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity
@@ -282,8 +291,8 @@ export default function BirthPreferencesScreen() {
             disabled={nextDisabled}
             onPress={next}
           >
-            <Text style={styles.nextBtnText}>{isLast ? 'Finish' : 'Next'}</Text>
-            <Ionicons name="chevron-forward" size={18} color="#fff" />
+            <Text style={styles.nextBtnText}>{isLast ? t('finish') : t('next')}</Text>
+            <Ionicons name={forward} size={18} color="#fff" />
           </TouchableOpacity>
         </View>
 
@@ -329,7 +338,8 @@ const styles = StyleSheet.create({
 
   formCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.md },
   formLabel: { fontSize: 11.5, fontWeight: '700', color: colors.textSecondary, marginBottom: 4 },
-  formInput: { fontSize: 15, fontWeight: '600', color: colors.textPrimary, backgroundColor: colors.background, borderRadius: radius.sm, paddingHorizontal: 12, paddingVertical: 10, borderWidth: 1, borderColor: colors.border },
+  formInput: { fontSize: 15, fontWeight: '600', color: colors.textPrimary, backgroundColor: colors.background, borderRadius: radius.sm, paddingHorizontal: 12, paddingVertical: 10, borderWidth: 1, borderColor: colors.border, textAlign: 'left' },
+  formInputRTL: { textAlign: 'right' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.neutralChip, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.pill },
   chipSelected: { backgroundColor: colors.primary },

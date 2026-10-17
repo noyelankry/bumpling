@@ -1,0 +1,81 @@
+{
+  "relationship": {
+    "partner": "Partner",
+    "family": "Family",
+    "doula": "Doula",
+    "other": "Other"
+  },
+  "environment": {
+    "navLabel": "Environment",
+    "question": "What kind of environment helps you feel calm?",
+    "subtitle": "Think about lighting, sound, and who's around you.",
+    "options": {
+      "calmQuiet": { "label": "Calm, low-light if possible", "summary": "Calm, low-light if possible" },
+      "music": { "label": "Music or sounds I choose", "summary": "Music or sounds I choose" },
+      "doesntMatter": { "label": "Doesn't matter much to me", "summary": "Doesn't matter much to me" },
+      "notSure": { "label": "Not sure yet", "summary": "Not sure yet" }
+    },
+    "tips": ["Who do you want in the room?", "Do you want dim lighting or bright?", "Quiet space, or okay with chatter?"]
+  },
+  "painRelief": {
+    "navLabel": "Pain relief",
+    "question": "What kind of pain relief approach feels most like you?",
+    "subtitle": "You don't need to decide everything now — this just helps you reflect.",
+    "options": {
+      "knowOptions": { "label": "I'd like to know all my options", "summary": "Open to options, unsure about epidural" },
+      "openEpidural": { "label": "Open to epidural", "summary": "Open to epidural" },
+      "avoidEpidural": { "label": "Prefer to avoid epidural if possible", "summary": "Prefer to avoid epidural" },
+      "notSure": { "label": "Not sure yet", "summary": "Not sure yet" }
+    }
+  },
+  "movement": {
+    "navLabel": "Movement & positions",
+    "question": "How do you feel about moving around during labor?",
+    "subtitle": "Positions and movement can help with comfort and progress.",
+    "options": {
+      "freedom": { "label": "Freedom to move and change positions", "summary": "Wants freedom to move" },
+      "limitedOk": { "label": "Comfortable with monitoring that limits movement", "summary": "Okay with limited movement" },
+      "guidance": { "label": "Open to my care team's guidance", "summary": "Open to care team's guidance" },
+      "notSure": { "label": "Not sure yet", "summary": "Not sure yet" }
+    }
+  },
+  "supportPeople": {
+    "navLabel": "Support people",
+    "question": "Who would you like with you during labor and birth?",
+    "subtitle": "Add anyone you want your care team and hospital to know about, with a way to reach them.",
+    "tips": ["Who helps you feel calm?", "Who can advocate for you?", "Do you want quiet or active support?"]
+  },
+  "monitoring": {
+    "navLabel": "Monitoring & interventions",
+    "question": "How do you feel about monitoring and interventions?",
+    "subtitle": "Think about how closely you want your labor monitored.",
+    "options": {
+      "continuous": { "label": "Continuous monitoring feels reassuring", "summary": "Prefers continuous monitoring" },
+      "intermittent": { "label": "Prefer intermittent monitoring if possible", "summary": "Prefers intermittent monitoring" },
+      "careTeam": { "label": "Open to my care team's recommendation", "summary": "Open to care team's call" },
+      "notSure": { "label": "Not sure yet", "summary": "Not sure yet" }
+    }
+  },
+  "afterBirth": {
+    "navLabel": "After birth",
+    "question": "What matters most to you right after birth?",
+    "subtitle": "The first moments can look different ways — what feels right to you?",
+    "options": {
+      "skinToSkin": { "label": "Skin-to-skin as soon as possible", "summary": "Skin-to-skin if possible" },
+      "delayedCord": { "label": "Delayed cord clamping", "summary": "Delayed cord clamping" },
+      "guide": { "label": "Let my care team guide the first steps", "summary": "Care team's lead" },
+      "notSure": { "label": "Not sure yet", "summary": "Not sure yet" }
+    }
+  },
+  "feeding": {
+    "navLabel": "Feeding",
+    "question": "How are you thinking about feeding?",
+    "subtitle": "This is just a starting point — babies change the plan often!",
+    "options": {
+      "breast": { "label": "Breastfeeding if possible", "summary": "Breastfeeding if possible" },
+      "combo": { "label": "Combination feeding", "summary": "Combination feeding" },
+      "formula": { "label": "Formula feeding", "summary": "Formula feeding" },
+      "deciding": { "label": "Still deciding", "summary": "Still deciding" }
+    }
+  }
+}

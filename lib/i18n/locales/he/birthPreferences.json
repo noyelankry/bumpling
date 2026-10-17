@@ -1,0 +1,18 @@
+{
+  "title": "העדפות לידה",
+  "topicOf": "נושא {{current}} מתוך {{total}}",
+  "nameLabel": "שם",
+  "namePlaceholder": "השם שלהם",
+  "relationshipLabel": "קרבה",
+  "phoneLabel": "טלפון",
+  "phonePlaceholder": "מספר הטלפון שלהם",
+  "cancel": "ביטול",
+  "saveChanges": "שמירת שינויים",
+  "addPerson": "הוספה",
+  "addAPerson": "הוספת איש קשר",
+  "helpfulToThinkAbout": "כדאי לחשוב גם על",
+  "askDoctorLater": "אשאל את הרופא/ה אחר כך",
+  "back": "חזרה",
+  "finish": "סיום",
+  "next": "הבא"
+}

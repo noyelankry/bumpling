@@ -1,11 +1,13 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import { goBack } from '../lib/navigation'
-import { TOPICS, loadBirthPrefs, isTopicDone, type BirthPrefsData } from '../lib/birthPrefs'
+import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
+import { getTopics, loadBirthPrefs, isTopicDone, type BirthPrefsData } from '../lib/birthPrefs'
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name']
 
@@ -13,8 +15,12 @@ const EMPTY_PREFS: BirthPrefsData = { answers: {}, supportContacts: [] }
 
 export default function PrepareForBirthScreen() {
   const router = useRouter()
+  const { t } = useTranslation('prepareForBirth')
+  const { t: tTopics } = useTranslation('birthPrefs')
+  const { back: backIcon, forward, arrowForward } = useDirectionalIcon()
   const back = () => goBack(router, '/(tabs)/plan')
   const [prefs, setPrefs] = useState<BirthPrefsData>(EMPTY_PREFS)
+  const TOPICS = useMemo(() => getTopics(tTopics), [tTopics])
 
   useFocusEffect(useCallback(() => {
     loadBirthPrefs().then(setPrefs)
@@ -33,19 +39,19 @@ export default function PrepareForBirthScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={back} hitSlop={8}>
-          <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
+          <Ionicons name={backIcon} size={26} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Prepare for birth</Text>
+        <Text style={styles.headerTitle}>{t('title')}</Text>
         <View style={{ width: 26 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        <Text style={styles.title}>Prepare for birth</Text>
-        <Text style={styles.subtitle}>Explore your preferences at your own pace.</Text>
+        <Text style={styles.title}>{t('title')}</Text>
+        <Text style={styles.subtitle}>{t('subtitle')}</Text>
 
         <View style={styles.progressRow}>
-          <Text style={styles.progressText}>{doneCount} of {TOPICS.length} topics explored</Text>
+          <Text style={styles.progressText}>{t('topicsExplored', { done: doneCount, total: TOPICS.length })}</Text>
         </View>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${(doneCount / TOPICS.length) * 100}%` }]} />
@@ -56,10 +62,10 @@ export default function PrepareForBirthScreen() {
             <Ionicons name="heart-outline" size={24} color={colors.lavenderDeep} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.introTitle}>Birth preferences</Text>
-            <Text style={styles.introSub}>A flexible guide to help you think through what matters to you.</Text>
+            <Text style={styles.introTitle}>{t('introTitle')}</Text>
+            <Text style={styles.introSub}>{t('introSub')}</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          <Ionicons name={forward} size={20} color={colors.textSecondary} />
         </TouchableOpacity>
 
         <View style={styles.listCard}>
@@ -77,8 +83,8 @@ export default function PrepareForBirthScreen() {
                 </View>
                 <Text style={styles.rowTitle}>{topic.navLabel}</Text>
                 <View style={[styles.statusPill, done && styles.statusPillDone]}>
-                  {done && <Ionicons name="checkmark" size={12} color={colors.sageDeep} style={{ marginRight: 3 }} />}
-                  <Text style={[styles.statusPillText, done && styles.statusPillTextDone]}>{done ? 'Done' : 'Not started'}</Text>
+                  {done && <Ionicons name="checkmark" size={12} color={colors.sageDeep} />}
+                  <Text style={[styles.statusPillText, done && styles.statusPillTextDone]}>{done ? t('done') : t('notStarted')}</Text>
                 </View>
               </TouchableOpacity>
             )
@@ -86,8 +92,10 @@ export default function PrepareForBirthScreen() {
         </View>
 
         <TouchableOpacity style={styles.continueBtn} activeOpacity={0.85} onPress={continueFlow}>
-          <Text style={styles.continueBtnText}>{allDone ? 'View summary' : firstUnanswered ? `Continue · ${firstUnanswered.navLabel}` : 'Continue'}</Text>
-          <Ionicons name="arrow-forward" size={18} color="#fff" />
+          <Text style={styles.continueBtnText}>
+            {allDone ? t('viewSummary') : firstUnanswered ? t('continueWith', { topic: firstUnanswered.navLabel }) : t('continue')}
+          </Text>
+          <Ionicons name={arrowForward} size={18} color="#fff" />
         </TouchableOpacity>
 
       </ScrollView>
@@ -120,7 +128,7 @@ const styles = StyleSheet.create({
   rowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
   rowIconChip: { width: 38, height: 38, borderRadius: radius.pill, backgroundColor: colors.lavender, alignItems: 'center', justifyContent: 'center' },
   rowTitle:   { flex: 1, fontSize: 14.5, fontWeight: '600', color: colors.textPrimary },
-  statusPill:      { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.neutralChip, paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
+  statusPill:      { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: colors.neutralChip, paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill },
   statusPillDone:  { backgroundColor: colors.sage },
   statusPillText:  { fontSize: 11, fontWeight: '700', color: colors.neutralChipDeep },
   statusPillTextDone: { color: colors.sageDeep },

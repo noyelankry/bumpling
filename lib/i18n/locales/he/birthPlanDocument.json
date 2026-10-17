@@ -1,0 +1,18 @@
+{
+  "defaultMomName": "אמא",
+  "unnamed": "ללא שם",
+  "headerTitle": "תוכנית לידה — {{name}}",
+  "preparedOn": "הוכן באמצעות Bumpling בתאריך {{date}}",
+  "forCareTeam": "לצוות המטפל שלי",
+  "momsContact": "פרטי האם",
+  "name": "שם",
+  "phone": "טלפון",
+  "supportTeam": "צוות תמיכה",
+  "relationship": "קרבה",
+  "noContactsYet": "טרם נוספו אנשי תמיכה.",
+  "preferences": "העדפות",
+  "notSetYet": "עוד לא הוגדר",
+  "unpredictableNote": "לידה יכולה להיות בלתי צפויה — ההעדפות הללו עשויות להשתנות, וזה בסדר גמור.",
+  "exportError": "לא הצלחנו ליצור את קובץ ה-PDF. נסו שוב.",
+  "shareDialogTitle": "שיתוף תוכנית הלידה"
+}

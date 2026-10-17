@@ -1,0 +1,18 @@
+{
+  "title": "Birth preferences",
+  "topicOf": "Topic {{current}} of {{total}}",
+  "nameLabel": "Name",
+  "namePlaceholder": "Their name",
+  "relationshipLabel": "Relationship",
+  "phoneLabel": "Phone",
+  "phonePlaceholder": "Their phone number",
+  "cancel": "Cancel",
+  "saveChanges": "Save changes",
+  "addPerson": "Add person",
+  "addAPerson": "Add a person",
+  "helpfulToThinkAbout": "Helpful to think about",
+  "askDoctorLater": "Ask my doctor later",
+  "back": "Back",
+  "finish": "Finish",
+  "next": "Next"
+}

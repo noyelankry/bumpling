@@ -1,13 +1,15 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import { goBack } from '../lib/navigation'
+import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 import { supabase } from '../lib/supabase'
 import { loadMomPhone } from '../lib/momContact'
-import { TOPICS, optionFor, relationshipOption, loadBirthPrefs, isTopicDone, type BirthPrefsData } from '../lib/birthPrefs'
+import { getTopics, getRelationshipOptions, optionFor, relationshipOption, loadBirthPrefs, isTopicDone, type BirthPrefsData } from '../lib/birthPrefs'
 import { buildBirthPlanHtml, exportBirthPlanPdf } from '../lib/birthPlanDocument'
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name']
@@ -16,6 +18,11 @@ const EMPTY_PREFS: BirthPrefsData = { answers: {}, supportContacts: [] }
 
 export default function BirthPreferencesSummaryScreen() {
   const router = useRouter()
+  const { t } = useTranslation('birthPreferencesSummary')
+  const { t: tTopics } = useTranslation('birthPrefs')
+  const { back: backIcon, forward } = useDirectionalIcon()
+  const TOPICS = useMemo(() => getTopics(tTopics), [tTopics])
+  const RELATIONSHIP_OPTIONS = useMemo(() => getRelationshipOptions(tTopics), [tTopics])
   const back = () => goBack(router, '/prepare-for-birth')
   const [prefs, setPrefs] = useState<BirthPrefsData>(EMPTY_PREFS)
   const [momName, setMomName] = useState('')
@@ -34,10 +41,10 @@ export default function BirthPreferencesSummaryScreen() {
 
   async function shareSummary() {
     setExporting(true)
-    const html = buildBirthPlanHtml(prefs, { momName, momPhone })
+    const html = buildBirthPlanHtml(prefs, { momName, momPhone }, TOPICS, RELATIONSHIP_OPTIONS)
     const result = await exportBirthPlanPdf(html)
     setExporting(false)
-    if (!result.ok && result.message) Alert.alert("Couldn't export", result.message)
+    if (!result.ok && result.message) Alert.alert(t('exportFailedTitle'), result.message)
   }
 
   const standardTopics = TOPICS.filter(t => t.kind !== 'contacts')
@@ -47,9 +54,9 @@ export default function BirthPreferencesSummaryScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={back} hitSlop={8}>
-          <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
+          <Ionicons name={backIcon} size={26} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Your birth preferences</Text>
+        <Text style={styles.headerTitle}>{t('title')}</Text>
         <View style={{ width: 26 }} />
       </View>
 
@@ -60,8 +67,8 @@ export default function BirthPreferencesSummaryScreen() {
             <Ionicons name="document-text-outline" size={24} color={colors.lavenderDeep} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.heroTitle}>Your birth preferences</Text>
-            <Text style={styles.heroSub}>A flexible summary you can revisit anytime.</Text>
+            <Text style={styles.heroTitle}>{t('title')}</Text>
+            <Text style={styles.heroSub}>{t('subtitle')}</Text>
           </View>
         </View>
 
@@ -79,14 +86,14 @@ export default function BirthPreferencesSummaryScreen() {
               {prefs.supportContacts.length > 0 ? (
                 prefs.supportContacts.map(c => (
                   <Text key={c.id} style={styles.topicValue}>
-                    {c.name} · {relationshipOption(c.relationship)?.label ?? c.relationship}{c.phone ? ` · ${c.phone}` : ''}
+                    {c.name} · {relationshipOption(RELATIONSHIP_OPTIONS, c.relationship)?.label ?? c.relationship}{c.phone ? ` · ${c.phone}` : ''}
                   </Text>
                 ))
               ) : (
-                <Text style={styles.topicValue}>Not set yet</Text>
+                <Text style={styles.topicValue}>{t('notSetYet')}</Text>
               )}
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+            <Ionicons name={forward} size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         )}
 
@@ -105,9 +112,9 @@ export default function BirthPreferencesSummaryScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.topicTitle}>{topic.navLabel}</Text>
-                  <Text style={styles.topicValue}>{option ? option.summary : 'Not set yet'}</Text>
+                  <Text style={styles.topicValue}>{option ? option.summary : t('notSetYet')}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                <Ionicons name={forward} size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             )
           })}
@@ -115,18 +122,18 @@ export default function BirthPreferencesSummaryScreen() {
 
         <View style={styles.noteCard}>
           <Ionicons name="heart-outline" size={18} color={colors.sageDeep} />
-          <Text style={styles.noteText}>Birth can be unpredictable — your preferences may change, and that's okay.</Text>
+          <Text style={styles.noteText}>{t('unpredictableNote')}</Text>
         </View>
 
         <View style={styles.footerRow}>
           <TouchableOpacity style={styles.editBtn} onPress={back}>
             <Ionicons name="pencil-outline" size={16} color={colors.textPrimary} />
-            <Text style={styles.editBtnText}>Edit</Text>
+            <Text style={styles.editBtnText}>{t('edit')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.shareBtn} onPress={shareSummary} disabled={exporting}>
             {exporting ? <ActivityIndicator color="#fff" /> : <>
               <Ionicons name="document-outline" size={16} color="#fff" />
-              <Text style={styles.shareBtnText}>Share / Save PDF</Text>
+              <Text style={styles.shareBtnText}>{t('sharePdf')}</Text>
             </>}
           </TouchableOpacity>
         </View>
