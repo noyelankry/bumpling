@@ -52,10 +52,7 @@ export default function BookedScreen() {
             <BabyMark size={28} />
             <Text style={styles.appName}>Bumpling</Text>
           </View>
-          <TouchableOpacity style={styles.bellBtn}>
-            <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-            <View style={[styles.bellDot, isRTL && styles.bellDotRTL]} />
-          </TouchableOpacity>
+          <View style={styles.backBtn} />
         </View>
 
         <Text style={styles.title}>{t('title')}</Text>
@@ -136,9 +133,6 @@ const styles = StyleSheet.create({
   backBtn:      { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   appName:      { fontSize: 19, fontWeight: '700', color: colors.textPrimary },
-  bellBtn:      { width: 36, height: 36, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  bellDot:      { position: 'absolute', top: 4, right: 4, width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.background },
-  bellDotRTL:   { right: undefined, left: 4 },
 
   title:    { fontFamily: fonts.headlineBold, fontSize: 28, color: colors.textPrimary, lineHeight: 34 },
   subtitle: { fontSize: 14, color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.md, lineHeight: 20 },
@@ -161,6 +155,6 @@ const styles = StyleSheet.create({
   rowMetaBooked: { fontSize: 12, color: colors.sageDeep, fontWeight: '600', marginTop: 2 },
   rowAction: { fontSize: 12.5, fontWeight: '700', color: colors.primary },
 
-  continueBtn:     { flexDirection: 'row', gap: 8, backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', justifyContent: 'center' },
+  continueBtn:     { flexDirection: 'row', gap: 8, backgroundColor: colors.textPrimary, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', justifyContent: 'center' },
   continueBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 })

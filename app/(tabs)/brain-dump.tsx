@@ -16,16 +16,16 @@ import {
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name']
 
-const KIND_ICON: Record<EntryKind, { icon: IoniconsName; color: string; chipBg: string }> = {
-  thought: { icon: 'bulb-outline', color: colors.creamDeep, chipBg: colors.cream },
-  doctor:  { icon: 'medical-outline', color: colors.lavenderDeep, chipBg: colors.lavender },
+const KIND_ICON: Record<EntryKind, { icon: IoniconsName; color: string }> = {
+  thought: { icon: 'bulb-outline', color: colors.creamDeep },
+  doctor: { icon: 'medical-outline', color: colors.lavenderDeep },
 }
 
 export default function BrainDumpScreen() {
   const router = useRouter()
   const { t } = useTranslation('brainDump')
   const { isRTL } = useLanguage()
-  const KIND_META: Record<EntryKind, { icon: IoniconsName; label: string; color: string; chipBg: string }> = {
+  const KIND_META: Record<EntryKind, { icon: IoniconsName; color: string; label: string }> = {
     thought: { ...KIND_ICON.thought, label: t('kindThought') },
     doctor: { ...KIND_ICON.doctor, label: t('kindDoctor') },
   }
@@ -93,6 +93,7 @@ export default function BrainDumpScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <View style={styles.blobTopRight} pointerEvents="none" />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -111,26 +112,20 @@ export default function BrainDumpScreen() {
             <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')} accessibilityLabel={t('profileLabel')}>
               <Ionicons name="person-outline" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.bellBtn}>
-              <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.heroRow}>
-          <View style={styles.heroIconChip}>
-            <Ionicons name="bulb-outline" size={24} color={colors.lavenderDeep} />
-          </View>
+        <View style={styles.titleRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.heroTitle}>{t('heroTitle')}</Text>
-            <Text style={styles.heroSub}>{t('heroSub')}</Text>
+            <Text style={styles.title}>{t('heroTitle')}</Text>
+            <Text style={styles.subtitle}>{t('heroSub')}</Text>
           </View>
-          <TouchableOpacity style={styles.menuBtn} onPress={handleMenu} accessibilityLabel={t('moreOptions')}>
-            <Ionicons name="ellipsis-horizontal" size={16} color={colors.textPrimary} />
+          <TouchableOpacity style={styles.menuBtn} onPress={handleMenu} accessibilityLabel={t('moreOptions')} hitSlop={8}>
+            <Ionicons name="ellipsis-horizontal" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.addCard}>
+        <View style={styles.composer}>
           <TextInput
             style={[styles.input, isRTL && styles.inputRTL]}
             value={text}
@@ -139,7 +134,7 @@ export default function BrainDumpScreen() {
             placeholderTextColor={colors.textSecondary}
             multiline
           />
-          <View style={styles.addRow}>
+          <View style={styles.composerRow}>
             <View style={styles.typeToggle}>
               {(['thought', 'doctor'] as EntryKind[]).map(k => {
                 const meta = KIND_META[k]
@@ -150,7 +145,7 @@ export default function BrainDumpScreen() {
                     style={[styles.typeChip, active && styles.typeChipActive]}
                     onPress={() => setKind(k)}
                   >
-                    <Ionicons name={meta.icon} size={14} color={active ? '#fff' : colors.textSecondary} />
+                    <Ionicons name={meta.icon} size={13} color={active ? '#fff' : colors.textSecondary} />
                     <Text style={[styles.typeChipText, active && styles.typeChipTextActive]}>{meta.label}</Text>
                   </TouchableOpacity>
                 )
@@ -167,14 +162,10 @@ export default function BrainDumpScreen() {
           </View>
         </View>
 
-        <View style={styles.filterTabs}>
+        <View style={styles.filterRow}>
           {FILTERS.map(f => (
-            <TouchableOpacity
-              key={f.key}
-              style={[styles.filterTab, filter === f.key && styles.filterTabActive]}
-              onPress={() => setFilter(f.key)}
-            >
-              <Text style={[styles.filterTabText, filter === f.key && styles.filterTabTextActive]}>
+            <TouchableOpacity key={f.key} onPress={() => setFilter(f.key)} hitSlop={6}>
+              <Text style={[styles.filterText, filter === f.key && styles.filterTextActive]}>
                 {f.label} ({counts[f.key]})
               </Text>
             </TouchableOpacity>
@@ -189,16 +180,18 @@ export default function BrainDumpScreen() {
           groups.map(group => (
             <View key={group.label} style={styles.section}>
               <Text style={styles.sectionLabel}>{group.label}</Text>
-              {group.items.map(item => (
-                <Row
-                  key={item.id}
-                  item={item}
-                  meta={KIND_META[item.kind]}
-                  onPress={() => router.push({ pathname: '/edit-brain-dump', params: { id: item.id } })}
-                  onToggleDone={() => handleToggleDone(item.id)}
-                  onDelete={() => confirmDelete(item.id)}
-                />
-              ))}
+              <View style={styles.list}>
+                {group.items.map(item => (
+                  <Row
+                    key={item.id}
+                    item={item}
+                    meta={KIND_META[item.kind]}
+                    onPress={() => router.push({ pathname: '/edit-brain-dump', params: { id: item.id } })}
+                    onToggleDone={() => handleToggleDone(item.id)}
+                    onDelete={() => confirmDelete(item.id)}
+                  />
+                ))}
+              </View>
             </View>
           ))
         )}
@@ -210,7 +203,7 @@ export default function BrainDumpScreen() {
 
 function Row({ item, meta, onPress, onToggleDone, onDelete }: {
   item: Entry
-  meta: { icon: IoniconsName; label: string; color: string; chipBg: string }
+  meta: { icon: IoniconsName; color: string; label: string }
   onPress: () => void
   onToggleDone: () => void
   onDelete: () => void
@@ -219,29 +212,27 @@ function Row({ item, meta, onPress, onToggleDone, onDelete }: {
   return (
     <View style={styles.row}>
       <TouchableOpacity
-        style={[styles.rowIconChip, { backgroundColor: meta.chipBg }]}
+        style={[styles.checkbox, item.done && styles.checkboxChecked]}
         onPress={onToggleDone}
-        hitSlop={4}
+        hitSlop={6}
         accessibilityLabel={item.done ? t('markNotDone') : t('markDone')}
       >
-        <Ionicons
-          name={item.done ? 'checkmark-circle' : meta.icon}
-          size={18}
-          color={item.done ? colors.sageDeep : meta.color}
-        />
+        {item.done && <Ionicons name="checkmark" size={12} color="#fff" />}
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.rowBody} onPress={onPress} activeOpacity={0.7}>
+      <Ionicons name={meta.icon} size={15} color={item.done ? colors.textSecondary : meta.color} />
+
+      <TouchableOpacity style={styles.rowBody} onPress={onPress} activeOpacity={0.6}>
         <Text style={[styles.rowTitle, item.done && styles.rowTitleDone]} numberOfLines={1}>{item.text}</Text>
         {!!item.details && (
-          <Text style={styles.rowDetail} numberOfLines={2}>{item.details}</Text>
+          <Text style={styles.rowDetail} numberOfLines={1}>{item.details}</Text>
         )}
       </TouchableOpacity>
 
       <View style={styles.rowTrailing}>
-        <Text style={styles.rowTime}>{formatEntryTime(item.createdAt)}</Text>
-        <TouchableOpacity onPress={onDelete} hitSlop={8} style={styles.rowMenuBtn} accessibilityLabel={t('deleteEntry')}>
-          <Ionicons name="ellipsis-vertical" size={16} color={colors.textSecondary} />
+        <Text style={styles.rowMeta}>{formatEntryTime(item.createdAt)}</Text>
+        <TouchableOpacity onPress={onDelete} hitSlop={8} accessibilityLabel={t('deleteEntry')}>
+          <Ionicons name="ellipsis-horizontal" size={14} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
     </View>
@@ -249,7 +240,16 @@ function Row({ item, meta, onPress, onToggleDone, onDelete }: {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: colors.background },
+  safe:   { flex: 1, backgroundColor: colors.background, position: 'relative', overflow: 'hidden' },
+
+  // Same soft-corner-wash technique as the desktop web preview frame, scaled
+  // down for the screen itself — one touch of color on an otherwise flat
+  // page. Top-right only: a matching bottom-left blob sits right where the
+  // floating tab bar's own rounded shapes are, on a different layer outside
+  // this screen's container — at any screen height short enough to show it
+  // at all, it reads as a rendering glitch poking out from behind the tab
+  // bar rather than a deliberate corner wash, so it's not worth the risk.
+  blobTopRight: { position: 'absolute', top: -170, right: -150, width: 360, height: 360, borderRadius: 180, backgroundColor: colors.peach, opacity: 0.4 },
   scroll: { paddingHorizontal: spacing.md, paddingTop: 28, paddingBottom: 56 },
 
   header:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
@@ -257,54 +257,46 @@ const styles = StyleSheet.create({
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   appName:    { fontSize: 24, fontWeight: '700', color: colors.textPrimary },
   profileBtn: { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
-  bellBtn:    { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
 
-  heroRow:      { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
-  heroIconChip: { width: 52, height: 52, borderRadius: radius.lg, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
-  heroTitle:    { fontFamily: fonts.headline, fontSize: 19, color: colors.textPrimary },
-  heroSub:      { fontSize: 12.5, color: colors.textSecondary, marginTop: 3, lineHeight: 17 },
-  menuBtn:      { width: 30, height: 30, borderRadius: radius.pill, backgroundColor: colors.neutralChip, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginBottom: spacing.md },
+  title:    { fontFamily: fonts.headline, fontSize: 21, color: colors.textPrimary },
+  subtitle: { fontSize: 13, color: colors.textSecondary, marginTop: 3, lineHeight: 18 },
+  menuBtn:  { padding: 4, marginTop: 2 },
 
-  addCard: { backgroundColor: colors.lavender, borderRadius: radius.xl, padding: spacing.sm, marginBottom: spacing.md },
-  input:   { fontSize: 15, color: colors.textPrimary, minHeight: 44, textAlignVertical: 'top', marginBottom: spacing.sm, textAlign: 'left' },
+  composer: { borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.border, paddingVertical: spacing.sm, marginBottom: spacing.md },
+  input:    { fontSize: 15, color: colors.textPrimary, minHeight: 40, textAlignVertical: 'top', marginBottom: spacing.sm, textAlign: 'left' },
   inputRTL: { textAlign: 'right' },
-  addRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  composerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 
   typeToggle:      { flexDirection: 'row', flexWrap: 'wrap', gap: 8, flex: 1 },
-  typeChip:        { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 11, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: colors.card },
-  typeChipActive:  { backgroundColor: colors.primary },
+  typeChip:        { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 11, paddingVertical: 7, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border },
+  typeChipActive:  { backgroundColor: colors.primary, borderColor: colors.primary },
   typeChipText:    { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
   typeChipTextActive: { color: '#fff' },
 
-  addBtn:         { width: 36, height: 36, borderRadius: radius.pill, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginLeft: spacing.xs },
+  addBtn:         { width: 36, height: 36, borderRadius: radius.pill, backgroundColor: colors.textPrimary, alignItems: 'center', justifyContent: 'center', marginLeft: spacing.xs },
   addBtnRTL:      { marginLeft: 0, marginRight: spacing.xs },
-  addBtnDisabled: { opacity: 0.4 },
+  addBtnDisabled: { opacity: 0.35 },
 
-  filterTabs: { flexDirection: 'row', gap: 6, marginBottom: spacing.md },
-  filterTab:       { paddingHorizontal: 13, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: colors.neutralChip },
-  filterTabActive: { backgroundColor: colors.lavender },
-  filterTabText:       { fontSize: 12, fontWeight: '700', color: colors.textSecondary },
-  filterTabTextActive: { color: colors.lavenderDeep },
+  filterRow: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md },
+  filterText:       { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+  filterTextActive: { color: colors.textPrimary },
 
   emptyText: { fontSize: 13.5, color: colors.textSecondary, lineHeight: 19, marginTop: spacing.sm },
 
   section:      { marginBottom: spacing.md },
-  sectionLabel: { fontSize: 12, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: spacing.xs },
+  sectionLabel: { fontSize: 11.5, fontWeight: '600', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 },
+  list:         { borderTopWidth: 1, borderTopColor: colors.border },
 
-  row: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 10,
-    backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.xs,
-    borderWidth: 1, borderColor: colors.border,
-    shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
-  },
-  rowIconChip: { width: 36, height: 36, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+  checkbox:        { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  checkboxChecked: { backgroundColor: colors.sageDeep, borderColor: colors.sageDeep },
 
   rowBody:  { flex: 1 },
-  rowTitle: { fontSize: 14.5, fontWeight: '700', color: colors.textPrimary, lineHeight: 19 },
+  rowTitle: { fontSize: 14.5, fontWeight: '600', color: colors.textPrimary },
   rowTitleDone: { color: colors.textSecondary, textDecorationLine: 'line-through' },
-  rowDetail: { fontSize: 12.5, color: colors.textSecondary, marginTop: 3, lineHeight: 17 },
+  rowDetail: { fontSize: 12.5, color: colors.textSecondary, marginTop: 2 },
 
-  rowTrailing: { alignItems: 'flex-end', gap: 18 },
-  rowTime:     { fontSize: 11, color: colors.textSecondary },
-  rowMenuBtn:  { padding: 2 },
+  rowTrailing: { alignItems: 'flex-end', gap: 8 },
+  rowMeta:     { fontSize: 11, color: colors.textSecondary },
 })

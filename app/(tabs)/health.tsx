@@ -11,7 +11,6 @@ import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 import { gestationalAge } from '../../lib/pregnancy'
 import { getDateLocale } from '../../lib/i18n/dateLocale'
 import { useDirectionalIcon } from '../../lib/i18n/useDirectionalIcon'
-import { useLanguage } from '../../lib/i18n/LanguageProvider'
 import { TODAY, loadLMP } from '../../lib/carePlan'
 
 const STORAGE_KEY = 'bumpling_health_checkins'
@@ -64,7 +63,6 @@ function formatTime(iso: string) {
 export default function HealthScreen() {
   const router = useRouter()
   const { t } = useTranslation('health')
-  const { isRTL } = useLanguage()
   const { forward } = useDirectionalIcon()
   const MOODS = MOOD_KEYS.map(m => ({ ...m, label: t(`mood.${m.key}`) }))
   // Case-insensitive so a legacy capitalized symptom saved before this
@@ -152,10 +150,6 @@ export default function HealthScreen() {
             <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')} accessibilityLabel={t('profileLabel')}>
               <Ionicons name="person-outline" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.bellBtn}>
-              <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-              <View style={[styles.bellDot, isRTL && styles.bellDotRTL]} />
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -164,78 +158,75 @@ export default function HealthScreen() {
             <Text style={styles.title}>{t('title')}</Text>
             <Text style={styles.heroSubtitle}>{t('heroSubtitle', { weeks: age.weeks, days: age.days })}</Text>
           </View>
-          <FetusIllustration size={110} />
+          <FetusIllustration size={92} />
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardTitle}>{t('howFeeling')}</Text>
-            {!!savedAt && <Text style={styles.loggedText}>{t('loggedAt', { time: formatTime(savedAt) })}</Text>}
-          </View>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionLabel}>{t('howFeeling')}</Text>
+          {!!savedAt && <Text style={styles.loggedText}>{t('loggedAt', { time: formatTime(savedAt) })}</Text>}
+        </View>
 
-          <View style={styles.moodRow}>
-            {MOODS.map(m => {
-              const selected = mood === m.key
-              return (
-                <TouchableOpacity
-                  key={m.key}
-                  style={styles.moodBtn}
-                  onPress={() => setMood(m.key)}
-                  activeOpacity={0.8}
-                >
-                  <View style={[styles.moodIconChip, { backgroundColor: `${m.color}1F` }, selected && { borderColor: m.color, borderWidth: 2 }]}>
-                    <MoodFace mood={m.key} size={22} color={m.color} />
-                  </View>
-                  <Text style={[styles.moodLabel, selected && { color: m.color }]}>{m.label}</Text>
-                </TouchableOpacity>
-              )
-            })}
-          </View>
+        <View style={styles.moodRow}>
+          {MOODS.map(m => {
+            const selected = mood === m.key
+            return (
+              <TouchableOpacity
+                key={m.key}
+                style={styles.moodBtn}
+                onPress={() => setMood(m.key)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.moodIconChip, { backgroundColor: `${m.color}1F` }, selected && { borderColor: m.color, borderWidth: 2 }]}>
+                  <MoodFace mood={m.key} size={22} color={m.color} />
+                </View>
+                <Text style={[styles.moodLabel, selected && { color: m.color }]}>{m.label}</Text>
+              </TouchableOpacity>
+            )
+          })}
+        </View>
 
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.cardTitle}>{t('symptoms')}</Text>
-            <TouchableOpacity onPress={() => setSymptomsOpen(v => !v)} activeOpacity={0.7} style={styles.viewAllBtn}>
-              <Text style={styles.viewAllText}>{symptomsOpen ? t('hide') : t('viewAll')}</Text>
-              <Ionicons name={symptomsOpen ? 'chevron-up' : forward} size={14} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionLabel}>{t('symptoms')}</Text>
+          <TouchableOpacity onPress={() => setSymptomsOpen(v => !v)} activeOpacity={0.7} style={styles.viewAllBtn}>
+            <Text style={styles.viewAllText}>{symptomsOpen ? t('hide') : t('viewAll')}</Text>
+            <Ionicons name={symptomsOpen ? 'chevron-up' : forward} size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
 
+        <View style={styles.chipRow}>
+          {symptoms.map(s => (
+            <View key={s} style={styles.symptomPill}>
+              <Text style={styles.symptomPillText}>{symptomLabel(s)}</Text>
+              <TouchableOpacity onPress={() => toggleSymptom(s)} hitSlop={6}>
+                <Ionicons name="close" size={13} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+          ))}
+          <TouchableOpacity style={styles.addSymptomBtn} onPress={() => setSymptomsOpen(true)} activeOpacity={0.8}>
+            <Ionicons name="add" size={14} color={colors.textPrimary} />
+            <Text style={styles.addSymptomText}>{t('addSymptom')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {symptomsOpen && (
           <View style={styles.chipRow}>
-            {symptoms.map(s => (
-              <View key={s} style={styles.symptomPill}>
-                <Text style={styles.symptomPillText}>{symptomLabel(s)}</Text>
-                <TouchableOpacity onPress={() => toggleSymptom(s)} hitSlop={6}>
-                  <Ionicons name="close" size={14} color={colors.urgent} />
-                </TouchableOpacity>
-              </View>
+            {unpickedSymptoms.length === 0 ? (
+              <Text style={styles.emptyText}>{t('allSymptomsAdded')}</Text>
+            ) : unpickedSymptoms.map(s => (
+              <TouchableOpacity key={s} style={styles.pickerChip} onPress={() => toggleSymptom(s)} activeOpacity={0.8}>
+                <Text style={styles.pickerChipText}>{symptomLabel(s)}</Text>
+              </TouchableOpacity>
             ))}
-            <TouchableOpacity style={styles.addSymptomBtn} onPress={() => setSymptomsOpen(true)} activeOpacity={0.8}>
-              <Ionicons name="add" size={14} color={colors.textPrimary} />
-              <Text style={styles.addSymptomText}>{t('addSymptom')}</Text>
-            </TouchableOpacity>
           </View>
+        )}
 
-          {symptomsOpen && (
-            <View style={styles.chipRow}>
-              {unpickedSymptoms.length === 0 ? (
-                <Text style={styles.emptyText}>{t('allSymptomsAdded')}</Text>
-              ) : unpickedSymptoms.map(s => (
-                <TouchableOpacity key={s} style={styles.pickerChip} onPress={() => toggleSymptom(s)} activeOpacity={0.8}>
-                  <Text style={styles.pickerChipText}>{symptomLabel(s)}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
+        <View style={styles.list}>
           <TouchableOpacity style={styles.navRow} onPress={() => setVitalsOpen(v => !v)} activeOpacity={0.7}>
-            <View style={styles.navRowIcon}>
-              <Ionicons name="body-outline" size={20} color={colors.primaryDark} />
-            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.navRowTitle}>{t('trackWeight')}</Text>
               <Text style={styles.navRowSub}>{weight || t('optional')}</Text>
             </View>
-            <Ionicons name={vitalsOpen ? 'chevron-down' : forward} size={18} color={colors.textSecondary} />
+            <Ionicons name={vitalsOpen ? 'chevron-down' : forward} size={16} color={colors.textSecondary} />
           </TouchableOpacity>
 
           {vitalsOpen && (
@@ -264,38 +255,29 @@ export default function HealthScreen() {
           )}
 
           <TouchableOpacity style={styles.navRow} onPress={photoTrackingComingSoon} activeOpacity={0.7}>
-            <View style={styles.navRowIcon}>
-              <Ionicons name="camera-outline" size={20} color={colors.primaryDark} />
-            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.navRowTitle}>{t('preferPhotos')}</Text>
               <Text style={styles.navRowSub}>{t('trackWithPhotos')}</Text>
             </View>
-            <Ionicons name={forward} size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.saveBtn} onPress={save} activeOpacity={0.85}>
-            <Text style={styles.saveBtnText}>{savedAt ? t('updateCheckIn') : t('saveCheckIn')}</Text>
+            <Ionicons name={forward} size={16} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionLabel}>{t('recentCheckIns')}</Text>
+        <TouchableOpacity style={styles.saveBtn} onPress={save} activeOpacity={0.85}>
+          <Text style={styles.saveBtnText}>{savedAt ? t('updateCheckIn') : t('saveCheckIn')}</Text>
+        </TouchableOpacity>
+
+        <Text style={[styles.sectionLabel, styles.historyLabel]}>{t('recentCheckIns')}</Text>
         {history.length === 0 ? (
           <Text style={styles.emptyText}>{t('noCheckInsYet')}</Text>
         ) : (
-          <View style={{ gap: spacing.xs }}>
+          <View style={styles.list}>
             {history.map(c => {
               const moodMeta = c.mood ? MOODS.find(m => m.key === c.mood) : undefined
               return (
                 <View key={c.date} style={styles.historyRow}>
-                  <View style={styles.historyDateChip}>
-                    <Text style={styles.historyDateText}>{formatDay(c.date)}</Text>
-                  </View>
-                  {!!moodMeta && (
-                    <View style={styles.historyMoodChip}>
-                      <MoodFace mood={moodMeta.key} size={16} color={moodMeta.color} />
-                    </View>
-                  )}
+                  <Text style={styles.historyDateText}>{formatDay(c.date)}</Text>
+                  {!!moodMeta && <MoodFace mood={moodMeta.key} size={16} color={moodMeta.color} />}
                   <View style={{ flex: 1 }}>
                     {c.symptoms.length > 0 && (
                       <Text style={styles.historySymptoms}>{c.symptoms.map(symptomLabel).join(', ')}</Text>
@@ -330,59 +312,53 @@ const styles = StyleSheet.create({
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   appName: { fontSize: 24, fontWeight: '700', color: colors.textPrimary },
   profileBtn: { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
-  bellBtn: { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  bellDot: { position: 'absolute', top: 6, right: 6, width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.background },
-  bellDotRTL: { right: undefined, left: 6 },
 
-  heroRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs },
-  title: { fontFamily: fonts.headlineBold, fontSize: 34, color: colors.textPrimary },
+  heroRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs, marginBottom: spacing.lg },
+  title: { fontFamily: fonts.headlineBold, fontSize: 30, color: colors.textPrimary },
   heroSubtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 4 },
 
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.sm, marginTop: -28, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
-  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
-  cardTitle: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary },
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
+  sectionLabel: { fontSize: 11.5, fontWeight: '600', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1 },
+  historyLabel: { marginTop: spacing.lg, marginBottom: spacing.sm },
   loggedText: { fontSize: 11.5, color: colors.sageDeep, fontWeight: '600' },
 
-  moodRow: { flexDirection: 'row', gap: 8, marginBottom: spacing.md },
+  moodRow: { flexDirection: 'row', gap: 8, marginBottom: spacing.lg },
   moodBtn: { flex: 1, alignItems: 'center', gap: 6 },
   moodIconChip: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'transparent' },
   moodLabel: { fontSize: 11, fontWeight: '600', color: colors.textSecondary },
 
-  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs },
   viewAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   viewAllText: { fontSize: 12.5, fontWeight: '600', color: colors.textSecondary },
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.sm },
 
-  symptomPill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: colors.urgentBg },
-  symptomPillText: { fontSize: 13, fontWeight: '600', color: colors.urgent },
+  symptomPill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 13, paddingVertical: 7, borderRadius: radius.pill, backgroundColor: colors.neutralChip },
+  symptomPillText: { fontSize: 12.5, fontWeight: '600', color: colors.textPrimary },
 
-  addSymptomBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.background },
-  addSymptomText: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
+  addSymptomBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 13, paddingVertical: 7, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border },
+  addSymptomText: { fontSize: 12.5, fontWeight: '600', color: colors.textPrimary },
 
-  pickerChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.background },
-  pickerChipText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+  pickerChip: { paddingHorizontal: 13, paddingVertical: 7, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border },
+  pickerChipText: { fontSize: 12.5, fontWeight: '600', color: colors.textSecondary },
 
-  navRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.background, borderRadius: radius.md, padding: spacing.sm, marginBottom: spacing.sm },
-  navRowIcon: { width: 40, height: 40, borderRadius: radius.sm, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center' },
-  navRowTitle: { fontSize: 14.5, fontWeight: '700', color: colors.textPrimary },
-  navRowSub: { fontSize: 12.5, color: colors.textSecondary, marginTop: 1 },
+  list: { borderTopWidth: 1, borderTopColor: colors.border, marginBottom: spacing.md },
 
-  vitalsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
+  navRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: colors.border },
+  navRowTitle: { fontSize: 15, color: colors.textPrimary },
+  navRowSub: { fontSize: 12.5, color: colors.textSecondary, marginTop: 2 },
+
+  vitalsRow: { flexDirection: 'row', gap: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border },
   vitalField: { flex: 1, gap: 5 },
   fieldLabel: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
   vitalInput: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.textPrimary },
 
-  saveBtn: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center', marginTop: spacing.xs },
+  saveBtn: { backgroundColor: colors.textPrimary, borderRadius: radius.pill, paddingVertical: 15, alignItems: 'center' },
   saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 
-  sectionLabel: { fontFamily: fonts.headline, fontSize: 17, color: colors.textPrimary, marginBottom: spacing.xs },
   emptyText: { fontSize: 13.5, color: colors.textSecondary },
 
-  historyRow: { flexDirection: 'row', gap: spacing.sm, backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.sm, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  historyDateChip: { width: 56, paddingVertical: 6, borderRadius: radius.sm, backgroundColor: colors.background, alignItems: 'center' },
-  historyDateText: { fontSize: 12, fontWeight: '700', color: colors.textPrimary },
-  historyMoodChip: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
+  historyRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+  historyDateText: { width: 52, fontSize: 12.5, fontWeight: '700', color: colors.textPrimary },
   historySymptoms: { fontSize: 13.5, fontWeight: '600', color: colors.textPrimary },
   historyVitals: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   historyNote: { fontSize: 12, color: colors.textSecondary, marginTop: 2, fontStyle: 'italic' },

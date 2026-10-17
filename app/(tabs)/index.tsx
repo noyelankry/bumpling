@@ -13,10 +13,11 @@ import { useLanguage } from '../../lib/i18n/LanguageProvider'
 import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, getItemTitle, type CareItemWithCustom } from '../../lib/carePlan'
 import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 import { type Entry, loadEntries, formatRelativeTime } from '../../lib/brainDump'
+import { getWeeklyFact } from '../../lib/pregnancyContent'
 
 export default function HomeScreen() {
   const { t } = useTranslation('home')
-  const { isRTL } = useLanguage()
+  const { isRTL, language } = useLanguage()
   const { forward } = useDirectionalIcon()
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date>(TODAY)
@@ -24,6 +25,7 @@ export default function HomeScreen() {
   const router = useRouter()
   const autoScroll = useAutoScrollEnabled()
   const age = gestationalAge(lmp, TODAY)
+  const weeklyFact = getWeeklyFact(age.weeks, language)
 
   useFocusEffect(useCallback(() => {
     loadCareItems().then(setItems)
@@ -32,8 +34,11 @@ export default function HomeScreen() {
   }, []))
 
   const computed = computeCareItems(items, lmp, TODAY)
+  // Only items that are still genuinely achievable (or not yet due) — a
+  // 'missed' item's window has already closed, so it shouldn't keep winning
+  // this sort on its now-meaningless (and ever more negative) bookBy date.
   const nextItem = computed
-    .filter(i => i.status !== 'scheduled' && i.status !== 'done')
+    .filter(i => i.status === 'actionable' || i.status === 'future')
     .sort((a, b) => a.bookBy.getTime() - b.bookBy.getTime())[0]
 
   return (
@@ -55,18 +60,14 @@ export default function HomeScreen() {
             <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')} accessibilityLabel={t('profileLabel')}>
               <Ionicons name="person-outline" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.bellBtn}>
-              <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
-              <View style={[styles.bellDot, isRTL && styles.bellDotRTL]} />
-            </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.weekRow}>
           <View style={styles.weekTextCol}>
             <Text style={styles.eyebrow}>{t('pregnant')}</Text>
-            <Text style={styles.heroNumber}>{age.weeks}</Text>
-            <Text style={styles.heroWeeksLabel}>{t('week', { count: age.weeks })}</Text>
+            <Text style={[styles.heroNumber, isRTL && styles.heroNumberRTL]}>{age.weeks}</Text>
+            <Text style={[styles.heroWeeksLabel, isRTL && styles.heroWeeksLabelRTL]}>{t('week', { count: age.weeks })}</Text>
             <View style={[styles.heroDaysLine, isRTL && styles.heroDaysLineRTL]}>
               <Text>
                 <Text style={styles.heroDaysAccent}>+{age.days}</Text>
@@ -81,7 +82,7 @@ export default function HomeScreen() {
           <Ionicons name="sparkles-outline" size={16} color={colors.lavenderDeep} style={{ marginTop: 2 }} />
           <Text style={styles.tipText}>
             <Text style={styles.tipTextBold}>{t('weeklyTipLabel')}</Text>
-            {t('weeklyTip')}
+            {weeklyFact.text}
           </Text>
         </View>
 
@@ -157,17 +158,19 @@ const styles = StyleSheet.create({
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   appName:     { fontSize: 24, fontWeight: '700', color: colors.textPrimary },
   profileBtn:  { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
-  bellBtn:     { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  bellDot:     { position: 'absolute', top: 6, right: 6, width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.background },
-  bellDotRTL:  { right: undefined, left: 6 },
 
   eyebrow:       { fontSize: 12, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1 },
 
   weekRow:       { flexDirection: 'row', alignItems: 'center', gap: 2, marginBottom: spacing.md },
   weekTextCol:   { flex: 1 },
 
+  // Digits have no inherent text direction, so "17" doesn't auto-align with
+  // its Hebrew siblings the way real Hebrew letters do — needs an explicit
+  // nudge or it sits flush left while "שבועות" sits flush right beside it.
   heroNumber:     { fontFamily: fonts.headlineBold, fontSize: 96, color: colors.textPrimary, lineHeight: 92, marginTop: 4 },
+  heroNumberRTL:  { textAlign: 'right' },
   heroWeeksLabel: { fontFamily: fonts.headline, fontSize: 20, color: colors.textPrimary, marginTop: -10 },
+  heroWeeksLabelRTL: { textAlign: 'right' },
   heroDaysLine:   { marginTop: 4, alignSelf: 'flex-start', marginLeft: 30 },
   heroDaysLineRTL: { marginLeft: 0, marginRight: 30 },
   heroDaysAccent: { fontFamily: fonts.headline, fontSize: 23, color: colors.primaryDark },
