@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { View } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useFonts as usePoppinsFonts, Poppins_600SemiBold } from '@expo-google-fonts/poppins'
@@ -8,11 +8,28 @@ import { useFonts as useNotoSansHebrewFonts, NotoSansHebrew_400Regular, NotoSans
 import { supabase } from '../lib/supabase'
 import { DEV_BYPASS_KEY, allowDevBypass } from '../lib/devBypass'
 import { hasLMP, hasCompletedCatchUp, hasCompletedBooked } from '../lib/carePlan'
-import { fonts } from '../lib/theme'
+import { fonts, colors, spacing } from '../lib/theme'
 import '../lib/i18n'
 import { LanguageProvider } from '../lib/i18n/LanguageProvider'
 import { DesktopWebFrame } from '../components/DesktopWebFrame'
 import { ONBOARDING_KEY } from '../lib/onboarding'
+
+// Only true on the GitHub Pages preview build (see .github/workflows/deploy-pages.yml)
+// — a persistent, impossible-to-miss reminder that this public URL isn't the
+// real app: no live backend, nothing saved to a real server.
+function PreviewBanner() {
+  if (process.env.EXPO_PUBLIC_PREVIEW_BUILD !== 'true') return null
+  return (
+    <View style={previewStyles.banner}>
+      <Text style={previewStyles.text}>Preview build — work in progress, no real backend, nothing is saved to a server</Text>
+    </View>
+  )
+}
+
+const previewStyles = StyleSheet.create({
+  banner: { backgroundColor: colors.urgent, paddingVertical: 5, paddingHorizontal: spacing.sm },
+  text: { fontSize: 10.5, fontWeight: '700', color: '#fff', textAlign: 'center' },
+})
 
 // Sets the bundled body font once at the root. On web this relies on real DOM
 // font-family inheritance to reach every Text without touching each screen's
@@ -114,6 +131,7 @@ export default function RootLayout() {
   return (
     <LanguageProvider>
       <View style={[{ flex: 1 }, rootFontStyle]}>
+        <PreviewBanner />
         <DesktopWebFrame>
           <Stack screenOptions={{ headerShown: false }} />
         </DesktopWebFrame>
