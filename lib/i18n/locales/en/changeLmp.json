@@ -1,0 +1,12 @@
+{
+  "title": "Update your dates",
+  "subtitle": "Got your last period date wrong? Update it here and we'll recalculate your whole care plan.",
+  "datePlaceholder": "Select a date",
+  "weekPreview": "That puts you at about Week {{weeks}} + {{days}} today.",
+  "warning": "This updates your week-by-week timeline and test windows across the app. Items you've already scheduled or marked done won't change.",
+  "submit": "Save new date",
+  "successTitle": "Updated",
+  "successMessage": "Your dates have been recalculated.",
+  "error": "Error",
+  "saveFailed": "Couldn't save that — check your connection and try again."
+}

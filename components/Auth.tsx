@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, ScrollView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -30,37 +30,67 @@ export default function Auth() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [username, setUsername] = useState('')
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [agreedTerms, setAgreedTerms] = useState(false)
   const [agreedHealthData, setAgreedHealthData] = useState(false)
   const [agreedAge, setAgreedAge] = useState(false)
+  const [confirmationPending, setConfirmationPending] = useState(false)
 
-  const canSignUp = mode === 'signin' || (agreedTerms && agreedHealthData && agreedAge)
+  const canSignUp = mode === 'signin' || (agreedTerms && agreedHealthData && agreedAge && usernameStatus === 'available')
+
+  useEffect(() => {
+    if (mode !== 'signup') return
+    const trimmed = username.trim()
+    if (trimmed.length === 0) { setUsernameStatus('idle'); return }
+    if (trimmed.length < 3 || !/^[a-zA-Z0-9_]+$/.test(trimmed)) { setUsernameStatus('invalid'); return }
+    setUsernameStatus('checking')
+    const handle = setTimeout(async () => {
+      const { data, error } = await supabase.rpc('username_available', { check_username: trimmed })
+      setUsernameStatus(error ? 'idle' : data ? 'available' : 'taken')
+    }, 400)
+    return () => clearTimeout(handle)
+  }, [username, mode])
+
+  // RLS requires a real session to write here, so a signup that doesn't
+  // return one immediately (email confirmation pending) can't record consent
+  // yet — this runs again on the first successful sign-in to backfill it.
+  async function writeConsentIfMissing(userId: string) {
+    const { data: existing } = await supabase.from('consent_logs').select('id').eq('user_id', userId).limit(1)
+    if (existing && existing.length > 0) return
+    await supabase.from('consent_logs').insert([
+      { user_id: userId, document: 'terms', version: TERMS_VERSION },
+      { user_id: userId, document: 'privacy', version: PRIVACY_VERSION },
+      { user_id: userId, document: 'health_data', version: HEALTH_CONSENT_VERSION },
+      { user_id: userId, document: 'age_attestation', version: TERMS_VERSION },
+    ])
+  }
 
   async function submit() {
     if (!canSignUp) return
     setLoading(true)
     if (mode === 'signin') {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) Alert.alert(error.message)
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) { Alert.alert(error.message); setLoading(false); return }
+      if (data.user) await writeConsentIfMissing(data.user.id)
       setLoading(false)
       return
     }
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { username: username.trim() } } })
     if (error) {
       Alert.alert(error.message)
       setLoading(false)
       return
     }
     if (data.user && data.session) {
-      await supabase.from('consent_logs').insert([
-        { user_id: data.user.id, document: 'terms', version: TERMS_VERSION },
-        { user_id: data.user.id, document: 'privacy', version: PRIVACY_VERSION },
-        { user_id: data.user.id, document: 'health_data', version: HEALTH_CONSENT_VERSION },
-        { user_id: data.user.id, document: 'age_attestation', version: TERMS_VERSION },
-      ])
+      await writeConsentIfMissing(data.user.id)
+      setLoading(false)
+      return
     }
+    // No immediate session — this project requires email confirmation.
+    setConfirmationPending(true)
     setLoading(false)
   }
 
@@ -91,7 +121,44 @@ export default function Auth() {
             </Text>
           </View>
 
+          {confirmationPending && (
+            <View style={styles.form}>
+              <View style={styles.confirmationBox}>
+                <Ionicons name="mail-outline" size={32} color={colors.primary} />
+                <Text style={styles.confirmationTitle}>{t('checkEmailTitle')}</Text>
+                <Text style={styles.confirmationBody}>{t('checkEmailBody', { email })}</Text>
+              </View>
+              <TouchableOpacity style={styles.switchMode} onPress={() => { setConfirmationPending(false); setMode('signin') }}>
+                <Text style={styles.switchModeText}>
+                  <Text style={styles.switchModeLink}>{t('backToSignIn')}</Text>
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {!confirmationPending && (
           <View style={styles.form}>
+            {mode === 'signup' && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>{t('username')}</Text>
+                <View style={styles.inputRow}>
+                  <Text style={styles.usernamePrefix}>@</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={username}
+                    onChangeText={v => setUsername(v.replace(/^@+/, ''))}
+                    placeholder={t('usernamePlaceholder')}
+                    placeholderTextColor={colors.textSecondary}
+                    autoCapitalize="none"
+                  />
+                </View>
+                {usernameStatus === 'checking' && <Text style={styles.usernameHint}>{t('usernameChecking')}</Text>}
+                {usernameStatus === 'available' && <Text style={[styles.usernameHint, styles.usernameOk]}>{t('usernameAvailable')}</Text>}
+                {usernameStatus === 'taken' && <Text style={[styles.usernameHint, styles.usernameBad]}>{t('usernameTaken')}</Text>}
+                {usernameStatus === 'invalid' && <Text style={[styles.usernameHint, styles.usernameBad]}>{t('usernameInvalid')}</Text>}
+              </View>
+            )}
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t('email')}</Text>
               <View style={styles.inputRow}>
@@ -168,7 +235,10 @@ export default function Auth() {
                 </Text>
               </Text>
             </TouchableOpacity>
+
+            {/* TODO: Sign in with Apple / Google — see BACKEND.md Section 13. Needs an Apple Developer account first; Apple is then required alongside Google per App Store Guideline 4.8. */}
           </View>
+          )}
 
           {allowDevBypass && (
             <TouchableOpacity style={styles.devSkip} onPress={devSkip}>
@@ -186,6 +256,13 @@ const BLOB = 240
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, position: 'relative', overflow: 'hidden' },
+  confirmationBox: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.lg },
+  usernamePrefix: { fontSize: 16, color: colors.textSecondary },
+  usernameHint: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
+  usernameOk: { color: colors.sageDeep },
+  usernameBad: { color: colors.urgent },
+  confirmationTitle: { fontFamily: fonts.headlineBold, fontSize: 20, color: colors.textPrimary, textAlign: 'center' },
+  confirmationBody: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', lineHeight: 20, paddingHorizontal: spacing.sm },
   scroll:    { flexGrow: 1, paddingHorizontal: spacing.md, justifyContent: 'center', paddingVertical: spacing.lg },
 
   blobTopLeft:     { position: 'absolute', top: -BLOB * 0.55, left: -BLOB * 0.55, width: BLOB, height: BLOB, borderRadius: BLOB / 2, backgroundColor: colors.peach },

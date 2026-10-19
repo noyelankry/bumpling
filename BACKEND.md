@@ -32,7 +32,8 @@ Existing Supabase state: `profiles` table (from `20240403090422_init.sql`) plus 
 - **Brain dump ids currently come from the client** (`Date.now().toString()`). Switch to `gen_random_uuid()` as the column default and use the id Supabase returns from the insert — don't keep generating ids client-side once this is backed by Postgres.
 - **`health_logs` is a one-row-per-day upsert**, mirroring today's "replace today's entry" logic (`checkIns.filter(c => c.date !== entry.date)` then prepend). Model this as a unique constraint on `(user_id, log_date)` and use `upsert(..., { onConflict: 'user_id,log_date' })` — not insert-then-manual-dedupe.
 - **`birth_preferences` ports cleanest as two `jsonb` columns** (`answers`, `support_contacts`), mirroring the existing shape exactly. Nothing today queries across users by topic, so normalizing into per-topic rows buys nothing and costs a rewrite.
-- **The AsyncStorage-backed Supabase session (`lib/supabase.ts`) is unencrypted on disk.** Swap for `expo-secure-store` (Step 6) — but iOS Keychain items cap around 2048 bytes per entry; verify the session payload fits after wiring it up, and chunk across multiple keys if it ever doesn't, rather than letting it fail silently.
+- **The AsyncStorage-backed Supabase session (`lib/supabase.ts`) is unencrypted on disk.** Swap for `expo-secure-store` (Step 6) — but iOS Keychain items cap around 2048 bytes per entry; verify the session payload fits after wiring it up, and chunk across multiple keys if it ever doesn't, rather than letting it fail silently. **`expo-secure-store` has no web implementation at all** — Platform-branch the storage adapter (SecureStore on native, AsyncStorage on web) or the web build crashes on first load.
+- **`catchup_done` and `booked_done` are independent, not a single mode.** The real onboarding flow runs catch-up *then* booked, in sequence — both complete for every user, it's not an either/or choice. Modeling this as one `mode` column (`'catchup' | 'booked'`) means the second write silently erases the first, and the layout's auth-gating effect (`app/_layout.tsx`) bounces the user back to catch-up forever since it reads `hasCompletedCatchUp()` as false again. Caught live by querying the production table directly after a real test account got stuck in exactly this loop.
 
 ## 3. Target schema
 
@@ -40,11 +41,17 @@ Run as migrations in this order (see Step 4 for filenames). RLS policies live in
 
 ```sql
 -- pregnancies
+-- catchup_done / booked_done are independent flags, not a mutually exclusive
+-- mode — the original design used a single `mode` enum here and it was
+-- wrong: the real flow runs catch-up then booked in sequence, and
+-- markBookedDone() was silently un-setting catch-up completion by
+-- overwriting the same column. Caught live (see Section 2).
 create table pregnancies (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   lmp_date date not null,
-  mode text not null check (mode in ('booked', 'catchup')),
+  catchup_done boolean not null default false,
+  booked_done boolean not null default false,
   created_at timestamptz not null default now()
 );
 alter table pregnancies enable row level security;
@@ -309,3 +316,20 @@ Two distinct mechanisms, don't conflate them:
 - [ ] Sign in, kill the app, relaunch — session should survive via `expo-secure-store`.
 - [ ] Create a brand-new pregnancy and open Plan immediately — all 18 default care items should already be there (the seeding-gotcha check).
 - [ ] Run `delete_my_account` against a disposable test user and confirm every one of the 9 tables plus `auth.users` is actually empty for that user afterward.
+
+## 12a. Username (added post-launch-testing)
+
+`profiles.username` now has a case-insensitive unique index (`lower(username)`, replacing the original plain-text `unique`). A `username_available(check_username text)` function, `security definer`, granted to `anon` and `authenticated`, lets the signup form check availability live before a session exists — it only returns a boolean, never leaks other profile data. `handle_new_user()` was updated to also read `username` out of `raw_user_meta_data`, so it's set the moment `auth.users` gets a row, via `signUp({ options: { data: { username } } })`. Profile's own username edit reuses the same RPC for a friendly "taken" message instead of surfacing the raw Postgres constraint error.
+
+## 12b. Editing LMP after onboarding
+
+`app/change-lmp.tsx`, linked from Profile settings, reuses `saveLMP()` as-is — no new backend logic needed, since it already handles the "pregnancy row exists → update `lmp_date`" path without touching `care_items` (every item's window is computed live from `lmp_date` + relative week offsets, never stored as an absolute date). Changing LMP is safe and doesn't disturb anything already scheduled or marked done.
+
+## 13. Deferred: Sign in with Apple / Google
+
+Deliberately not implemented yet — needs an Apple Developer account first, which isn't set up. A `TODO` in `components/Auth.tsx` points here.
+
+- **Apple**: enable the "Sign in with Apple" capability on the app's identifier in the Apple Developer portal (no extra cost beyond the existing $99/year membership), then configure the same in Supabase under Authentication → Providers → Apple. Code-side: `expo-apple-authentication` + `supabase.auth.signInWithIdToken()`.
+- **Google**: free Google Cloud project, OAuth consent screen, OAuth client ID — configured in Supabase under Authentication → Providers → Google. Code-side: either Supabase's hosted `signInWithOAuth()` redirect flow, or a native Google Sign-In SDK for a more in-app feel.
+- **Not optional once Google ships**: Apple's App Store Review Guideline 4.8 requires offering Sign in with Apple as an equivalent option if any other third-party login (Google included) is offered. Budget for both together, not Google alone.
+- Both are a native rebuild, not an OTA update — plan for an EAS/`expo run:ios` build when this actually gets picked up.

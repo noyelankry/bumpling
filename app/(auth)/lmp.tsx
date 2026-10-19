@@ -14,7 +14,7 @@ import { useLanguage } from '../../lib/i18n/LanguageProvider'
 // Care-plan chart tracks post-term monitoring out to week 41; 43 gives a bit of slack.
 const MAX_WEEKS_BACK = 43
 
-type ErrorKind = 'missing' | 'tooOld'
+type ErrorKind = 'missing' | 'tooOld' | 'saveFailed'
 
 export default function LmpScreen() {
   const router = useRouter()
@@ -35,7 +35,10 @@ export default function LmpScreen() {
   function continueOn() {
     if (!date) { setError('missing'); return }
     if (date < earliestLmp) { setError('tooOld'); return }
-    saveLMP(date).then(() => router.replace('/(auth)/catch-up'))
+    setError(null)
+    saveLMP(date)
+      .then(() => router.replace('/(auth)/catch-up'))
+      .catch(err => { console.error('saveLMP failed:', err); setError('saveFailed') })
   }
 
   return (
@@ -71,6 +74,9 @@ export default function LmpScreen() {
           )}
           {error === 'tooOld' && (
             <Text style={styles.errorText}>{t('errorTooOld', { weeks: MAX_WEEKS_BACK })}</Text>
+          )}
+          {error === 'saveFailed' && (
+            <Text style={styles.errorText}>{t('errorSaveFailed')}</Text>
           )}
 
           {preview && (

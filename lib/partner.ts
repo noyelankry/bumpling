@@ -1,28 +1,21 @@
-// Local-only partner contact info, used to address the "share with partner"
-// email draft on an appointment. Not synced to Supabase — same tier as the
-// rest of this app's settings (LMP, care items, health check-ins).
-import AsyncStorage from '@react-native-async-storage/async-storage'
-
-const STORAGE_KEY = 'bumpling_partner'
+// Partner contact info, used to address the "share with partner" email draft on an appointment.
+import { supabase } from './supabase'
 
 export type Partner = { name: string; email: string }
 
 const EMPTY_PARTNER: Partner = { name: '', email: '' }
 
 export async function loadPartner(): Promise<Partner> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY)
-  if (!raw) return EMPTY_PARTNER
-  try {
-    return { ...EMPTY_PARTNER, ...JSON.parse(raw) }
-  } catch {
-    return EMPTY_PARTNER
-  }
+  const { data } = await supabase.from('partner_contacts').select('name,email').maybeSingle()
+  return data ? { name: data.name ?? '', email: data.email ?? '' } : EMPTY_PARTNER
 }
 
 export async function savePartner(partner: Partner): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(partner))
+  const { data } = await supabase.auth.getClaims()
+  const userId = data?.claims?.sub
+  if (!userId) return
+  await supabase.from('partner_contacts').upsert({ user_id: userId, ...partner })
 }
 
-export async function clearPartnerData(): Promise<void> {
-  await AsyncStorage.removeItem(STORAGE_KEY)
-}
+// No-op now — data is server-side and cascade-deleted on account deletion, not local.
+export async function clearPartnerData(): Promise<void> {}

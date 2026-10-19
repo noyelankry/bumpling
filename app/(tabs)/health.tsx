@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert,
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { MoodFace, BabyMark, FetusIllustration } from '../../components/illustrations'
@@ -11,13 +10,11 @@ import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 import { gestationalAge } from '../../lib/pregnancy'
 import { getDateLocale } from '../../lib/i18n/dateLocale'
 import { useDirectionalIcon } from '../../lib/i18n/useDirectionalIcon'
-import { TODAY, loadLMP } from '../../lib/carePlan'
+import { TODAY, loadLMP, currentPregnancyId } from '../../lib/carePlan'
+import { supabase } from '../../lib/supabase'
 
-const STORAGE_KEY = 'bumpling_health_checkins'
-
-export async function clearHealthData(): Promise<void> {
-  await AsyncStorage.removeItem(STORAGE_KEY)
-}
+// No-op now — data is server-side and cascade-deleted on account deletion, not local.
+export async function clearHealthData(): Promise<void> {}
 
 // Stored values stay these fixed English keys regardless of display
 // language — same pattern as care-item ids — so a saved check-in never goes
@@ -85,8 +82,19 @@ export default function HealthScreen() {
   useFocusEffect(useCallback(() => { load(); loadLMP().then(setLmp) }, []))
 
   async function load() {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY)
-    const all: CheckIn[] = raw ? JSON.parse(raw) : []
+    const { data: claims } = await supabase.auth.getClaims()
+    const userId = claims?.claims?.sub
+    if (!userId) { setCheckIns([]); return }
+    const { data: rows } = await supabase.from('health_logs').select('*').eq('user_id', userId).order('log_date', { ascending: false })
+    const all: CheckIn[] = (rows ?? []).map(row => ({
+      date: row.log_date,
+      mood: row.mood,
+      symptoms: row.symptoms ?? [],
+      note: row.note ?? '',
+      weight: row.weight ?? '',
+      bloodPressure: row.blood_pressure ?? '',
+      loggedAt: row.logged_at,
+    }))
     setCheckIns(all)
     const today = all.find(c => c.date === todayKey())
     if (today) {
@@ -121,11 +129,26 @@ export default function HealthScreen() {
       bloodPressure: bloodPressure.trim(),
       loggedAt: new Date().toISOString(),
     }
+    const { data: claims } = await supabase.auth.getClaims()
+    const userId = claims?.claims?.sub
+    if (userId) {
+      const pregnancyId = await currentPregnancyId()
+      await supabase.from('health_logs').upsert({
+        user_id: userId,
+        pregnancy_id: pregnancyId,
+        log_date: entry.date,
+        mood: entry.mood,
+        symptoms: entry.symptoms,
+        note: entry.note || null,
+        weight: entry.weight || null,
+        blood_pressure: entry.bloodPressure || null,
+        logged_at: entry.loggedAt,
+      }, { onConflict: 'user_id,log_date' })
+    }
     const others = checkIns.filter(c => c.date !== entry.date)
     const next = [entry, ...others].sort((a, b) => b.date.localeCompare(a.date))
     setCheckIns(next)
     setSavedAt(entry.loggedAt)
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next))
   }
 
   const history = checkIns.filter(c => c.date !== todayKey())

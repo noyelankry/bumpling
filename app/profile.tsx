@@ -9,7 +9,8 @@ import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import { BabyMark } from '../components/illustrations'
 import { supabase } from '../lib/supabase'
-import { clearCarePlanData } from '../lib/carePlan'
+import { clearCarePlanData, loadLMP } from '../lib/carePlan'
+import { gestationalAge, formatDate } from '../lib/pregnancy'
 import { DEV_BYPASS_KEY } from '../lib/devBypass'
 import { ONBOARDING_KEY } from '../lib/onboarding'
 import { goBack } from '../lib/navigation'
@@ -18,6 +19,7 @@ import { clearBrainDumpData } from '../lib/brainDump'
 import { type Partner, loadPartner, savePartner, clearPartnerData } from '../lib/partner'
 import { clearBirthPrefsData } from '../lib/birthPrefs'
 import { loadMomPhone, saveMomPhone, clearMomContactData } from '../lib/momContact'
+import { exportMyData } from '../lib/dataExport'
 import { useLanguage } from '../lib/i18n/LanguageProvider'
 import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 import type { Language } from '../lib/i18n/languageStorage'
@@ -40,6 +42,8 @@ export default function ProfileScreen() {
   const [partner, setPartner] = useState<Partner>({ name: '', email: '' })
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [lmp, setLmp] = useState<Date | null>(null)
   // The last-saved values, so fields can just always be editable — no edit-mode
   // toggle — while still only showing "Save changes" once something actually differs.
   const [saved, setSaved] = useState<{ form: Profile; phoneCountry: PhoneCountry; phoneNumber: string; partner: Partner } | null>(null)
@@ -89,7 +93,7 @@ export default function ProfileScreen() {
   useFocusEffect(useCallback(() => {
     let cancelled = false
     ;(async () => {
-      const [p, ph] = await Promise.all([loadPartner(), loadMomPhone()])
+      const [p, ph, lmpDate] = await Promise.all([loadPartner(), loadMomPhone(), loadLMP()])
       let f: Profile = { full_name: '', username: '' }
       const { data } = await supabase.auth.getClaims()
       if (data?.claims) {
@@ -98,6 +102,7 @@ export default function ProfileScreen() {
       }
       if (cancelled) return
       const { country, number } = splitPhone(ph)
+      setLmp(lmpDate)
       setPartner(p)
       setPhoneCountry(country)
       setPhoneNumber(number)
@@ -109,10 +114,14 @@ export default function ProfileScreen() {
 
   async function save() {
     setSaving(true)
-    // Partner info and mom's phone are local-only (AsyncStorage, see
-    // lib/partner.ts / lib/momContact.ts) — they save regardless of Supabase
-    // session state, unlike the profile fields below which need a signed-in
-    // user to write to.
+    if (form.username && form.username !== saved?.form.username) {
+      const { data: available } = await supabase.rpc('username_available', { check_username: form.username })
+      if (available === false) {
+        setSaving(false)
+        Alert.alert(t('error'), t('usernameTakenError'))
+        return
+      }
+    }
     await savePartner(partner)
     await saveMomPhone(joinPhone(phoneCountry, phoneNumber))
     const { data } = await supabase.auth.getClaims()
@@ -126,6 +135,13 @@ export default function ProfileScreen() {
     }
     setSaving(false)
     setSaved({ form, phoneCountry, phoneNumber, partner })
+  }
+
+  async function downloadMyData() {
+    setExporting(true)
+    const result = await exportMyData()
+    setExporting(false)
+    if (!result.ok) Alert.alert(t('error'), t('exportDataError'))
   }
 
   async function deleteAccount() {
@@ -242,6 +258,17 @@ export default function ProfileScreen() {
             </View>
           </View>
 
+          <TouchableOpacity style={styles.fieldRow} onPress={() => router.push('/change-lmp')} activeOpacity={0.6}>
+            <Text style={styles.fieldLabel}>{t('lastPeriod')}</Text>
+            <View style={styles.lmpRow}>
+              <View>
+                <Text style={styles.lmpValue}>{lmp ? formatDate(lmp) : t('lastPeriodNotSet')}</Text>
+                {lmp && <Text style={styles.lmpWeek}>{t('lastPeriodWeek', gestationalAge(lmp, new Date()))}</Text>}
+              </View>
+              <Ionicons name={forward} size={16} color={colors.textSecondary} />
+            </View>
+          </TouchableOpacity>
+
           <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>{t('phone')}</Text>
             <View style={styles.phoneRow}>
@@ -330,6 +357,13 @@ export default function ProfileScreen() {
             <Ionicons name={forward} size={16} color={colors.textSecondary} />
           </TouchableOpacity>
 
+          <TouchableOpacity style={styles.subRow} onPress={downloadMyData} activeOpacity={0.6} disabled={exporting}>
+            {exporting
+              ? <ActivityIndicator color={colors.textSecondary} size="small" />
+              : <Text style={styles.subRowTitle}>{t('downloadMyData')}</Text>
+            }
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.subRow} onPress={signOut} activeOpacity={0.6}>
             <Text style={[styles.subRowTitle, styles.urgentText]}>{t('logOut')}</Text>
           </TouchableOpacity>
@@ -377,6 +411,9 @@ const styles = StyleSheet.create({
 
   list:         { borderTopWidth: 1, borderTopColor: colors.border },
   fieldRow:     { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+  lmpRow:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  lmpValue: { fontSize: 15, color: colors.textPrimary },
+  lmpWeek:  { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   fieldLabel:   { fontSize: 11.5, fontWeight: '600', color: colors.textSecondary, marginBottom: 3 },
   fieldInput:   { fontSize: 16, color: colors.textPrimary, padding: 0, textAlign: 'left' },
   fieldInputRTL: { textAlign: 'right' },

@@ -1,8 +1,7 @@
 // Birth-preferences guided flow: one question per topic, answered at the
 // user's own pace, rendered into a shareable PDF birth plan at the end.
-import AsyncStorage from '@react-native-async-storage/async-storage'
-
-const STORAGE_KEY = 'bumpling_birth_prefs'
+import { supabase } from './supabase'
+import { currentPregnancyId } from './carePlan'
 
 export type TopicId =
   | 'environment'
@@ -163,18 +162,25 @@ export function relationshipOption(options: TopicOption[], id: string): TopicOpt
 const EMPTY: BirthPrefsData = { answers: {}, supportContacts: [] }
 
 export async function loadBirthPrefs(): Promise<BirthPrefsData> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY)
-  if (!raw) return EMPTY
-  try {
-    const parsed = JSON.parse(raw)
-    return { answers: parsed.answers ?? {}, supportContacts: parsed.supportContacts ?? [] }
-  } catch {
-    return EMPTY
-  }
+  const pregnancyId = await currentPregnancyId()
+  if (!pregnancyId) return EMPTY
+  const { data } = await supabase.from('birth_preferences').select('answers,support_contacts').eq('pregnancy_id', pregnancyId).maybeSingle()
+  if (!data) return EMPTY
+  return { answers: data.answers ?? {}, supportContacts: data.support_contacts ?? [] }
 }
 
 async function saveBirthPrefs(data: BirthPrefsData): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  const pregnancyId = await currentPregnancyId()
+  if (!pregnancyId) return
+  const { data: claims } = await supabase.auth.getClaims()
+  const userId = claims?.claims?.sub
+  if (!userId) return
+  await supabase.from('birth_preferences').upsert({
+    pregnancy_id: pregnancyId,
+    user_id: userId,
+    answers: data.answers,
+    support_contacts: data.supportContacts,
+  })
 }
 
 export async function saveBirthPrefAnswer(data: BirthPrefsData, topicId: TopicId, optionId: string): Promise<BirthPrefsData> {
@@ -194,6 +200,5 @@ export function isTopicDone(data: BirthPrefsData, topic: Topic): boolean {
   return topic.kind === 'contacts' ? data.supportContacts.length > 0 : !!data.answers[topic.id]
 }
 
-export async function clearBirthPrefsData(): Promise<void> {
-  await AsyncStorage.removeItem(STORAGE_KEY)
-}
+// No-op now — data is server-side and cascade-deleted on account deletion, not local.
+export async function clearBirthPrefsData(): Promise<void> {}

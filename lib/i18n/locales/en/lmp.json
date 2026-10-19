@@ -4,6 +4,7 @@
   "datePlaceholder": "Select a date",
   "errorMissing": "Pick the date your last period started.",
   "errorTooOld": "That's more than {{weeks}} weeks ago — outside a typical pregnancy. Double-check the date.",
+  "errorSaveFailed": "Couldn't save that — check your connection and try again.",
   "weekPreview": "That puts you at about Week {{weeks}} + {{days}} today.",
   "disclaimer": "This is a general estimate to help you plan ahead — always confirm dates and test timing with your doctor.",
   "continue": "Continue"

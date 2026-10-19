@@ -1,10 +1,8 @@
 // Shared brain-dump storage: free-form notes and doctor questions,
 // optionally enriched with details/tags/an appointment link.
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { supabase } from './supabase'
 import i18next from './i18n'
 import { getDateLocale } from './i18n/dateLocale'
-
-const STORAGE_KEY = 'bumpling_brain_dump'
 
 export type EntryKind = 'thought' | 'doctor'
 export type Filter = 'all' | 'doctor' | 'personal'
@@ -30,40 +28,30 @@ export function filterGroupOf(kind: EntryKind): Filter {
   return kind === 'doctor' ? 'doctor' : 'personal'
 }
 
-// Earlier shapes had `type` ('doctor' | 'thought') or `category`
-// ('doctor' | 'personal') instead of `kind`, and no tags/details/link; a
-// since-removed 'symptom' kind also folds into 'thought' here.
-type StoredEntry = Partial<Omit<Entry, 'kind'>> & { kind?: string; type?: string; category?: string }
-
-function migrate(raw: StoredEntry[]): Entry[] {
-  return raw.map(e => {
-    const kind: EntryKind = (e.kind ?? e.category ?? e.type) === 'doctor' ? 'doctor' : 'thought'
-    return {
-      id: e.id ?? Date.now().toString(),
-      text: e.text ?? '',
-      details: e.details,
-      kind,
-      tags: e.tags ?? [],
-      linkedAppointmentId: e.linkedAppointmentId,
-      linkedAppointmentTitle: e.linkedAppointmentTitle,
-      done: e.done ?? false,
-      createdAt: e.createdAt ?? new Date().toISOString(),
-    }
-  })
+async function currentUserId(): Promise<string | null> {
+  const { data } = await supabase.auth.getClaims()
+  return data?.claims?.sub ?? null
 }
 
-export async function loadEntries(): Promise<Entry[]> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY)
-  if (!raw) return []
-  try {
-    return migrate(JSON.parse(raw))
-  } catch {
-    return []
+function fromRow(row: Record<string, any>): Entry {
+  return {
+    id: row.id,
+    text: row.text,
+    details: row.details ?? undefined,
+    kind: row.kind,
+    tags: row.tags ?? [],
+    linkedAppointmentId: row.linked_appointment_id ?? undefined,
+    linkedAppointmentTitle: row.linked_appointment_title ?? undefined,
+    done: row.done,
+    createdAt: row.created_at,
   }
 }
 
-async function saveEntries(entries: Entry[]): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
+export async function loadEntries(): Promise<Entry[]> {
+  const userId = await currentUserId()
+  if (!userId) return []
+  const { data } = await supabase.from('brain_dump_entries').select('*').order('created_at', { ascending: false })
+  return (data ?? []).map(fromRow)
 }
 
 export async function addEntry(entries: Entry[], details: {
@@ -74,20 +62,19 @@ export async function addEntry(entries: Entry[], details: {
   linkedAppointmentId?: string
   linkedAppointmentTitle?: string
 }): Promise<Entry[]> {
-  const entry: Entry = {
-    id: Date.now().toString(),
+  const userId = await currentUserId()
+  if (!userId) return entries
+  const { data } = await supabase.from('brain_dump_entries').insert({
+    user_id: userId,
     text: details.text,
-    details: details.details?.trim() || undefined,
+    details: details.details?.trim() || null,
     kind: details.kind,
     tags: details.tags ?? [],
-    linkedAppointmentId: details.linkedAppointmentId,
-    linkedAppointmentTitle: details.linkedAppointmentTitle,
-    done: false,
-    createdAt: new Date().toISOString(),
-  }
-  const next = [entry, ...entries]
-  await saveEntries(next)
-  return next
+    linked_appointment_id: details.linkedAppointmentId ?? null,
+    linked_appointment_title: details.linkedAppointmentTitle ?? null,
+  }).select().single()
+  if (!data) return entries
+  return [fromRow(data), ...entries]
 }
 
 export async function updateEntry(entries: Entry[], id: string, details: {
@@ -98,7 +85,15 @@ export async function updateEntry(entries: Entry[], id: string, details: {
   linkedAppointmentId?: string
   linkedAppointmentTitle?: string
 }): Promise<Entry[]> {
-  const next = entries.map(e => e.id === id ? {
+  await supabase.from('brain_dump_entries').update({
+    text: details.text,
+    details: details.details?.trim() || null,
+    kind: details.kind,
+    tags: details.tags ?? [],
+    linked_appointment_id: details.linkedAppointmentId ?? null,
+    linked_appointment_title: details.linkedAppointmentTitle ?? null,
+  }).eq('id', id)
+  return entries.map(e => e.id === id ? {
     ...e,
     text: details.text,
     details: details.details?.trim() || undefined,
@@ -107,25 +102,22 @@ export async function updateEntry(entries: Entry[], id: string, details: {
     linkedAppointmentId: details.linkedAppointmentId,
     linkedAppointmentTitle: details.linkedAppointmentTitle,
   } : e)
-  await saveEntries(next)
-  return next
 }
 
 export async function toggleDone(entries: Entry[], id: string): Promise<Entry[]> {
-  const next = entries.map(e => e.id === id ? { ...e, done: !e.done } : e)
-  await saveEntries(next)
-  return next
+  const entry = entries.find(e => e.id === id)
+  if (!entry) return entries
+  await supabase.from('brain_dump_entries').update({ done: !entry.done }).eq('id', id)
+  return entries.map(e => e.id === id ? { ...e, done: !e.done } : e)
 }
 
 export async function removeEntry(entries: Entry[], id: string): Promise<Entry[]> {
-  const next = entries.filter(e => e.id !== id)
-  await saveEntries(next)
-  return next
+  await supabase.from('brain_dump_entries').delete().eq('id', id)
+  return entries.filter(e => e.id !== id)
 }
 
-export async function clearBrainDumpData(): Promise<void> {
-  await AsyncStorage.removeItem(STORAGE_KEY)
-}
+// No-op now — data is server-side and cascade-deleted on account deletion, not local.
+export async function clearBrainDumpData(): Promise<void> {}
 
 /** Coarse "3h ago" label for the home screen preview card. */
 export function formatRelativeTime(iso: string): string {
