@@ -1,5 +1,4 @@
-// Local-only language preference, same tier as lib/partner.ts — not synced
-// to Supabase (the profiles table has no language column).
+// Local-only language preference — not synced to Supabase (the profiles table has no language column).
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const STORAGE_KEY = 'bumpling_language'
