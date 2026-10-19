@@ -107,14 +107,14 @@ export default function RadialTabBar({ state, descriptors, navigation }: BottomT
   // A partner only has 2 fan tabs (Health hidden) — the fan/stage layout
   // below was hand-tuned for 3 and reads lopsided with 2 floating bubbles
   // over an off-center pill, even with balanced left/right offsets. A flat
-  // row — both bubbles level with the pill, not floating above it — just
-  // looks right at this tab count instead of fighting the geometry to make
-  // 2 look like a trimmed-down 3.
+  // row — all three level, same size — looks right at this tab count:
+  // three equal destinations, not an anchor hub with two satellites, so
+  // Today renders as a Bubble here too rather than the larger pill shape.
   if (fanRoutes.length === 2) {
     return (
       <View style={[styles.root, styles.flatRow, { paddingBottom: insets.bottom + PILL_ROW_BOTTOM_PADDING }]}>
         <Bubble route={fanRoutes[isRTL ? 1 : 0]} />
-        {Pill}
+        <Bubble route={pillRoute} />
         <Bubble route={fanRoutes[isRTL ? 0 : 1]} />
       </View>
     )

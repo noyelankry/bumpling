@@ -203,7 +203,7 @@ export default function PlanScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.summaryWeek}>{t('summaryWeek', { weeks: age.weeks, days: age.days })}</Text>
-              <Text style={styles.summarySub}>{t('summarySub')}</Text>
+              <Text style={styles.summarySub}>{t(isPartnerView ? 'summarySubPartner' : 'summarySub')}</Text>
             </View>
             <View style={styles.summaryIllustration}>
               <BabyMark size={52} />
@@ -216,7 +216,7 @@ export default function PlanScreen() {
           <View style={styles.summaryDivider} />
 
           <Text style={styles.needsYouTitle}>
-            {needsYouCount > 0 ? t('needsYou', { count: needsYouCount }) : t('nothingNeedsAttention')}
+            {needsYouCount > 0 ? t('needsYou', { count: needsYouCount }) : t(isPartnerView ? 'nothingNeedsAttentionPartner' : 'nothingNeedsAttention')}
           </Text>
           <Text style={styles.needsYouSub}>{t('needsYouSub')}</Text>
         </View>
@@ -365,7 +365,7 @@ export default function PlanScreen() {
             {age.weeks < 14 ? t('trimester1') : age.weeks < 28 ? t('trimester2') : t('trimester3')}
           </Text>
           <View style={styles.hereRow}>
-            <Text style={styles.hereText}>{t('youAreHere')}</Text>
+            <Text style={styles.hereText}>{t(isPartnerView ? 'youAreHerePartner' : 'youAreHere')}</Text>
             <Ionicons name="heart" size={13} color={colors.primary} />
           </View>
 
