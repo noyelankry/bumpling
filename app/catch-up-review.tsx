@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import { formatDateRange } from '../lib/pregnancy'
-import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, markManyDone, markManySkipped, getItemTitle, type CareItemWithCustom } from '../lib/carePlan'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, markManyDone, markManySkipped, getItemTitle, currentRole, type CareItemWithCustom } from '../lib/carePlan'
 import { goBack } from '../lib/navigation'
 import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 
@@ -24,6 +24,9 @@ export default function CatchUpReviewScreen() {
     loadCareItems().then(setItems)
     loadLMP().then(setLmp)
     setSelected(new Set())
+    // Defense in depth — Plan already hides the entry point into this
+    // write-only screen for a partner, this just covers reaching it directly.
+    currentRole().then(role => { if (role === 'partner') router.replace('/(tabs)/plan') })
   }, []))
 
   const computed = useMemo(() => computeCareItems(items, lmp, TODAY), [items, lmp])

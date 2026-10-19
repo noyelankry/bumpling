@@ -7,7 +7,7 @@
   "thingsToReview_one": "דבר אחד לבדיקה",
   "thingsToReview_two": "{{count}} דברים לבדיקה",
   "thingsToReview_other": "{{count}} דברים לבדיקה",
-  "targetDates": "תאריכי מטרה: {{range}}",
+  "targetDates": "טווח תאריכים: {{range}}",
   "nothingYet": "אין עדיין כלום בתוכנית שלך — נציג בדיקות כשהן יהפכו לרלוונטיות.",
   "canUpdateAnytime": "את יכולה לעדכן את זה בכל זמן.",
   "saveCompleted": "שמור פעולות שהושלמו",

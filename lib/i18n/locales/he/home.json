@@ -15,5 +15,8 @@
   "thingsOnMind_one": "דבר אחד בראש שלך",
   "thingsOnMind_two": "{{count}} דברים בראש שלך",
   "thingsOnMind_other": "{{count}} דברים בראש שלך",
+  "partnerThingsOnMind_one": "משהו אחד שמעסיק אותה",
+  "partnerThingsOnMind_two": "{{count}} דברים שמעסיקים אותה",
+  "partnerThingsOnMind_other": "{{count}} דברים שמעסיקים אותה",
   "lastAdded": "נוסף לאחרונה {{time}}"
 }

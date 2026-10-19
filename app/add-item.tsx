@@ -1,13 +1,13 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter, useLocalSearchParams } from 'expo-router'
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import DateField from '../components/DateField'
 import { formatDateRange } from '../lib/pregnancy'
-import { loadCareItems, loadLMP, scheduleItem, addCustomItem } from '../lib/carePlan'
+import { loadCareItems, loadLMP, scheduleItem, addCustomItem, currentRole } from '../lib/carePlan'
 import { addAppointmentToCalendar } from '../lib/calendar'
 import { goBack } from '../lib/navigation'
 import { showAlert } from '../lib/alert'
@@ -33,6 +33,13 @@ export default function AddItemScreen() {
   const [prepNote, setPrepNote] = useState(params.prepNote ?? '')
   const [addToCalendar, setAddToCalendar] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  // Defense in depth — Plan and the appointment detail screen both hide the
+  // entry points into this write-only screen for a partner, this just
+  // covers reaching it directly.
+  useFocusEffect(useCallback(() => {
+    currentRole().then(role => { if (role === 'partner') router.replace('/(tabs)/plan') })
+  }, []))
 
   const outsideWindow = !!(date && windowStart && windowEnd && (date.getTime() < windowStart.getTime() || date.getTime() > windowEnd.getTime()))
 

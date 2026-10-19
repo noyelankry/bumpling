@@ -24,7 +24,7 @@ import { loadMomPhone, saveMomPhone, clearMomContactData } from '../lib/momConta
 import { exportMyData } from '../lib/dataExport'
 import { loadProfile, setCachedProfile, clearProfileCache } from '../lib/profileData'
 import { uploadAvatar } from '../lib/avatar'
-import { createInvite } from '../lib/partnerInvite'
+import { createInvite, hasAcceptedPartner, removePartnerAccess } from '../lib/partnerInvite'
 import { useLanguage } from '../lib/i18n/LanguageProvider'
 import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 import type { Language } from '../lib/i18n/languageStorage'
@@ -54,11 +54,14 @@ export default function ProfileScreen() {
   const [isPartnerView, setIsPartnerView] = useState(false)
   const [connectedMomName, setConnectedMomName] = useState<string | null>(null)
   const [inviting, setInviting] = useState(false)
+  const [partnerConnected, setPartnerConnected] = useState(false)
   // The last-saved values, so fields can just always be editable — no edit-mode
   // toggle — while still only showing "Save changes" once something actually differs.
   const [saved, setSaved] = useState<{ form: Profile; phoneCountry: PhoneCountry; phoneNumber: string; partner: Partner } | null>(null)
   const phoneError = phoneNumber.trim() !== '' && !isValidPhoneNumber(phoneNumber)
   const partnerEmailError = partner.email.trim() !== '' && !isValidEmail(partner.email)
+  const partnerEmailDirty = !!saved && saved.partner.email !== partner.email
+  const showPartnerConnected = partnerConnected && !partnerEmailDirty
   const isDirty = !!saved && (
     saved.form.full_name !== form.full_name || saved.form.username !== form.username ||
     saved.phoneCountry.iso !== phoneCountry.iso || saved.phoneNumber !== phoneNumber ||
@@ -103,7 +106,7 @@ export default function ProfileScreen() {
   useFocusEffect(useCallback(() => {
     let cancelled = false
     ;(async () => {
-      const [p, ph, lmpDate, f, role] = await Promise.all([loadPartner(), loadMomPhone(), loadLMP(), loadProfile(), currentRole()])
+      const [p, ph, lmpDate, f, role, connected] = await Promise.all([loadPartner(), loadMomPhone(), loadLMP(), loadProfile(), currentRole(), hasAcceptedPartner()])
       if (cancelled) return
       const { country, number } = splitPhone(ph)
       const partnerView = role === 'partner'
@@ -111,6 +114,7 @@ export default function ProfileScreen() {
       if (partnerView) loadConnectedMomName().then(setConnectedMomName)
       setLmp(lmpDate)
       setPartner(p)
+      setPartnerConnected(connected)
       setPhoneCountry(country)
       setPhoneNumber(number)
       setForm(f)
@@ -130,6 +134,10 @@ export default function ProfileScreen() {
         return
       }
     }
+    if (partnerConnected && partnerEmailDirty) {
+      await removePartnerAccess()
+      setPartnerConnected(false)
+    }
     await savePartner(partner)
     await saveMomPhone(joinPhone(phoneCountry, phoneNumber))
     const { data } = await supabase.auth.getClaims()
@@ -144,6 +152,18 @@ export default function ProfileScreen() {
     }
     setSaving(false)
     setSaved({ form, phoneCountry, phoneNumber, partner })
+  }
+
+  function confirmSave() {
+    if (!(partnerConnected && partnerEmailDirty)) { save(); return }
+    if (Platform.OS === 'web') {
+      if (window.confirm(t('partnerUnlinkConfirmWeb'))) save()
+    } else {
+      Alert.alert(t('partnerUnlinkTitle'), t('partnerUnlinkBody'), [
+        { text: t('cancel'), style: 'cancel' },
+        { text: t('partnerUnlinkConfirmBtn'), style: 'destructive', onPress: save },
+      ])
+    }
   }
 
   async function invitePartner() {
@@ -379,21 +399,28 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            <TouchableOpacity
-              style={[styles.inviteBtn, (!partner.email.trim() || partnerEmailError || inviting) && styles.saveBtnDisabled]}
-              onPress={invitePartner}
-              disabled={!partner.email.trim() || !!partnerEmailError || inviting}
-            >
-              {inviting
-                ? <ActivityIndicator color={colors.primary} />
-                : <Text style={styles.inviteBtnText}>{t('invitePartner')}</Text>
-              }
-            </TouchableOpacity>
+            {showPartnerConnected ? (
+              <View style={styles.partnerConnectedCard}>
+                <Ionicons name="checkmark-circle" size={18} color={colors.sageDeep} />
+                <Text style={styles.partnerConnectedText}>{t('partnerConnected')}</Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.inviteBtn, (!partner.email.trim() || partnerEmailError || inviting) && styles.saveBtnDisabled]}
+                onPress={invitePartner}
+                disabled={!partner.email.trim() || !!partnerEmailError || inviting}
+              >
+                {inviting
+                  ? <ActivityIndicator color={colors.primary} />
+                  : <Text style={styles.inviteBtnText}>{t('invitePartner')}</Text>
+                }
+              </TouchableOpacity>
+            )}
           </>
         )}
 
         {isDirty && (
-          <TouchableOpacity style={[styles.saveBtn, !canSave && styles.saveBtnDisabled]} onPress={save} disabled={saving || !canSave}>
+          <TouchableOpacity style={[styles.saveBtn, !canSave && styles.saveBtnDisabled]} onPress={confirmSave} disabled={saving || !canSave}>
             {saving
               ? <ActivityIndicator color="#fff" />
               : <Text style={styles.saveBtnText}>{t('saveChanges')}</Text>
@@ -506,6 +533,8 @@ const styles = StyleSheet.create({
   saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   inviteBtn:   { borderWidth: 1.5, borderColor: colors.primary, borderRadius: radius.pill, paddingVertical: 13, alignItems: 'center', marginTop: spacing.sm },
   inviteBtnText: { color: colors.primary, fontWeight: '700', fontSize: 15 },
+  partnerConnectedCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, backgroundColor: colors.sage, borderRadius: radius.pill, paddingVertical: 13, marginTop: spacing.sm },
+  partnerConnectedText: { color: colors.sageDeep, fontWeight: '700', fontSize: 15 },
 
   languageRow: { flexDirection: 'row', gap: spacing.lg, paddingVertical: 4 },
   langOption:  { paddingVertical: 8 },

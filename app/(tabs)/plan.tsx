@@ -218,7 +218,9 @@ export default function PlanScreen() {
           <Text style={styles.needsYouTitle}>
             {needsYouCount > 0 ? t('needsYou', { count: needsYouCount }) : t(isPartnerView ? 'nothingNeedsAttentionPartner' : 'nothingNeedsAttention')}
           </Text>
-          <Text style={styles.needsYouSub}>{t('needsYouSub')}</Text>
+          <Text style={styles.needsYouSub}>
+            {needsYouCount > 0 ? t('needsYouSub') : t(isPartnerView ? 'allCaughtUpSubPartner' : 'allCaughtUpSub')}
+          </Text>
         </View>
 
         {attention.length > 0 && (

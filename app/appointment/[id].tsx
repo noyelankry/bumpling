@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { formatDate, formatDateRange, formatWeekday, type CareStatus } from '../../lib/pregnancy'
-import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, removeItem, markDone, unmarkDone, markSkipped, unmarkSkipped, saveVisitNotes, computeCareItems, getItemTitle, type CareItemWithCustom } from '../../lib/carePlan'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, removeItem, markDone, unmarkDone, markSkipped, unmarkSkipped, saveVisitNotes, computeCareItems, getItemTitle, currentRole, type CareItemWithCustom } from '../../lib/carePlan'
 import { addAppointmentToCalendar } from '../../lib/calendar'
 import { shareAppointmentWithPartner } from '../../lib/shareAppointment'
 import { type Partner, loadPartner } from '../../lib/partner'
@@ -54,6 +54,7 @@ export default function AppointmentDetailScreen() {
   const [notesDraft, setNotesDraft] = useState('')
   const [notesEditing, setNotesEditing] = useState(false)
   const [savingNotes, setSavingNotes] = useState(false)
+  const [isPartnerView, setIsPartnerView] = useState(false)
 
   useFocusEffect(useCallback(() => {
     loadCareItems().then(all => {
@@ -62,6 +63,7 @@ export default function AppointmentDetailScreen() {
     })
     loadLMP().then(setLmp)
     loadPartner().then(setPartner)
+    currentRole().then(role => setIsPartnerView(role === 'partner'))
     setNotesEditing(false)
   }, [id]))
 
@@ -235,121 +237,146 @@ export default function AppointmentDetailScreen() {
         )}
 
         {item.status === 'done' ? (
-          <TouchableOpacity style={styles.secondaryBtn} onPress={handleUnmarkDone}>
-            <Text style={styles.secondaryBtnText}>{t('undo')}</Text>
-          </TouchableOpacity>
+          !isPartnerView && (
+            <TouchableOpacity style={styles.secondaryBtn} onPress={handleUnmarkDone}>
+              <Text style={styles.secondaryBtnText}>{t('undo')}</Text>
+            </TouchableOpacity>
+          )
         ) : item.status === 'skipped' ? (
-          <TouchableOpacity style={styles.secondaryBtn} onPress={handleUnmarkSkip}>
-            <Text style={styles.secondaryBtnText}>{t('undo')}</Text>
-          </TouchableOpacity>
+          !isPartnerView && (
+            <TouchableOpacity style={styles.secondaryBtn} onPress={handleUnmarkSkip}>
+              <Text style={styles.secondaryBtnText}>{t('undo')}</Text>
+            </TouchableOpacity>
+          )
         ) : item.scheduledAt ? (
           <>
-            <TouchableOpacity
-              style={styles.secondaryBtn}
-              onPress={() => router.push({
-                pathname: '/add-item',
-                params: {
-                  id: item.id,
-                  title: title,
-                  date: item.scheduledAt!.toISOString(),
-                  time: item.scheduledTimeLabel ?? '',
-                  location: item.location ?? '',
-                  prepNote: item.prepNote ?? '',
-                  windowStart: item.windowStart.toISOString(),
-                  windowEnd: item.windowEnd.toISOString(),
-                },
-              })}
-            >
-              <Text style={styles.secondaryBtnText}>{t('changeDetails')}</Text>
-            </TouchableOpacity>
+            {!isPartnerView && (
+              <TouchableOpacity
+                style={styles.secondaryBtn}
+                onPress={() => router.push({
+                  pathname: '/add-item',
+                  params: {
+                    id: item.id,
+                    title: title,
+                    date: item.scheduledAt!.toISOString(),
+                    time: item.scheduledTimeLabel ?? '',
+                    location: item.location ?? '',
+                    prepNote: item.prepNote ?? '',
+                    windowStart: item.windowStart.toISOString(),
+                    windowEnd: item.windowEnd.toISOString(),
+                  },
+                })}
+              >
+                <Text style={styles.secondaryBtnText}>{t('changeDetails')}</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={styles.secondaryBtn} onPress={handleAddToCalendar}>
               <Text style={styles.secondaryBtnText}>{t('addToCalendar')}</Text>
             </TouchableOpacity>
           </>
         ) : item.status === 'missed' ? (
-          <>
-            <TouchableOpacity style={styles.primaryBtn} onPress={handleMarkDone}>
-              <Text style={styles.primaryBtnText}>{t('iAlreadyDidThis')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryBtn} onPress={handleSkip}>
-              <Text style={styles.secondaryBtnText}>{t('skipThisOne')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.tertiaryBtn}
-              onPress={() => router.push({ pathname: '/add-item', params: { id: item.id, title: title, prepNote: item.prepNote ?? '', windowStart: item.windowStart.toISOString(), windowEnd: item.windowEnd.toISOString() } })}
-            >
-              <Text style={styles.tertiaryBtnText}>{t('scheduleAnyway')}</Text>
-            </TouchableOpacity>
-          </>
+          !isPartnerView && (
+            <>
+              <TouchableOpacity style={styles.primaryBtn} onPress={handleMarkDone}>
+                <Text style={styles.primaryBtnText}>{t('iAlreadyDidThis')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.secondaryBtn} onPress={handleSkip}>
+                <Text style={styles.secondaryBtnText}>{t('skipThisOne')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.tertiaryBtn}
+                onPress={() => router.push({ pathname: '/add-item', params: { id: item.id, title: title, prepNote: item.prepNote ?? '', windowStart: item.windowStart.toISOString(), windowEnd: item.windowEnd.toISOString() } })}
+              >
+                <Text style={styles.tertiaryBtnText}>{t('scheduleAnyway')}</Text>
+              </TouchableOpacity>
+            </>
+          )
         ) : (
+          !isPartnerView && (
+            <>
+              <TouchableOpacity
+                style={styles.primaryBtn}
+                onPress={() => router.push({ pathname: '/add-item', params: { id: item.id, title: title, prepNote: item.prepNote ?? '', windowStart: item.windowStart.toISOString(), windowEnd: item.windowEnd.toISOString() } })}
+              >
+                <Text style={styles.primaryBtnText}>{t('scheduleNow')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.secondaryBtn} onPress={handleMarkDone}>
+                <Text style={styles.secondaryBtnText}>{t('iAlreadyDidThis')}</Text>
+              </TouchableOpacity>
+            </>
+          )
+        )}
+
+        {(!isPartnerView || !!item.visitNotes) && (
           <>
-            <TouchableOpacity
-              style={styles.primaryBtn}
-              onPress={() => router.push({ pathname: '/add-item', params: { id: item.id, title: title, prepNote: item.prepNote ?? '', windowStart: item.windowStart.toISOString(), windowEnd: item.windowEnd.toISOString() } })}
-            >
-              <Text style={styles.primaryBtnText}>{t('scheduleNow')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryBtn} onPress={handleMarkDone}>
-              <Text style={styles.secondaryBtnText}>{t('iAlreadyDidThis')}</Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionLabel}>{t('moreSection')}</Text>
+            <View style={styles.list}>
+
+              {notesEditing ? (
+                <View style={styles.notesEditRow}>
+                  <Text style={styles.listLabel}>{t('notesTitle')}</Text>
+                  <TextInput
+                    style={[styles.notesInput, isRTL && styles.notesInputRTL]}
+                    value={notesDraft}
+                    onChangeText={setNotesDraft}
+                    placeholder={t('notesPlaceholder')}
+                    placeholderTextColor={colors.textSecondary}
+                    multiline
+                    autoFocus
+                  />
+                  <View style={styles.notesActionRow}>
+                    <TouchableOpacity style={styles.notesCancelBtn} onPress={cancelNotesEdit} disabled={savingNotes}>
+                      <Text style={styles.notesCancelBtnText}>{t('cancel')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.notesSaveBtn} onPress={handleSaveNotes} disabled={savingNotes}>
+                      <Text style={styles.notesSaveBtnText}>{t('save')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : isPartnerView ? (
+                <View style={styles.subRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.subRowTitle}>{t('notesTitle')}</Text>
+                    <Text style={styles.subRowCaption} numberOfLines={2}>{item.visitNotes}</Text>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity style={styles.subRow} activeOpacity={0.6} onPress={() => setNotesEditing(true)}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.subRowTitle}>{t('notesTitle')}</Text>
+                    <Text style={styles.subRowCaption} numberOfLines={2}>{item.visitNotes || t('notesEmpty')}</Text>
+                  </View>
+                  <Ionicons name={item.visitNotes ? 'pencil-outline' : 'add'} size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
+
+              {!isPartnerView && (
+                <TouchableOpacity style={styles.subRow} activeOpacity={0.6} onPress={handleSharePartner}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.subRowTitle}>{partner.name ? t('shareWithPartner', { name: partner.name }) : t('shareWithYourPartner')}</Text>
+                    <Text style={styles.subRowCaption} numberOfLines={1}>
+                      {partner.email ? t('sendsDetailsTo', { email: partner.email }) : t('addEmailInProfile')}
+                    </Text>
+                  </View>
+                  <Ionicons name={forward} size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
+
+              {!isPartnerView && (
+                <TouchableOpacity style={styles.subRow} activeOpacity={0.6} onPress={() => router.push('/brain-dump')}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.subRowTitle}>{t('questionsForDoctor')}</Text>
+                    <Text style={styles.subRowCaption} numberOfLines={1}>{t('questionsForDoctorSub')}</Text>
+                  </View>
+                  <Ionicons name={forward} size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
+
+            </View>
           </>
         )}
 
-        <Text style={styles.sectionLabel}>{t('moreSection')}</Text>
-        <View style={styles.list}>
-
-          {notesEditing ? (
-            <View style={styles.notesEditRow}>
-              <Text style={styles.listLabel}>{t('notesTitle')}</Text>
-              <TextInput
-                style={[styles.notesInput, isRTL && styles.notesInputRTL]}
-                value={notesDraft}
-                onChangeText={setNotesDraft}
-                placeholder={t('notesPlaceholder')}
-                placeholderTextColor={colors.textSecondary}
-                multiline
-                autoFocus
-              />
-              <View style={styles.notesActionRow}>
-                <TouchableOpacity style={styles.notesCancelBtn} onPress={cancelNotesEdit} disabled={savingNotes}>
-                  <Text style={styles.notesCancelBtnText}>{t('cancel')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.notesSaveBtn} onPress={handleSaveNotes} disabled={savingNotes}>
-                  <Text style={styles.notesSaveBtnText}>{t('save')}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : (
-            <TouchableOpacity style={styles.subRow} activeOpacity={0.6} onPress={() => setNotesEditing(true)}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.subRowTitle}>{t('notesTitle')}</Text>
-                <Text style={styles.subRowCaption} numberOfLines={2}>{item.visitNotes || t('notesEmpty')}</Text>
-              </View>
-              <Ionicons name={item.visitNotes ? 'pencil-outline' : 'add'} size={16} color={colors.textSecondary} />
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity style={styles.subRow} activeOpacity={0.6} onPress={handleSharePartner}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.subRowTitle}>{partner.name ? t('shareWithPartner', { name: partner.name }) : t('shareWithYourPartner')}</Text>
-              <Text style={styles.subRowCaption} numberOfLines={1}>
-                {partner.email ? t('sendsDetailsTo', { email: partner.email }) : t('addEmailInProfile')}
-              </Text>
-            </View>
-            <Ionicons name={forward} size={16} color={colors.textSecondary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.subRow} activeOpacity={0.6} onPress={() => router.push('/brain-dump')}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.subRowTitle}>{t('questionsForDoctor')}</Text>
-              <Text style={styles.subRowCaption} numberOfLines={1}>{t('questionsForDoctorSub')}</Text>
-            </View>
-            <Ionicons name={forward} size={16} color={colors.textSecondary} />
-          </TouchableOpacity>
-
-        </View>
-
-        {item.custom && (
+        {item.custom && !isPartnerView && (
           <TouchableOpacity style={styles.removeBtn} onPress={handleRemove}>
             <Text style={styles.removeBtnText}>{t('removeFromPlan')}</Text>
           </TouchableOpacity>

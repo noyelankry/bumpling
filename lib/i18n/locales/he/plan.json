@@ -13,6 +13,8 @@
   "needsYou_two": "{{count}} דברים שכדאי לטפל בהם עכשיו",
   "needsYou_other": "{{count}} דברים שכדאי לטפל בהם עכשיו",
   "needsYouSub": "כדאי לקבוע בקרוב כדי להישאר בטווח המומלץ.",
+  "allCaughtUpSub": "אין כרגע שום דבר לקבוע — נודיע לך כשיהיה.",
+  "allCaughtUpSubPartner": "אין כרגע שום דבר לקבוע — נודיע לכם כשיהיה.",
   "whatNeedsAttention": "השלבים הבאים שלך",
   "comingUp": "מה מתקרב",
   "targetDates": "טווח מומלץ: {{range}}",

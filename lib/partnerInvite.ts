@@ -49,3 +49,31 @@ export async function isPartner(): Promise<boolean> {
     .maybeSingle()
   return data != null
 }
+
+/** Does the signed-in owner's own pregnancy already have an accepted partner? Used on Profile to swap the invite button for a "connected" state. */
+export async function hasAcceptedPartner(): Promise<boolean> {
+  const pregnancyId = await currentPregnancyId()
+  if (!pregnancyId) return false
+  const { data } = await supabase
+    .from('pregnancy_members')
+    .select('user_id')
+    .eq('pregnancy_id', pregnancyId)
+    .eq('role', 'partner')
+    .not('accepted_at', 'is', null)
+    .limit(1)
+    .maybeSingle()
+  return data != null
+}
+
+/**
+ * Revokes the current partner's access to this pregnancy — used when the
+ * owner changes the partner contact's email (a different person) or clears
+ * it. Also drops any outstanding unredeemed invite, so an old code lying
+ * around in a text thread can't quietly re-grant access later.
+ */
+export async function removePartnerAccess(): Promise<void> {
+  const pregnancyId = await currentPregnancyId()
+  if (!pregnancyId) return
+  await supabase.from('pregnancy_members').delete().eq('pregnancy_id', pregnancyId).eq('role', 'partner')
+  await supabase.from('pregnancy_invites').delete().eq('pregnancy_id', pregnancyId).is('redeemed_at', null)
+}

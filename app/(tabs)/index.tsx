@@ -139,7 +139,7 @@ export default function HomeScreen() {
               <Ionicons name="bulb-outline" size={20} color={colors.lavenderDeep} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.brainDumpTitle}>{t('thingsOnMind', { count: brainDumpEntries.length })}</Text>
+              <Text style={styles.brainDumpTitle}>{t(isPartnerView ? 'partnerThingsOnMind' : 'thingsOnMind', { count: brainDumpEntries.length })}</Text>
               <Text style={styles.brainDumpSub}>{t('lastAdded', { time: formatRelativeTime(brainDumpEntries[0].createdAt) })}</Text>
             </View>
             <Ionicons name={forward} size={18} color={colors.textSecondary} />

@@ -15,5 +15,8 @@
   "thingsOnMind_one": "{{count}} thing on your mind",
   "thingsOnMind_two": "{{count}} things on your mind",
   "thingsOnMind_other": "{{count}} things on your mind",
+  "partnerThingsOnMind_one": "{{count}} thing on her mind",
+  "partnerThingsOnMind_two": "{{count}} things on her mind",
+  "partnerThingsOnMind_other": "{{count}} things on her mind",
   "lastAdded": "Last added {{time}}"
 }

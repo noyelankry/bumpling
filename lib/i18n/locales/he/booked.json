@@ -4,7 +4,7 @@
   "heroCount": "{{booked}} מתוך {{total}} נקבעו",
   "heroSub": "הוסיפי תאריכים לשאר, או דלגי לעכשיו",
   "bookedWeekday": "נקבע · {{weekday}}",
-  "targetDates": "תאריכי מטרה: {{range}}",
+  "targetDates": "טווח תאריכים: {{range}}",
   "edit": "עריכה",
   "addDate": "הוסף תאריך",
   "continue": "המשך",
