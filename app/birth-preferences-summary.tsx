@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import { goBack } from '../lib/navigation'
 import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
-import { supabase } from '../lib/supabase'
+import { loadProfile } from '../lib/profileData'
 import { loadMomPhone } from '../lib/momContact'
 import { getTopics, getRelationshipOptions, optionFor, relationshipOption, loadBirthPrefs, isTopicDone, type BirthPrefsData } from '../lib/birthPrefs'
 import { buildBirthPlanHtml, exportBirthPlanPdf } from '../lib/birthPlanDocument'
@@ -32,11 +32,7 @@ export default function BirthPreferencesSummaryScreen() {
   useFocusEffect(useCallback(() => {
     loadBirthPrefs().then(setPrefs)
     loadMomPhone().then(setMomPhone)
-    supabase.auth.getClaims().then(async ({ data }) => {
-      if (!data?.claims) return
-      const { data: p } = await supabase.from('profiles').select('full_name').eq('id', data.claims.sub).single()
-      if (p?.full_name) setMomName(p.full_name)
-    })
+    loadProfile().then(p => { if (p.full_name) setMomName(p.full_name) })
   }, []))
 
   async function shareSummary() {
