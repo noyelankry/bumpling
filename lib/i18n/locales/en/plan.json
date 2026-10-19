@@ -12,6 +12,7 @@
   "needsYou_other": "{{count}} things need your attention",
   "needsYouSub": "We'll remind you before booking windows close.",
   "whatNeedsAttention": "What needs your attention",
+  "comingUp": "Coming up",
   "targetDates": "Target dates: {{range}}",
   "bookBy": "Book by {{date}}",
   "scheduleNow": "Schedule now",

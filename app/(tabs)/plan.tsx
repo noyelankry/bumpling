@@ -221,7 +221,7 @@ export default function PlanScreen() {
 
         {attention.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>{t('whatNeedsAttention')}</Text>
+            <Text style={styles.sectionTitle}>{needsYouCount > 0 ? t('whatNeedsAttention') : t('comingUp')}</Text>
             <View style={{ gap: spacing.xs, marginBottom: spacing.lg }}>
               {attention.map(item => {
                 const meta = metaFor(item.windowStartWeek)
