@@ -42,7 +42,13 @@
       ],
       "expo-sharing",
       "expo-localization",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Bumpling uses your photos to let you choose a profile picture."
+        }
+      ]
     ]
   }
 }

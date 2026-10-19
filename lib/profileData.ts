@@ -2,9 +2,9 @@
 // summary screen. Session-only cache, same pattern as carePlan/partner/momContact.
 import { supabase } from './supabase'
 
-export type ProfileData = { full_name: string; username: string }
+export type ProfileData = { full_name: string; username: string; avatar_url: string | null }
 
-const EMPTY: ProfileData = { full_name: '', username: '' }
+const EMPTY: ProfileData = { full_name: '', username: '', avatar_url: null }
 
 let profileCache: ProfileData | null = null
 
@@ -13,8 +13,8 @@ export async function loadProfile(): Promise<ProfileData> {
   const { data: claims } = await supabase.auth.getClaims()
   const userId = claims?.claims?.sub
   if (!userId) return EMPTY
-  const { data } = await supabase.from('profiles').select('full_name,username').eq('id', userId).maybeSingle()
-  const profile = data ? { full_name: data.full_name ?? '', username: data.username ?? '' } : EMPTY
+  const { data } = await supabase.from('profiles').select('full_name,username,avatar_url').eq('id', userId).maybeSingle()
+  const profile = data ? { full_name: data.full_name ?? '', username: data.username ?? '', avatar_url: data.avatar_url ?? null } : EMPTY
   profileCache = profile
   return profile
 }

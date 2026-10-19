@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform, ActivityIndicator, Share } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform, ActivityIndicator, Share, Image } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useNavigation } from '@react-navigation/native'
@@ -23,6 +23,7 @@ import { clearBirthPrefsData } from '../lib/birthPrefs'
 import { loadMomPhone, saveMomPhone, clearMomContactData } from '../lib/momContact'
 import { exportMyData } from '../lib/dataExport'
 import { loadProfile, setCachedProfile, clearProfileCache } from '../lib/profileData'
+import { uploadAvatar } from '../lib/avatar'
 import { createInvite } from '../lib/partnerInvite'
 import { useLanguage } from '../lib/i18n/LanguageProvider'
 import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
@@ -41,6 +42,8 @@ export default function ProfileScreen() {
   const { back: backIcon, forward } = useDirectionalIcon()
   const back = () => goBack(router, '/(tabs)')
   const [form, setForm] = useState<Profile>({ full_name: '', username: '' })
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
   const [phoneCountry, setPhoneCountry] = useState<PhoneCountry>(DEFAULT_PHONE_COUNTRY)
   const [phoneNumber, setPhoneNumber] = useState('')
   const [partner, setPartner] = useState<Partner>({ name: '', email: '' })
@@ -111,6 +114,7 @@ export default function ProfileScreen() {
       setPhoneCountry(country)
       setPhoneNumber(number)
       setForm(f)
+      setAvatarUrl(f.avatar_url)
       setSaved({ form: f, phoneCountry: country, phoneNumber: number, partner: p })
     })()
     return () => { cancelled = true }
@@ -136,7 +140,7 @@ export default function ProfileScreen() {
         updated_at: new Date().toISOString(),
       }).eq('id', data.claims.sub)
       if (error) { setSaving(false); showAlert(t('error'), error.message); return }
-      setCachedProfile(form)
+      setCachedProfile({ ...form, avatar_url: avatarUrl })
     }
     setSaving(false)
     setSaved({ form, phoneCountry, phoneNumber, partner })
@@ -156,6 +160,18 @@ export default function ProfileScreen() {
       return
     }
     await Share.share({ message })
+  }
+
+  async function pickAvatar() {
+    setAvatarUploading(true)
+    const result = await uploadAvatar()
+    setAvatarUploading(false)
+    if (result.ok && result.avatarUrl) {
+      setAvatarUrl(result.avatarUrl)
+      setCachedProfile({ ...form, avatar_url: result.avatarUrl })
+    } else if (result.message) {
+      showAlert(t('error'), result.message)
+    }
   }
 
   async function downloadMyData() {
@@ -243,9 +259,21 @@ export default function ProfileScreen() {
 
         <View style={styles.heroWrap}>
           <View style={styles.avatar}>
-            <BabyMark size={60} />
-            <TouchableOpacity style={[styles.cameraBtn, isRTL && styles.cameraBtnRTL]} activeOpacity={0.8}>
-              <Ionicons name="camera-outline" size={14} color={colors.textPrimary} />
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+            ) : (
+              <BabyMark size={60} />
+            )}
+            <TouchableOpacity
+              style={[styles.cameraBtn, isRTL && styles.cameraBtnRTL]}
+              activeOpacity={0.8}
+              onPress={pickAvatar}
+              disabled={avatarUploading}
+              accessibilityLabel={t('changePhoto')}
+            >
+              {avatarUploading
+                ? <ActivityIndicator size="small" color={colors.textPrimary} />
+                : <Ionicons name="camera-outline" size={14} color={colors.textPrimary} />}
             </TouchableOpacity>
           </View>
           <Text style={styles.pageTitle} numberOfLines={1}>{form.full_name || t('addYourName')}</Text>
@@ -448,7 +476,8 @@ const styles = StyleSheet.create({
   backBtn: { width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
 
   heroWrap:    { alignItems: 'center', marginTop: spacing.md, marginBottom: spacing.lg },
-  avatar:      { width: 92, height: 92, borderRadius: 46, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
+  avatar:      { width: 92, height: 92, borderRadius: 46, backgroundColor: colors.peach, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm, overflow: 'hidden' },
+  avatarImage: { width: 92, height: 92, borderRadius: 46 },
   cameraBtn:   { position: 'absolute', bottom: -2, right: -2, width: 30, height: 30, borderRadius: 15, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
   cameraBtnRTL: { right: undefined, left: -2 },
   pageTitle:   { fontFamily: fonts.headlineBold, fontSize: 22, color: colors.textPrimary, textAlign: 'center' },
