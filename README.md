@@ -1,125 +1,89 @@
-# React Native User Management example with Expo
+# Bumpling
 
-## Requirements
+A calm, all-in-one pregnancy companion: a personal, deadline-aware care plan (tests, scans, appointments — mapped to your own trimester, not a generic timeline), plus day-to-day mood/symptom logging, free-form "brain dump" notes, and a guided flow for a shareable birth plan.
 
-- Install the [Expo CLI](https://docs.expo.io/get-started/installation/)
+**[Try the live web preview →](https://noyelankry.github.io/bumpling/)**
+
+No backend is wired up on the preview build — a banner marks it as such, and a "skip sign-in" button lets you explore the full app without an account. Nothing you enter there is saved anywhere.
+
+## A visual tour
+
+Every screenshot below is a real screen from the app (captured from the live preview above), not a mockup.
+
+### Onboarding & account
+
+<table>
+<tr>
+<td width="33%"><img src="docs/screenshots/onboarding-welcome.png" width="100%"></td>
+<td width="33%"><img src="docs/screenshots/onboarding-disclaimer.png" width="100%"></td>
+<td width="33%"><img src="docs/screenshots/signup-consent.png" width="100%"></td>
+</tr>
+<tr>
+<td>A 5-slide carousel introduces Plan, Today, Health, and the all-in-one pitch before account creation.</td>
+<td>The carousel's last slide is a medical disclaimer — reinforced again on the next screen.</td>
+<td>Sign-up gates on three separate consents: terms &amp; privacy, health-data processing, and an 18+ age attestation.</td>
+</tr>
+</table>
+
+### Setting up your care plan
+
+<table>
+<tr>
+<td width="33%"><img src="docs/screenshots/lmp.png" width="100%"></td>
+<td width="33%"><img src="docs/screenshots/catch-up.png" width="100%"></td>
+<td width="33%"><img src="docs/screenshots/booked.png" width="100%"></td>
+</tr>
+<tr>
+<td>Your last-period date is all it takes to compute gestational age and the right test/scan windows.</td>
+<td>Already had some of these? Check them off once and Bumpling stops reminding you.</td>
+<td>Already got appointments on the calendar? Add the dates now so Plan starts accurate.</td>
+</tr>
+</table>
+
+### Daily use
+
+<table>
+<tr>
+<td width="25%"><img src="docs/screenshots/today.png" width="100%"></td>
+<td width="25%"><img src="docs/screenshots/plan.png" width="100%"></td>
+<td width="25%"><img src="docs/screenshots/brain-dump.png" width="100%"></td>
+<td width="25%"><img src="docs/screenshots/health.png" width="100%"></td>
+</tr>
+<tr>
+<td><b>Today</b> — current week, this week's development fact, and what needs attention next.</td>
+<td><b>Plan</b> — the full trimester-by-trimester care-item list, with booking deadlines.</td>
+<td><b>Brain dump</b> — a free-form note space, filterable by "for doctor" vs. personal.</td>
+<td><b>Health</b> — a daily mood/symptom/vitals check-in with a running history.</td>
+</tr>
+</table>
+
+Beyond these four tabs, the app also covers: appointment detail + visit notes + partner share-out, a "Prepare for birth" guided flow that produces a shareable PDF birth plan, a Profile screen (partner contact, language switch between English/Hebrew with full RTL, change password, delete account, data export), and legal pages. See [PRODUCT.md](PRODUCT.md) for the full product spec.
+
+## Tech stack
+
+- [Expo](https://expo.dev) + [expo-router](https://docs.expo.dev/router/introduction/) (React Native, targeting iOS — see [PRODUCT.md](PRODUCT.md))
+- [Supabase](https://supabase.com) for auth (data layer is mid-migration from on-device storage — see [BACKEND.md](BACKEND.md))
+- [react-i18next](https://react.i18next.com) for English/Hebrew localization with RTL layout
 
 ## Setup & run locally
 
-### 1. Create new project
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Create a [Supabase](https://supabase.com/dashboard) project, then copy its URL and publishable (anon) key into a `.env` file:
+   ```bash
+   cp .env.example .env
+   ```
+   ```
+   EXPO_PUBLIC_SUPABASE_URL=...
+   EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
+   ```
+3. Run the app:
+   ```bash
+   npm start      # dev client
+   npm run ios    # native iOS build
+   npm run web    # web, in a browser
+   ```
 
-Sign up to Supabase - [https://supabase.com/dashboard](https://supabase.com/dashboard) and create a new project. Wait for your database to start.
-
-### 2. Run "User Management Starter" Quickstart
-
-Once your database has started, run the "User Management Starter" quickstart. Inside of your project, enter the `SQL editor` tab and scroll down until you see `User Management Starter`.
-
-### 3. Get the URL and Key
-
-Go to the Project Settings (the cog icon), open the API tab, and find your API URL and `anon` key, you'll need these in the next step.
-
-The `anon` key is your client-side API key. It allows "anonymous access" to your database, until the user has logged in. Once they have logged in, the keys will switch to the user's own login token. This enables row level security for your data. Read more about this [below](#postgres-row-level-security).
-
-![image](https://user-images.githubusercontent.com/10214025/88916245-528c2680-d298-11ea-8a71-708f93e1ce4f.png)
-
-**_NOTE_**: The `secret` key has full access to your data, bypassing any security policies. These keys have to be kept secret and are meant to be used in server environments and never on a client or browser.
-
-Run `cp .env.example .env` and fill your URL and publishable key in the newly created `.env` file.
-
-### 4. Install the dependencies & run the project:
-
-Install the dependencies:
-
-```bash
-npm install
-```
-
-### 4a. For file picker
-
-In order to get the file picker to work you must first prebuild the project before running it.
-
-```bash
-npm run prebuild
-```
-
-### 5. Run the application
-
-Run the application: `npm start`.
-
-## Supabase details
-
-### Postgres Row level security
-
-This project uses very high-level Authorization using Postgres' Row Level Security.
-When you start a Postgres database on Supabase, we populate it with an `auth` schema, and some helper functions.
-When a user logs in, they are issued a JWT with the role `authenticated` and their UUID.
-We can use these details to provide fine-grained control over what each user can and cannot do.
-
-This is a trimmed-down schema, with the policies:
-
-```sql
--- Create a table for Public Profiles
-create table
-  profiles (
-    id uuid references auth.users not null,
-    updated_at timestamp
-    with
-      time zone,
-      username text unique,
-      avatar_url text,
-      website text,
-      primary key (id),
-      unique (username),
-      constraint username_length check (char_length(username) >= 3)
-  );
-
-alter table
-  profiles enable row level security;
-
-create policy "Public profiles are viewable by everyone." on profiles for
-select
-  using (true);
-
-create policy "Users can insert their own profile." on profiles for insert
-with
-  check ((select auth.uid()) = id);
-
-create policy "Users can update own profile." on profiles for
-update
-  using ((select auth.uid()) = id);
-
--- Set up Realtime!
-begin;
-
-drop
-  publication if exists supabase_realtime;
-
-create publication supabase_realtime;
-
-commit;
-
-alter
-  publication supabase_realtime add table profiles;
-
--- Set up Storage!
-insert into
-  storage.buckets (id, name)
-values
-  ('avatars', 'avatars');
-
--- Set up access controls for storage. Allows downloading object with public key
--- See https://supabase.com/docs/guides/storage/security/access-control#policy-examples for more details.
-create policy "Avatar images are publicly accessible." on storage.objects for
-select
-  using (bucket_id = 'avatars' and storage.allow_any_operation(array['object.get_authenticated_info', 'object.get_authenticated']));
-
-create policy "Anyone can upload an avatar." on storage.objects for insert
-with
-  check (bucket_id = 'avatars');
-```
-
-## Authors
-
-- [Supabase](https://supabase.com)
-
-Supabase is open source, we'd love for you to follow along and get involved at https://github.com/supabase/supabase
+The Supabase schema this app expects is not yet live anywhere — see [BACKEND.md](BACKEND.md) for the full migration plan from the current on-device storage.
