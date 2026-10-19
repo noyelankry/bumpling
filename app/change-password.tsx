@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform, ActivityIndicator } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import { supabase } from '../lib/supabase'
 import { goBack } from '../lib/navigation'
+import { showAlert } from '../lib/alert'
 import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 import { useLanguage } from '../lib/i18n/LanguageProvider'
 
@@ -32,14 +33,10 @@ export default function ChangePasswordScreen() {
     const { error } = await supabase.auth.updateUser({ password })
     setSaving(false)
     if (error) {
-      Alert.alert(t('error'), error.message)
+      showAlert(t('error'), error.message)
       return
     }
-    if (Platform.OS === 'web') {
-      window.alert(t('successMessage'))
-    } else {
-      Alert.alert(t('successTitle'), t('successMessage'))
-    }
+    showAlert(t('successTitle'), t('successMessage'))
     back()
   }
 

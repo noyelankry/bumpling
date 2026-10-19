@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, ScrollView, Platform } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, ScrollView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
@@ -11,6 +11,7 @@ import { DEV_BYPASS_KEY, allowDevBypass } from '../lib/devBypass'
 import { useLanguage } from '../lib/i18n/LanguageProvider'
 import { TERMS_VERSION, PRIVACY_VERSION, HEALTH_CONSENT_VERSION } from '../lib/legal'
 import { redeemInvite, PARTNER_REDEEM_FLAG } from '../lib/partnerInvite'
+import { showAlert } from '../lib/alert'
 import { BabyMark } from './illustrations'
 
 function Checkbox({ checked, onPress, children }: { checked: boolean; onPress: () => void; children: React.ReactNode }) {
@@ -90,13 +91,12 @@ export default function Auth() {
       setInviteCode('')
       return true
     }
-    if (typed) Alert.alert(t('error'), t('inviteCodeInvalid'))
+    if (typed) showAlert(t('error'), t('inviteCodeInvalid'))
     return false
   }
 
   function goToPartnerHome() {
-    if (Platform.OS === 'web') window.alert(t('inviteJoined'))
-    else Alert.alert(t('inviteJoinedTitle'), t('inviteJoined'))
+    showAlert(t('inviteJoinedTitle'), t('inviteJoined'))
     router.replace('/partner-home')
   }
 
@@ -113,7 +113,7 @@ export default function Auth() {
     try {
       if (mode === 'signin') {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) { Alert.alert(error.message); setLoading(false); return }
+        if (error) { showAlert(error.message); setLoading(false); return }
         if (data.user) await writeConsentIfMissing(data.user.id)
         const joined = await redeemCodeIfPresent()
         setLoading(false)
@@ -122,7 +122,7 @@ export default function Auth() {
       }
       const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { username: username.trim() } } })
       if (error) {
-        Alert.alert(error.message)
+        showAlert(error.message)
         setLoading(false)
         return
       }

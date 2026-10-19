@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -9,6 +9,7 @@ import DateField from '../components/DateField'
 import { addDays, gestationalAge } from '../lib/pregnancy'
 import { loadLMP, saveLMP } from '../lib/carePlan'
 import { goBack } from '../lib/navigation'
+import { showAlert } from '../lib/alert'
 import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 
 const MAX_WEEKS_BACK = 43
@@ -32,15 +33,11 @@ export default function ChangeLmpScreen() {
     setSaving(true)
     try {
       await saveLMP(date)
-      if (Platform.OS === 'web') {
-        window.alert(t('successMessage'))
-      } else {
-        Alert.alert(t('successTitle'), t('successMessage'))
-      }
+      showAlert(t('successTitle'), t('successMessage'))
       back()
     } catch (err) {
       console.error('saveLMP failed:', err)
-      Alert.alert(t('error'), t('saveFailed'))
+      showAlert(t('error'), t('saveFailed'))
     } finally {
       setSaving(false)
     }

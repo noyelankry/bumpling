@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -8,6 +8,7 @@ import { colors, spacing, radius, fonts } from '../lib/theme'
 import { goBack } from '../lib/navigation'
 import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 import { loadProfile } from '../lib/profileData'
+import { showAlert } from '../lib/alert'
 import { loadMomPhone } from '../lib/momContact'
 import { getTopics, getRelationshipOptions, optionFor, relationshipOption, loadBirthPrefs, isTopicDone, type BirthPrefsData } from '../lib/birthPrefs'
 import { buildBirthPlanHtml, exportBirthPlanPdf } from '../lib/birthPlanDocument'
@@ -40,7 +41,7 @@ export default function BirthPreferencesSummaryScreen() {
     const html = buildBirthPlanHtml(prefs, { momName, momPhone }, TOPICS, RELATIONSHIP_OPTIONS)
     const result = await exportBirthPlanPdf(html)
     setExporting(false)
-    if (!result.ok && result.message) Alert.alert(t('exportFailedTitle'), result.message)
+    if (!result.ok && result.message) showAlert(t('exportFailedTitle'), result.message)
   }
 
   const standardTopics = TOPICS.filter(t => t.kind !== 'contacts')

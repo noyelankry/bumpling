@@ -10,6 +10,7 @@ import { formatDateRange } from '../lib/pregnancy'
 import { loadCareItems, loadLMP, scheduleItem, addCustomItem } from '../lib/carePlan'
 import { addAppointmentToCalendar } from '../lib/calendar'
 import { goBack } from '../lib/navigation'
+import { showAlert } from '../lib/alert'
 import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 import { useLanguage } from '../lib/i18n/LanguageProvider'
 
@@ -36,8 +37,8 @@ export default function AddItemScreen() {
   const outsideWindow = !!(date && windowStart && windowEnd && (date.getTime() < windowStart.getTime() || date.getTime() > windowEnd.getTime()))
 
   async function save() {
-    if (!title.trim()) return Alert.alert(t('missingTitleTitle'), t('missingTitleBody'))
-    if (!date) return Alert.alert(t('missingDateTitle'), t('missingDateBody'))
+    if (!title.trim()) return showAlert(t('missingTitleTitle'), t('missingTitleBody'))
+    if (!date) return showAlert(t('missingDateTitle'), t('missingDateBody'))
 
     setSaving(true)
     const current = await loadCareItems()
@@ -60,7 +61,12 @@ export default function AddItemScreen() {
       if (!result.ok) {
         setSaving(false)
         // The appointment itself is already saved — only the calendar step failed.
-        Alert.alert(t('couldntAddToCalendar'), result.message, [{ text: t('ok'), onPress: back }])
+        if (Platform.OS === 'web') {
+          window.alert(result.message)
+          back()
+        } else {
+          Alert.alert(t('couldntAddToCalendar'), result.message, [{ text: t('ok'), onPress: back }])
+        }
         return
       }
     }

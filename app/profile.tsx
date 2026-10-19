@@ -15,6 +15,7 @@ import { gestationalAge, formatDate } from '../lib/pregnancy'
 import { DEV_BYPASS_KEY } from '../lib/devBypass'
 import { ONBOARDING_KEY } from '../lib/onboarding'
 import { goBack } from '../lib/navigation'
+import { showAlert } from '../lib/alert'
 import { clearHealthData } from './(tabs)/health'
 import { clearBrainDumpData } from '../lib/brainDump'
 import { type Partner, loadPartner, savePartner, clearPartnerData } from '../lib/partner'
@@ -121,7 +122,7 @@ export default function ProfileScreen() {
       const { data: available } = await supabase.rpc('username_available', { check_username: form.username })
       if (available === false) {
         setSaving(false)
-        Alert.alert(t('error'), t('usernameTakenError'))
+        showAlert(t('error'), t('usernameTakenError'))
         return
       }
     }
@@ -134,7 +135,7 @@ export default function ProfileScreen() {
         username:   form.username || null,
         updated_at: new Date().toISOString(),
       }).eq('id', data.claims.sub)
-      if (error) { setSaving(false); Alert.alert(t('error'), error.message); return }
+      if (error) { setSaving(false); showAlert(t('error'), error.message); return }
       setCachedProfile(form)
     }
     setSaving(false)
@@ -146,7 +147,7 @@ export default function ProfileScreen() {
     const invite = await createInvite(partner.email.trim())
     setInviting(false)
     if (!invite) {
-      Alert.alert(t('error'), t('inviteError'))
+      showAlert(t('error'), t('inviteError'))
       return
     }
     const message = t('inviteMessage', { code: invite.code })
@@ -161,7 +162,7 @@ export default function ProfileScreen() {
     setExporting(true)
     const result = await exportMyData()
     setExporting(false)
-    if (!result.ok) Alert.alert(t('error'), t('exportDataError'))
+    if (!result.ok) showAlert(t('error'), t('exportDataError'))
   }
 
   async function deleteAccount() {
@@ -169,7 +170,7 @@ export default function ProfileScreen() {
     const { error } = await supabase.rpc('delete_my_account')
     if (error) {
       setDeleting(false)
-      Alert.alert(t('error'), error.message)
+      showAlert(t('error'), error.message)
       return
     }
     await supabase.auth.signOut()
