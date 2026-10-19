@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -119,7 +119,22 @@ export default function EditBrainDumpScreen() {
     ])
   }
 
-  if (loaded && !entries.some(e => e.id === id)) {
+  if (!loaded) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8}>
+            <Ionicons name={backIcon} size={22} color={colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.notFound}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    )
+  }
+
+  if (!entries.some(e => e.id === id)) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>

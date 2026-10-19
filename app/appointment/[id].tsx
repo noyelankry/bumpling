@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Platform } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Platform, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -55,15 +55,20 @@ export default function AppointmentDetailScreen() {
   const [notesEditing, setNotesEditing] = useState(false)
   const [savingNotes, setSavingNotes] = useState(false)
   const [isPartnerView, setIsPartnerView] = useState(false)
+  // Resets per id — a different appointment is genuinely different data, not
+  // a case where showing the previous one briefly is harmless.
+  const [loaded, setLoaded] = useState(false)
 
   useFocusEffect(useCallback(() => {
-    loadCareItems().then(all => {
+    setLoaded(false)
+    Promise.all([loadCareItems(), loadLMP(), loadPartner(), currentRole()]).then(([all, lmpDate, p, role]) => {
       setItems(all)
       setNotesDraft(all.find(i => i.id === id)?.visitNotes ?? '')
+      setLmp(lmpDate)
+      setPartner(p)
+      setIsPartnerView(role === 'partner')
+      setLoaded(true)
     })
-    loadLMP().then(setLmp)
-    loadPartner().then(setPartner)
-    currentRole().then(role => setIsPartnerView(role === 'partner'))
     setNotesEditing(false)
   }, [id]))
 
@@ -84,6 +89,17 @@ export default function AppointmentDetailScreen() {
     ? rawTrimesterLabel
     : undefined
   const testPurpose = item && !item.custom ? getTestPurpose(item.id, language) : undefined
+
+  if (!loaded) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Header onBack={back} title={t('defaultTitle')} backIcon={backIcon} />
+        <View style={styles.notFound}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    )
+  }
 
   if (!item) {
     return (

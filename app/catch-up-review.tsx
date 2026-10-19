@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -19,10 +19,16 @@ export default function CatchUpReviewScreen() {
   const [lmp, setLmp] = useState<Date>(TODAY)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
+  // Avoids flashing "All caught up" (DEFAULT_CARE_ITEMS has nothing missed)
+  // before the real, possibly non-empty missed list loads.
+  const [loaded, setLoaded] = useState(false)
 
   useFocusEffect(useCallback(() => {
-    loadCareItems().then(setItems)
-    loadLMP().then(setLmp)
+    Promise.all([loadCareItems(), loadLMP()]).then(([careItems, lmpDate]) => {
+      setItems(careItems)
+      setLmp(lmpDate)
+      setLoaded(true)
+    })
     setSelected(new Set())
     // Defense in depth — Plan already hides the entry point into this
     // write-only screen for a partner, this just covers reaching it directly.
@@ -73,7 +79,11 @@ export default function CatchUpReviewScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.subtitle}>{t('subtitle')}</Text>
 
-        {missed.length === 0 ? (
+        {!loaded ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : missed.length === 0 ? (
           <Text style={styles.emptyText}>{t('allCaughtUp')}</Text>
         ) : (
           <>
@@ -124,6 +134,7 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, paddingBottom: 56 },
   subtitle:  { fontSize: 13.5, color: colors.textSecondary, lineHeight: 19, marginBottom: spacing.md },
   emptyText: { fontSize: 13.5, color: colors.textSecondary, marginTop: spacing.md },
+  loadingState: { paddingVertical: spacing.lg * 2, alignItems: 'center' },
 
   listCard:     { backgroundColor: colors.card, borderRadius: radius.lg, marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, overflow: 'hidden' },
   row:          { flexDirection: 'row', alignItems: 'center', gap: 10, padding: spacing.sm },

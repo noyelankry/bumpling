@@ -111,11 +111,14 @@ export default function RadialTabBar({ state, descriptors, navigation }: BottomT
   // three equal destinations, not an anchor hub with two satellites, so
   // Today renders as a Bubble here too rather than the larger pill shape.
   if (fanRoutes.length === 2) {
+    // Today first (Plan, then Brain Dump), not anchored in the middle —
+    // mirrored for RTL so "first" still reads as first in either direction.
+    const ordered = isRTL
+      ? [fanRoutes[1], fanRoutes[0], pillRoute]
+      : [pillRoute, fanRoutes[0], fanRoutes[1]]
     return (
       <View style={[styles.root, styles.flatRow, { paddingBottom: insets.bottom + PILL_ROW_BOTTOM_PADDING }]}>
-        <Bubble route={fanRoutes[isRTL ? 1 : 0]} />
-        <Bubble route={pillRoute} />
-        <Bubble route={fanRoutes[isRTL ? 0 : 1]} />
+        {ordered.map(route => <Bubble key={route.key} route={route} />)}
       </View>
     )
   }

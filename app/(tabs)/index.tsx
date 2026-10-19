@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter, useFocusEffect } from 'expo-router'
@@ -23,16 +23,22 @@ export default function HomeScreen() {
   const [lmp, setLmp] = useState<Date>(TODAY)
   const [brainDumpEntries, setBrainDumpEntries] = useState<Entry[]>([])
   const [isPartnerView, setIsPartnerView] = useState(false)
+  // See plan.tsx for why: avoids flashing placeholder (0-week, empty) state
+  // before the real data loads, on a fresh mount.
+  const [loaded, setLoaded] = useState(false)
   const router = useRouter()
   const autoScroll = useAutoScrollEnabled()
   const age = gestationalAge(lmp, TODAY)
   const weeklyFact = getWeeklyFact(age.weeks, language)
 
   useFocusEffect(useCallback(() => {
-    loadCareItems().then(setItems)
-    loadLMP().then(setLmp)
-    loadEntries().then(setBrainDumpEntries)
-    currentRole().then(role => setIsPartnerView(role === 'partner'))
+    Promise.all([loadCareItems(), loadLMP(), loadEntries(), currentRole()]).then(([careItems, lmpDate, entries, role]) => {
+      setItems(careItems)
+      setLmp(lmpDate)
+      setBrainDumpEntries(entries)
+      setIsPartnerView(role === 'partner')
+      setLoaded(true)
+    })
   }, []))
 
   const computed = computeCareItems(items, lmp, TODAY)
@@ -65,6 +71,12 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {!loaded ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : (
+        <>
         <View style={styles.weekRow}>
           <View style={styles.weekTextCol}>
             <Text style={styles.eyebrow}>{t(isPartnerView ? 'partnerPregnant' : 'pregnant')}</Text>
@@ -145,6 +157,8 @@ export default function HomeScreen() {
             <Ionicons name={forward} size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         )}
+        </>
+        )}
 
       </ScrollView>
     </SafeAreaView>
@@ -154,6 +168,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: colors.background },
   scroll: { paddingHorizontal: spacing.md, paddingTop: 28, paddingBottom: 56 },
+  loadingState: { paddingVertical: spacing.lg * 2, alignItems: 'center' },
 
   header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   headerLeft:  { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },

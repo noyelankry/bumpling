@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter, useFocusEffect } from 'expo-router'
@@ -63,12 +63,20 @@ export default function PlanScreen() {
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date>(TODAY)
   const [isPartnerView, setIsPartnerView] = useState(false)
+  // Gates the data-dependent content below so a fresh mount never flashes
+  // DEFAULT_CARE_ITEMS (an unscheduled, generic template) before the real,
+  // possibly-already-scheduled data loads — stays true after the first
+  // load, so a cached refocus just updates content in place, no re-flash.
+  const [loaded, setLoaded] = useState(false)
   const age = useMemo(() => gestationalAge(lmp, TODAY), [lmp])
 
   useFocusEffect(useCallback(() => {
-    loadCareItems().then(setItems)
-    loadLMP().then(setLmp)
-    currentRole().then(role => setIsPartnerView(role === 'partner'))
+    Promise.all([loadCareItems(), loadLMP(), currentRole()]).then(([careItems, lmpDate, role]) => {
+      setItems(careItems)
+      setLmp(lmpDate)
+      setIsPartnerView(role === 'partner')
+      setLoaded(true)
+    })
   }, []))
 
   const computed = useMemo(() => computeCareItems(items, lmp, TODAY), [items, lmp])
@@ -196,6 +204,12 @@ export default function PlanScreen() {
         <Text style={styles.title}>{t('title')}</Text>
         <Text style={styles.subtitle}>{t('subtitle')}</Text>
 
+        {!loaded ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : (
+        <>
         <View style={styles.summaryCard}>
           <View style={styles.summaryTopRow}>
             <View style={styles.summaryIconChip}>
@@ -359,7 +373,6 @@ export default function PlanScreen() {
             <Text style={styles.journeyTitle}>{t('yourJourney')}</Text>
             <View style={styles.weekChip}>
               <Text style={styles.weekChipText}>{t('weekLabel', { weeks: age.weeks })}</Text>
-              <Ionicons name="chevron-down" size={13} color={colors.primaryDark} />
             </View>
           </View>
 
@@ -498,6 +511,8 @@ export default function PlanScreen() {
             <Text style={styles.birthPrepBtnText}>{t(isPartnerView ? 'view' : 'explore')}</Text>
           </TouchableOpacity>
         </View>
+        </>
+        )}
 
       </ScrollView>
     </SafeAreaView>
@@ -507,6 +522,7 @@ export default function PlanScreen() {
 const styles = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: colors.background },
   scroll: { paddingHorizontal: spacing.md, paddingTop: 28, paddingBottom: 56 },
+  loadingState: { paddingVertical: spacing.lg * 2, alignItems: 'center' },
 
   header:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },

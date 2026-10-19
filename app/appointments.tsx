@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -29,10 +29,16 @@ export default function AppointmentsScreen() {
   const back = () => goBack(router, '/(tabs)/plan')
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date>(TODAY)
+  // Avoids flashing DEFAULT_CARE_ITEMS's generic unscheduled state before
+  // the real, possibly-scheduled data loads.
+  const [loaded, setLoaded] = useState(false)
 
   useFocusEffect(useCallback(() => {
-    loadCareItems().then(setItems)
-    loadLMP().then(setLmp)
+    Promise.all([loadCareItems(), loadLMP()]).then(([careItems, lmpDate]) => {
+      setItems(careItems)
+      setLmp(lmpDate)
+      setLoaded(true)
+    })
   }, []))
 
   const computed = useMemo(() => computeCareItems(items, lmp, TODAY), [items, lmp])
@@ -65,6 +71,12 @@ export default function AppointmentsScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
+        {!loaded ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : (
+        <>
         {upcoming.length === 0 && needsDecision.length === 0 && past.length === 0 && (
           <Text style={styles.emptyText}>{t('nothingYet')}</Text>
         )}
@@ -154,6 +166,8 @@ export default function AppointmentsScreen() {
             </View>
           </>
         )}
+        </>
+        )}
 
       </ScrollView>
     </SafeAreaView>
@@ -167,6 +181,7 @@ const styles = StyleSheet.create({
 
   scroll: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, paddingBottom: 56 },
   emptyText: { fontSize: 13.5, color: colors.textSecondary, marginTop: spacing.md },
+  loadingState: { paddingVertical: spacing.lg * 2, alignItems: 'center' },
 
   sectionLabel: { fontFamily: fonts.headline, fontSize: 16, color: colors.textPrimary, marginBottom: spacing.xs, marginTop: spacing.sm },
 
