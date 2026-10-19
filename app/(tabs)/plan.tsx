@@ -8,7 +8,7 @@ import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { BabyMark } from '../../components/illustrations'
 import { ItemIcon } from '../../components/ItemIcon'
 import { formatDate, formatDateRange, formatWeekday, gestationalAge } from '../../lib/pregnancy'
-import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, getItemTitle, type CareItemWithCustom } from '../../lib/carePlan'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, getItemTitle, currentRole, type CareItemWithCustom } from '../../lib/carePlan'
 import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 import { useDirectionalIcon } from '../../lib/i18n/useDirectionalIcon'
 import { useLanguage } from '../../lib/i18n/LanguageProvider'
@@ -62,11 +62,13 @@ export default function PlanScreen() {
   const autoScroll = useAutoScrollEnabled()
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date>(TODAY)
+  const [isPartnerView, setIsPartnerView] = useState(false)
   const age = useMemo(() => gestationalAge(lmp, TODAY), [lmp])
 
   useFocusEffect(useCallback(() => {
     loadCareItems().then(setItems)
     loadLMP().then(setLmp)
+    currentRole().then(role => setIsPartnerView(role === 'partner'))
   }, []))
 
   const computed = useMemo(() => computeCareItems(items, lmp, TODAY), [items, lmp])
@@ -244,7 +246,7 @@ export default function PlanScreen() {
                         <Text style={styles.bookBy}>{t('bookBy', { date: formatDate(item.bookBy) })}</Text>
                       )}
                     </View>
-                    {item.status === 'actionable' ? (
+                    {item.status === 'actionable' && !isPartnerView ? (
                       <TouchableOpacity
                         activeOpacity={0.85}
                         style={styles.scheduleBtn}
@@ -465,30 +467,34 @@ export default function PlanScreen() {
           </>
         )}
 
-        <TouchableOpacity style={styles.addCustomCard} activeOpacity={0.7} onPress={() => router.push('/add-item')}>
-          <View style={styles.addCustomIconChip}>
-            <Ionicons name="add-circle-outline" size={22} color={colors.lavenderDeep} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.addCustomTitle}>{t('addCustomTitle')}</Text>
-            <Text style={styles.addCustomSub}>{t('addCustomSub')}</Text>
-          </View>
-          <Ionicons name={forward} size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+        {!isPartnerView && (
+          <TouchableOpacity style={styles.addCustomCard} activeOpacity={0.7} onPress={() => router.push('/add-item')}>
+            <View style={styles.addCustomIconChip}>
+              <Ionicons name="add-circle-outline" size={22} color={colors.lavenderDeep} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.addCustomTitle}>{t('addCustomTitle')}</Text>
+              <Text style={styles.addCustomSub}>{t('addCustomSub')}</Text>
+            </View>
+            <Ionicons name={forward} size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
+        )}
 
         {/* TODO: gate behind age.weeks once past onboarding, e.g. >= 25. */}
-        <View style={styles.birthPrepCard}>
-          <View style={styles.birthPrepIconChip}>
-            <Ionicons name="heart-outline" size={22} color={colors.lavenderDeep} />
+        {!isPartnerView && (
+          <View style={styles.birthPrepCard}>
+            <View style={styles.birthPrepIconChip}>
+              <Ionicons name="heart-outline" size={22} color={colors.lavenderDeep} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.birthPrepTitle}>{t('prepareForBirth')}</Text>
+              <Text style={styles.birthPrepSub}>{t('prepareForBirthSub')}</Text>
+            </View>
+            <TouchableOpacity style={styles.birthPrepBtn} onPress={() => router.push('/prepare-for-birth')}>
+              <Text style={styles.birthPrepBtnText}>{t('explore')}</Text>
+            </TouchableOpacity>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.birthPrepTitle}>{t('prepareForBirth')}</Text>
-            <Text style={styles.birthPrepSub}>{t('prepareForBirthSub')}</Text>
-          </View>
-          <TouchableOpacity style={styles.birthPrepBtn} onPress={() => router.push('/prepare-for-birth')}>
-            <Text style={styles.birthPrepBtnText}>{t('explore')}</Text>
-          </TouchableOpacity>
-        </View>
+        )}
 
       </ScrollView>
     </SafeAreaView>

@@ -20,7 +20,7 @@ function toLocalDateString(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
-function fromLocalDateString(dateStr: string): Date {
+export function fromLocalDateString(dateStr: string): Date {
   const [year, month, day] = dateStr.split('-').map(Number)
   return new Date(year, month - 1, day)
 }
@@ -67,7 +67,7 @@ export function getItemTitle(item: Pick<CareItemWithCustom, 'id' | 'title' | 'cu
   return i18next.t(`carePlan:${item.id}`, { defaultValue: item.title })
 }
 
-type PregnancyRow = { id: string; lmp_date: string; catchup_done: boolean; booked_done: boolean }
+type PregnancyRow = { id: string; lmp_date: string; catchup_done: boolean; booked_done: boolean; role: 'owner' | 'partner' }
 
 async function currentUserId(): Promise<string | null> {
   const { data } = await supabase.auth.getClaims()
@@ -88,19 +88,55 @@ function invalidateCache() {
 }
 
 // Does NOT create a pregnancy row — only saveLMP does that (the real
-// onboarding moment). Everything else here just reads whatever exists.
+// onboarding moment). Resolves to the user's own pregnancy if they're an
+// owner, or — if not — the one pregnancy they're an accepted partner on, so
+// Today/Plan/birth-preferences work transparently for both roles through
+// this single function. Mutating functions below are NOT partner-safe by
+// convention — RLS has no write policies for partners on these tables, so a
+// write attempt fails/no-ops server-side regardless, but the UI should not
+// expose write actions to a partner in the first place (see currentRole()).
 async function currentPregnancy(): Promise<PregnancyRow | null> {
   const userId = await currentUserId()
   if (!userId) return null
   if (pregnancyCache?.userId === userId) return pregnancyCache.row
-  const { data } = await supabase.from('pregnancies').select('id,lmp_date,catchup_done,booked_done').eq('user_id', userId).maybeSingle()
-  if (data) pregnancyCache = { userId, row: data }
-  return data ?? null
+
+  const { data: owned } = await supabase.from('pregnancies').select('id,lmp_date,catchup_done,booked_done').eq('user_id', userId).maybeSingle()
+  if (owned) {
+    const row: PregnancyRow = { ...owned, role: 'owner' }
+    pregnancyCache = { userId, row }
+    return row
+  }
+
+  const { data: membership } = await supabase
+    .from('pregnancy_members')
+    .select('pregnancy_id')
+    .eq('user_id', userId)
+    .eq('role', 'partner')
+    .not('accepted_at', 'is', null)
+    .limit(1)
+    .maybeSingle()
+  if (!membership) return null
+
+  const { data: partnerPregnancy } = await supabase
+    .from('pregnancies')
+    .select('id,lmp_date,catchup_done,booked_done')
+    .eq('id', membership.pregnancy_id)
+    .maybeSingle()
+  if (!partnerPregnancy) return null
+
+  const row: PregnancyRow = { ...partnerPregnancy, role: 'partner' }
+  pregnancyCache = { userId, row }
+  return row
 }
 
 /** For other modules (health_logs, birth_preferences) that need to scope their own rows to the current pregnancy. */
 export async function currentPregnancyId(): Promise<string | null> {
   return (await currentPregnancy())?.id ?? null
+}
+
+/** Lets screens hide/disable write actions for a partner without a separate query. */
+export async function currentRole(): Promise<'owner' | 'partner' | null> {
+  return (await currentPregnancy())?.role ?? null
 }
 
 function toRow(pregnancyId: string, userId: string, item: CareItemWithCustom) {
@@ -125,7 +161,7 @@ function toRow(pregnancyId: string, userId: string, item: CareItemWithCustom) {
   }
 }
 
-function fromRow(row: Record<string, any>): CareItemWithCustom {
+export function fromRow(row: Record<string, any>): CareItemWithCustom {
   return {
     id: row.id,
     title: row.title,

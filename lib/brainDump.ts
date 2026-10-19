@@ -17,6 +17,7 @@ export type Entry = {
   linkedAppointmentTitle?: string
   done: boolean
   createdAt: string
+  sharedWithPartner: boolean
 }
 
 // Stored lowercase (see SYMPTOMS in app/(tabs)/health.tsx for the same
@@ -44,6 +45,7 @@ function fromRow(row: Record<string, any>): Entry {
     linkedAppointmentTitle: row.linked_appointment_title ?? undefined,
     done: row.done,
     createdAt: row.created_at,
+    sharedWithPartner: row.shared_with_partner ?? false,
   }
 }
 
@@ -84,6 +86,7 @@ export async function updateEntry(entries: Entry[], id: string, details: {
   tags?: string[]
   linkedAppointmentId?: string
   linkedAppointmentTitle?: string
+  sharedWithPartner?: boolean
 }): Promise<Entry[]> {
   await supabase.from('brain_dump_entries').update({
     text: details.text,
@@ -92,6 +95,7 @@ export async function updateEntry(entries: Entry[], id: string, details: {
     tags: details.tags ?? [],
     linked_appointment_id: details.linkedAppointmentId ?? null,
     linked_appointment_title: details.linkedAppointmentTitle ?? null,
+    shared_with_partner: details.sharedWithPartner ?? false,
   }).eq('id', id)
   return entries.map(e => e.id === id ? {
     ...e,
@@ -101,6 +105,7 @@ export async function updateEntry(entries: Entry[], id: string, details: {
     tags: details.tags ?? [],
     linkedAppointmentId: details.linkedAppointmentId,
     linkedAppointmentTitle: details.linkedAppointmentTitle,
+    sharedWithPartner: details.sharedWithPartner ?? false,
   } : e)
 }
 
@@ -109,6 +114,13 @@ export async function toggleDone(entries: Entry[], id: string): Promise<Entry[]>
   if (!entry) return entries
   await supabase.from('brain_dump_entries').update({ done: !entry.done }).eq('id', id)
   return entries.map(e => e.id === id ? { ...e, done: !e.done } : e)
+}
+
+export async function toggleSharedWithPartner(entries: Entry[], id: string): Promise<Entry[]> {
+  const entry = entries.find(e => e.id === id)
+  if (!entry) return entries
+  await supabase.from('brain_dump_entries').update({ shared_with_partner: !entry.sharedWithPartner }).eq('id', id)
+  return entries.map(e => e.id === id ? { ...e, sharedWithPartner: !e.sharedWithPartner } : e)
 }
 
 export async function removeEntry(entries: Entry[], id: string): Promise<Entry[]> {

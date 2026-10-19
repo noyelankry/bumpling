@@ -38,6 +38,7 @@ export default function EditBrainDumpScreen() {
   const [tags, setTags] = useState<string[]>([])
   const [appointmentId, setAppointmentId] = useState<string | undefined>()
   const [appointmentTitle, setAppointmentTitle] = useState<string | undefined>()
+  const [sharedWithPartner, setSharedWithPartner] = useState(false)
   const [openSection, setOpenSection] = useState<Section>(null)
   const [saving, setSaving] = useState(false)
 
@@ -57,6 +58,7 @@ export default function EditBrainDumpScreen() {
         setTags(entry.tags)
         setAppointmentId(entry.linkedAppointmentId)
         setAppointmentTitle(entry.linkedAppointmentTitle)
+        setSharedWithPartner(entry.sharedWithPartner)
       }
       setLoaded(true)
     })
@@ -98,6 +100,7 @@ export default function EditBrainDumpScreen() {
       tags,
       linkedAppointmentId: appointmentId,
       linkedAppointmentTitle: appointmentTitle,
+      sharedWithPartner,
     })
     setSaving(false)
     back()
@@ -232,7 +235,6 @@ export default function EditBrainDumpScreen() {
               summary={tags.length > 0 ? tags.map(tagLabel).join(', ') : undefined}
               onPress={() => toggleSection('tags')}
               forwardIcon={forward}
-              last
             >
               <View style={styles.tagGrid}>
                 {SUGGESTED_TAGS.map(tag => {
@@ -249,6 +251,19 @@ export default function EditBrainDumpScreen() {
                 })}
               </View>
             </OptionRow>
+
+            <TouchableOpacity style={styles.optionRow} onPress={() => setSharedWithPartner(v => !v)} activeOpacity={0.7}>
+              <Ionicons name="people-outline" size={18} color={colors.textSecondary} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.optionLabel}>{t('shareWithPartner')}</Text>
+                {sharedWithPartner && <Text style={styles.optionSummary}>{t('shareWithPartnerOn')}</Text>}
+              </View>
+              <Ionicons
+                name={sharedWithPartner ? 'checkmark-circle' : 'ellipse-outline'}
+                size={20}
+                color={sharedWithPartner ? colors.sageDeep : colors.textSecondary}
+              />
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity style={[styles.saveBtn, !text.trim() && styles.saveBtnDisabled]} onPress={save} disabled={!text.trim() || saving}>

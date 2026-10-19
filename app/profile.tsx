@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform, ActivityIndicator } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform, ActivityIndicator, Share } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useNavigation } from '@react-navigation/native'
@@ -9,7 +9,8 @@ import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import { BabyMark } from '../components/illustrations'
 import { supabase } from '../lib/supabase'
-import { clearCarePlanData, loadLMP } from '../lib/carePlan'
+import { clearCarePlanData, loadLMP, currentRole } from '../lib/carePlan'
+import { loadConnectedMomName } from '../lib/partnerView'
 import { gestationalAge, formatDate } from '../lib/pregnancy'
 import { DEV_BYPASS_KEY } from '../lib/devBypass'
 import { ONBOARDING_KEY } from '../lib/onboarding'
@@ -20,6 +21,8 @@ import { type Partner, loadPartner, savePartner, clearPartnerData } from '../lib
 import { clearBirthPrefsData } from '../lib/birthPrefs'
 import { loadMomPhone, saveMomPhone, clearMomContactData } from '../lib/momContact'
 import { exportMyData } from '../lib/dataExport'
+import { loadProfile, setCachedProfile, clearProfileCache } from '../lib/profileData'
+import { createInvite } from '../lib/partnerInvite'
 import { useLanguage } from '../lib/i18n/LanguageProvider'
 import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 import type { Language } from '../lib/i18n/languageStorage'
@@ -44,6 +47,9 @@ export default function ProfileScreen() {
   const [deleting, setDeleting] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [lmp, setLmp] = useState<Date | null>(null)
+  const [isPartnerView, setIsPartnerView] = useState(false)
+  const [connectedMomName, setConnectedMomName] = useState<string | null>(null)
+  const [inviting, setInviting] = useState(false)
   // The last-saved values, so fields can just always be editable — no edit-mode
   // toggle — while still only showing "Save changes" once something actually differs.
   const [saved, setSaved] = useState<{ form: Profile; phoneCountry: PhoneCountry; phoneNumber: string; partner: Partner } | null>(null)
@@ -93,15 +99,12 @@ export default function ProfileScreen() {
   useFocusEffect(useCallback(() => {
     let cancelled = false
     ;(async () => {
-      const [p, ph, lmpDate] = await Promise.all([loadPartner(), loadMomPhone(), loadLMP()])
-      let f: Profile = { full_name: '', username: '' }
-      const { data } = await supabase.auth.getClaims()
-      if (data?.claims) {
-        const { data: row } = await supabase.from('profiles').select('*').eq('id', data.claims.sub).single()
-        if (row) f = { full_name: row.full_name ?? '', username: row.username ?? '' }
-      }
+      const [p, ph, lmpDate, f, role] = await Promise.all([loadPartner(), loadMomPhone(), loadLMP(), loadProfile(), currentRole()])
       if (cancelled) return
       const { country, number } = splitPhone(ph)
+      const partnerView = role === 'partner'
+      setIsPartnerView(partnerView)
+      if (partnerView) loadConnectedMomName().then(setConnectedMomName)
       setLmp(lmpDate)
       setPartner(p)
       setPhoneCountry(country)
@@ -132,9 +135,26 @@ export default function ProfileScreen() {
         updated_at: new Date().toISOString(),
       }).eq('id', data.claims.sub)
       if (error) { setSaving(false); Alert.alert(t('error'), error.message); return }
+      setCachedProfile(form)
     }
     setSaving(false)
     setSaved({ form, phoneCountry, phoneNumber, partner })
+  }
+
+  async function invitePartner() {
+    setInviting(true)
+    const invite = await createInvite(partner.email.trim())
+    setInviting(false)
+    if (!invite) {
+      Alert.alert(t('error'), t('inviteError'))
+      return
+    }
+    const message = t('inviteMessage', { code: invite.code })
+    if (Platform.OS === 'web') {
+      window.prompt(t('inviteMessageWebPrompt'), message)
+      return
+    }
+    await Share.share({ message })
   }
 
   async function downloadMyData() {
@@ -153,6 +173,7 @@ export default function ProfileScreen() {
       return
     }
     await supabase.auth.signOut()
+    clearProfileCache()
     await Promise.all([
       clearCarePlanData(),
       clearHealthData(),
@@ -258,63 +279,89 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.fieldRow} onPress={() => router.push('/change-lmp')} activeOpacity={0.6}>
-            <Text style={styles.fieldLabel}>{t('lastPeriod')}</Text>
-            <View style={styles.lmpRow}>
-              <View>
-                <Text style={styles.lmpValue}>{lmp ? formatDate(lmp) : t('lastPeriodNotSet')}</Text>
-                {lmp && <Text style={styles.lmpWeek}>{t('lastPeriodWeek', gestationalAge(lmp, new Date()))}</Text>}
+          {isPartnerView && (
+            <View style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>{t('connectedTo')}</Text>
+              <Text style={styles.lmpValue}>{connectedMomName ?? t('connectedToUnknown')}</Text>
+            </View>
+          )}
+
+          {!isPartnerView && (
+            <TouchableOpacity style={styles.fieldRow} onPress={() => router.push('/change-lmp')} activeOpacity={0.6}>
+              <Text style={styles.fieldLabel}>{t('lastPeriod')}</Text>
+              <View style={styles.lmpRow}>
+                <View>
+                  <Text style={styles.lmpValue}>{lmp ? formatDate(lmp) : t('lastPeriodNotSet')}</Text>
+                  {lmp && <Text style={styles.lmpWeek}>{t('lastPeriodWeek', gestationalAge(lmp, new Date()))}</Text>}
+                </View>
+                <Ionicons name={forward} size={16} color={colors.textSecondary} />
               </View>
-              <Ionicons name={forward} size={16} color={colors.textSecondary} />
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          )}
 
-          <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>{t('phone')}</Text>
-            <View style={styles.phoneRow}>
-              <PhoneCountryPicker value={phoneCountry} onChange={setPhoneCountry} label={t('phoneCountryLabel')} />
-              <TextInput
-                style={[styles.fieldInput, styles.phoneInput, isRTL && styles.fieldInputRTL]}
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                placeholder={t('phonePlaceholder')}
-                placeholderTextColor={colors.textSecondary}
-                keyboardType="phone-pad"
-              />
+          {!isPartnerView && (
+            <View style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>{t('phone')}</Text>
+              <View style={styles.phoneRow}>
+                <PhoneCountryPicker value={phoneCountry} onChange={setPhoneCountry} label={t('phoneCountryLabel')} />
+                <TextInput
+                  style={[styles.fieldInput, styles.phoneInput, isRTL && styles.fieldInputRTL]}
+                  value={phoneNumber}
+                  onChangeText={setPhoneNumber}
+                  placeholder={t('phonePlaceholder')}
+                  placeholderTextColor={colors.textSecondary}
+                  keyboardType="phone-pad"
+                />
+              </View>
+              {phoneError && <Text style={styles.fieldError}>{t('phoneInvalid')}</Text>}
             </View>
-            {phoneError && <Text style={styles.fieldError}>{t('phoneInvalid')}</Text>}
-          </View>
+          )}
         </View>
 
-        <Text style={styles.sectionLabel}>{t('partner')}</Text>
-        <Text style={styles.sectionHint}>{t('partnerHint')}</Text>
+        {!isPartnerView && (
+          <>
+            <Text style={styles.sectionLabel}>{t('partner')}</Text>
+            <Text style={styles.sectionHint}>{t('partnerHint')}</Text>
 
-        <View style={styles.list}>
-          <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>{t('partnerName')}</Text>
-            <TextInput
-              style={[styles.fieldInput, isRTL && styles.fieldInputRTL]}
-              value={partner.name}
-              onChangeText={setPartnerField('name')}
-              placeholder={t('partnerNamePlaceholder')}
-              placeholderTextColor={colors.textSecondary}
-            />
-          </View>
+            <View style={styles.list}>
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>{t('partnerName')}</Text>
+                <TextInput
+                  style={[styles.fieldInput, isRTL && styles.fieldInputRTL]}
+                  value={partner.name}
+                  onChangeText={setPartnerField('name')}
+                  placeholder={t('partnerNamePlaceholder')}
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
 
-          <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>{t('partnerEmail')}</Text>
-            <TextInput
-              style={[styles.fieldInput, isRTL && styles.fieldInputRTL]}
-              value={partner.email}
-              onChangeText={setPartnerField('email')}
-              placeholder={t('partnerEmailPlaceholder')}
-              placeholderTextColor={colors.textSecondary}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-            {partnerEmailError && <Text style={styles.fieldError}>{t('emailInvalid')}</Text>}
-          </View>
-        </View>
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>{t('partnerEmail')}</Text>
+                <TextInput
+                  style={[styles.fieldInput, isRTL && styles.fieldInputRTL]}
+                  value={partner.email}
+                  onChangeText={setPartnerField('email')}
+                  placeholder={t('partnerEmailPlaceholder')}
+                  placeholderTextColor={colors.textSecondary}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+                {partnerEmailError && <Text style={styles.fieldError}>{t('emailInvalid')}</Text>}
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.inviteBtn, (!partner.email.trim() || partnerEmailError || inviting) && styles.saveBtnDisabled]}
+              onPress={invitePartner}
+              disabled={!partner.email.trim() || !!partnerEmailError || inviting}
+            >
+              {inviting
+                ? <ActivityIndicator color={colors.primary} />
+                : <Text style={styles.inviteBtnText}>{t('invitePartner')}</Text>
+              }
+            </TouchableOpacity>
+          </>
+        )}
 
         {isDirty && (
           <TouchableOpacity style={[styles.saveBtn, !canSave && styles.saveBtnDisabled]} onPress={save} disabled={saving || !canSave}>
@@ -427,6 +474,8 @@ const styles = StyleSheet.create({
   saveBtn:     { backgroundColor: colors.textPrimary, borderRadius: radius.pill, paddingVertical: 14, alignItems: 'center', marginTop: spacing.md },
   saveBtnDisabled: { opacity: 0.5 },
   saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  inviteBtn:   { borderWidth: 1.5, borderColor: colors.primary, borderRadius: radius.pill, paddingVertical: 13, alignItems: 'center', marginTop: spacing.sm },
+  inviteBtnText: { color: colors.primary, fontWeight: '700', fontSize: 15 },
 
   languageRow: { flexDirection: 'row', gap: spacing.lg, paddingVertical: 4 },
   langOption:  { paddingVertical: 8 },

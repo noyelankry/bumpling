@@ -10,7 +10,7 @@ import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 import { gestationalAge } from '../../lib/pregnancy'
 import { getDateLocale } from '../../lib/i18n/dateLocale'
 import { useDirectionalIcon } from '../../lib/i18n/useDirectionalIcon'
-import { TODAY, loadLMP, currentPregnancyId } from '../../lib/carePlan'
+import { TODAY, loadLMP, currentPregnancyId, currentRole } from '../../lib/carePlan'
 import { supabase } from '../../lib/supabase'
 
 // No-op now — data is server-side and cascade-deleted on account deletion, not local.
@@ -79,7 +79,13 @@ export default function HealthScreen() {
 
   const age = gestationalAge(lmp, TODAY)
 
-  useFocusEffect(useCallback(() => { load(); loadLMP().then(setLmp) }, []))
+  useFocusEffect(useCallback(() => {
+    load()
+    loadLMP().then(setLmp)
+    // Defense in depth — the tab itself is already hidden for a partner
+    // (see (tabs)/_layout.tsx), this just covers reaching the route directly.
+    currentRole().then(role => { if (role === 'partner') router.replace('/(tabs)') })
+  }, []))
 
   async function load() {
     const { data: claims } = await supabase.auth.getClaims()

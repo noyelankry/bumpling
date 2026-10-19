@@ -1,0 +1,18 @@
+{
+  "waitingTitle": "כמעט שם",
+  "waitingBody": "בן/בת הזוג שלך עדיין לא סיימו להגדיר את ההריון. ברגע שיוסיפו את התאריכים, תראו כאן הכול.",
+  "partnerBadge": "עוקב/ת כבן/בת זוג",
+  "weekLabel": "שבוע {{weeks}} + {{days}}",
+  "loading": "טוען…",
+  "carePlan": "תוכנית טיפול",
+  "noUpcoming": "אין עדיין שום דבר מתוכנן.",
+  "scheduledFor": "נקבע ל-{{date}}",
+  "birthPreferences": "העדפות לידה",
+  "birthPrefsProgress": "{{done}} מתוך {{total}} נושאים הושלמו",
+  "birthPrefsNone": "עדיין לא התחילו.",
+  "sharedNotes": "הערות ששותפו איתך",
+  "noSharedNotes": "עדיין לא שותפו הערות.",
+  "signOutTitle": "התנתקות",
+  "signOutConfirm": "להתנתק מהחשבון?",
+  "cancel": "ביטול"
+}

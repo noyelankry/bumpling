@@ -1,0 +1,18 @@
+{
+  "waitingTitle": "Almost there",
+  "waitingBody": "Your partner hasn't finished setting up their pregnancy yet. Once they add their dates, you'll see everything here.",
+  "partnerBadge": "Following along as partner",
+  "weekLabel": "Week {{weeks}} + {{days}}",
+  "loading": "Loading…",
+  "carePlan": "Care plan",
+  "noUpcoming": "Nothing scheduled yet.",
+  "scheduledFor": "Scheduled for {{date}}",
+  "birthPreferences": "Birth preferences",
+  "birthPrefsProgress": "{{done}} of {{total}} topics covered",
+  "birthPrefsNone": "Not started yet.",
+  "sharedNotes": "Notes shared with you",
+  "noSharedNotes": "No notes have been shared yet.",
+  "signOutTitle": "Sign out",
+  "signOutConfirm": "Are you sure you want to sign out?",
+  "cancel": "Cancel"
+}

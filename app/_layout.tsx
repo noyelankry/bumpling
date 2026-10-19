@@ -8,6 +8,7 @@ import { useFonts as useNotoSansHebrewFonts, NotoSansHebrew_400Regular, NotoSans
 import { supabase } from '../lib/supabase'
 import { DEV_BYPASS_KEY, allowDevBypass } from '../lib/devBypass'
 import { hasLMP, hasCompletedCatchUp, hasCompletedBooked } from '../lib/carePlan'
+import { isPartner, PARTNER_REDEEM_FLAG } from '../lib/partnerInvite'
 import { fonts, colors, spacing } from '../lib/theme'
 import '../lib/i18n'
 import { LanguageProvider } from '../lib/i18n/LanguageProvider'
@@ -69,15 +70,42 @@ export default function RootLayout() {
 
     let cancelled = false
     ;(async () => {
+      // Auth.tsx is mid-redemption — it navigates itself once that
+      // resolves; this effect racing ahead on a stale "not a partner yet"
+      // read would send a soon-to-be-partner to the LMP screen first.
+      const redeeming = (await AsyncStorage.getItem(PARTNER_REDEEM_FLAG)) === 'true'
+      if (redeeming) return
+
       const inAuth = segments[0] === '(auth)'
       const devBypass = allowDevBypass && (await AsyncStorage.getItem(DEV_BYPASS_KEY)) === 'true'
       if (cancelled) return
 
       if (userId || devBypass) {
+        const path = (segments as string[]).join('/')
+
+        // A partner has no onboarding steps of their own — LMP/catch-up/
+        // booked all belong to mom. hasLMP() etc. below already resolve
+        // through *her* pregnancy for a partner (see carePlan.ts), so once
+        // she's done, a partner lands in the same (tabs) navigator as the
+        // owner; the only partner-specific case is while she hasn't set an
+        // LMP yet at all, which has nothing to show except a wait state.
+        if (userId) {
+          const partner = await isPartner()
+          if (cancelled) return
+          if (partner) {
+            const lmpSet = await hasLMP()
+            if (cancelled) return
+            if (!lmpSet) {
+              if (path !== 'partner-home') router.replace('/partner-home')
+              return
+            }
+            if (inAuth || path === 'partner-home') router.replace('/(tabs)')
+            return
+          }
+        }
+
         const lmpSet = await hasLMP()
         if (cancelled) return
-
-        const path = (segments as string[]).join('/')
 
         if (!lmpSet && path !== '(auth)/lmp') {
           router.replace('/(auth)/lmp')

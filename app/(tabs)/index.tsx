@@ -10,7 +10,7 @@ import { gestationalAge, formatDate } from '../../lib/pregnancy'
 import { getDateLocale } from '../../lib/i18n/dateLocale'
 import { useDirectionalIcon } from '../../lib/i18n/useDirectionalIcon'
 import { useLanguage } from '../../lib/i18n/LanguageProvider'
-import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, getItemTitle, type CareItemWithCustom } from '../../lib/carePlan'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, computeCareItems, getItemTitle, currentRole, type CareItemWithCustom } from '../../lib/carePlan'
 import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 import { type Entry, loadEntries, formatRelativeTime } from '../../lib/brainDump'
 import { getWeeklyFact } from '../../lib/pregnancyContent'
@@ -22,6 +22,7 @@ export default function HomeScreen() {
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
   const [lmp, setLmp] = useState<Date>(TODAY)
   const [brainDumpEntries, setBrainDumpEntries] = useState<Entry[]>([])
+  const [isPartnerView, setIsPartnerView] = useState(false)
   const router = useRouter()
   const autoScroll = useAutoScrollEnabled()
   const age = gestationalAge(lmp, TODAY)
@@ -31,6 +32,7 @@ export default function HomeScreen() {
     loadCareItems().then(setItems)
     loadLMP().then(setLmp)
     loadEntries().then(setBrainDumpEntries)
+    currentRole().then(role => setIsPartnerView(role === 'partner'))
   }, []))
 
   const computed = computeCareItems(items, lmp, TODAY)
@@ -65,7 +67,7 @@ export default function HomeScreen() {
 
         <View style={styles.weekRow}>
           <View style={styles.weekTextCol}>
-            <Text style={styles.eyebrow}>{t('pregnant')}</Text>
+            <Text style={styles.eyebrow}>{t(isPartnerView ? 'partnerPregnant' : 'pregnant')}</Text>
             <Text style={[styles.heroNumber, isRTL && styles.heroNumberRTL]}>{age.weeks}</Text>
             <Text style={[styles.heroWeeksLabel, isRTL && styles.heroWeeksLabelRTL]}>{t('week', { count: age.weeks })}</Text>
             <View style={[styles.heroDaysLine, isRTL && styles.heroDaysLineRTL]}>

@@ -11,8 +11,10 @@ import { useLanguage } from '../../lib/i18n/LanguageProvider'
 import {
   type Entry, type EntryKind, type Filter,
   loadEntries, addEntry, toggleDone, removeEntry, clearBrainDumpData,
-  groupByDay, formatEntryTime, filterGroupOf,
+  groupByDay, formatEntryTime, formatEntryDay, filterGroupOf,
 } from '../../lib/brainDump'
+import { currentRole } from '../../lib/carePlan'
+import { loadSharedNotes, type SharedNote } from '../../lib/partnerView'
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name']
 
@@ -39,8 +41,17 @@ export default function BrainDumpScreen() {
   const [text, setText] = useState('')
   const [kind, setKind] = useState<EntryKind>('thought')
   const [filter, setFilter] = useState<Filter>('all')
+  const [isPartnerView, setIsPartnerView] = useState(false)
+  const [sharedNotes, setSharedNotes] = useState<SharedNote[]>([])
 
-  useFocusEffect(useCallback(() => { load() }, []))
+  useFocusEffect(useCallback(() => {
+    currentRole().then(role => {
+      const partner = role === 'partner'
+      setIsPartnerView(partner)
+      if (partner) loadSharedNotes().then(setSharedNotes)
+      else load()
+    })
+  }, []))
 
   async function load() {
     setEntries(await loadEntries())
@@ -115,85 +126,115 @@ export default function BrainDumpScreen() {
           </View>
         </View>
 
-        <View style={styles.titleRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title}>{t('heroTitle')}</Text>
-            <Text style={styles.subtitle}>{t('heroSub')}</Text>
-          </View>
-          <TouchableOpacity style={styles.menuBtn} onPress={handleMenu} accessibilityLabel={t('moreOptions')} hitSlop={8}>
-            <Ionicons name="ellipsis-horizontal" size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.composer}>
-          <TextInput
-            style={[styles.input, isRTL && styles.inputRTL]}
-            value={text}
-            onChangeText={setText}
-            placeholder={t('placeholder')}
-            placeholderTextColor={colors.textSecondary}
-            multiline
-          />
-          <View style={styles.composerRow}>
-            <View style={styles.typeToggle}>
-              {(['thought', 'doctor'] as EntryKind[]).map(k => {
-                const meta = KIND_META[k]
-                const active = kind === k
-                return (
-                  <TouchableOpacity
-                    key={k}
-                    style={[styles.typeChip, active && styles.typeChipActive]}
-                    onPress={() => setKind(k)}
-                  >
-                    <Ionicons name={meta.icon} size={13} color={active ? '#fff' : colors.textSecondary} />
-                    <Text style={[styles.typeChipText, active && styles.typeChipTextActive]}>{meta.label}</Text>
-                  </TouchableOpacity>
-                )
-              })}
-            </View>
-            <TouchableOpacity
-              style={[styles.addBtn, !text.trim() && styles.addBtnDisabled, isRTL && styles.addBtnRTL]}
-              onPress={quickAdd}
-              disabled={!text.trim()}
-              accessibilityLabel={t('addEntry')}
-            >
-              <Ionicons name="add" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.filterRow}>
-          {FILTERS.map(f => (
-            <TouchableOpacity key={f.key} onPress={() => setFilter(f.key)} hitSlop={6}>
-              <Text style={[styles.filterText, filter === f.key && styles.filterTextActive]}>
-                {f.label} ({counts[f.key]})
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {groups.length === 0 ? (
-          <Text style={styles.emptyText}>
-            {entries.length === 0 ? t('emptyNoEntries') : t('emptyNoMatch')}
-          </Text>
-        ) : (
-          groups.map(group => (
-            <View key={group.label} style={styles.section}>
-              <Text style={styles.sectionLabel}>{group.label}</Text>
-              <View style={styles.list}>
-                {group.items.map(item => (
-                  <Row
-                    key={item.id}
-                    item={item}
-                    meta={KIND_META[item.kind]}
-                    onPress={() => router.push({ pathname: '/edit-brain-dump', params: { id: item.id } })}
-                    onToggleDone={() => handleToggleDone(item.id)}
-                    onDelete={() => confirmDelete(item.id)}
-                  />
-                ))}
+        {isPartnerView ? (
+          <>
+            <View style={styles.titleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.title}>{t('partnerTitle')}</Text>
+                <Text style={styles.subtitle}>{t('partnerSub')}</Text>
               </View>
             </View>
-          ))
+
+            {sharedNotes.length === 0 ? (
+              <Text style={styles.emptyText}>{t('partnerEmptyNoShared')}</Text>
+            ) : (
+              <View style={styles.section}>
+                <View style={styles.list}>
+                  {sharedNotes.map(note => (
+                    <View key={note.id} style={styles.row}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.rowTitle}>{note.text}</Text>
+                        <Text style={styles.rowDetail}>{formatEntryDay(note.createdAt)} · {formatEntryTime(note.createdAt)}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+          </>
+        ) : (
+          <>
+            <View style={styles.titleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.title}>{t('heroTitle')}</Text>
+                <Text style={styles.subtitle}>{t('heroSub')}</Text>
+              </View>
+              <TouchableOpacity style={styles.menuBtn} onPress={handleMenu} accessibilityLabel={t('moreOptions')} hitSlop={8}>
+                <Ionicons name="ellipsis-horizontal" size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.composer}>
+              <TextInput
+                style={[styles.input, isRTL && styles.inputRTL]}
+                value={text}
+                onChangeText={setText}
+                placeholder={t('placeholder')}
+                placeholderTextColor={colors.textSecondary}
+                multiline
+              />
+              <View style={styles.composerRow}>
+                <View style={styles.typeToggle}>
+                  {(['thought', 'doctor'] as EntryKind[]).map(k => {
+                    const meta = KIND_META[k]
+                    const active = kind === k
+                    return (
+                      <TouchableOpacity
+                        key={k}
+                        style={[styles.typeChip, active && styles.typeChipActive]}
+                        onPress={() => setKind(k)}
+                      >
+                        <Ionicons name={meta.icon} size={13} color={active ? '#fff' : colors.textSecondary} />
+                        <Text style={[styles.typeChipText, active && styles.typeChipTextActive]}>{meta.label}</Text>
+                      </TouchableOpacity>
+                    )
+                  })}
+                </View>
+                <TouchableOpacity
+                  style={[styles.addBtn, !text.trim() && styles.addBtnDisabled, isRTL && styles.addBtnRTL]}
+                  onPress={quickAdd}
+                  disabled={!text.trim()}
+                  accessibilityLabel={t('addEntry')}
+                >
+                  <Ionicons name="add" size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.filterRow}>
+              {FILTERS.map(f => (
+                <TouchableOpacity key={f.key} onPress={() => setFilter(f.key)} hitSlop={6}>
+                  <Text style={[styles.filterText, filter === f.key && styles.filterTextActive]}>
+                    {f.label} ({counts[f.key]})
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {groups.length === 0 ? (
+              <Text style={styles.emptyText}>
+                {entries.length === 0 ? t('emptyNoEntries') : t('emptyNoMatch')}
+              </Text>
+            ) : (
+              groups.map(group => (
+                <View key={group.label} style={styles.section}>
+                  <Text style={styles.sectionLabel}>{group.label}</Text>
+                  <View style={styles.list}>
+                    {group.items.map(item => (
+                      <Row
+                        key={item.id}
+                        item={item}
+                        meta={KIND_META[item.kind]}
+                        onPress={() => router.push({ pathname: '/edit-brain-dump', params: { id: item.id } })}
+                        onToggleDone={() => handleToggleDone(item.id)}
+                        onDelete={() => confirmDelete(item.id)}
+                      />
+                    ))}
+                  </View>
+                </View>
+              ))
+            )}
+          </>
         )}
 
       </ScrollView>

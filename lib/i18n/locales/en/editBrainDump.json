@@ -12,6 +12,8 @@
   "noUpcomingAppointments": "No upcoming appointments yet.",
   "bookBy": "Book by {{date}}",
   "addTag": "Add tag",
+  "shareWithPartner": "Share with partner",
+  "shareWithPartnerOn": "Visible to your partner",
   "deleteEntry": "Delete entry",
   "deleteEntryTitle": "Delete this entry?",
   "delete": "Delete"

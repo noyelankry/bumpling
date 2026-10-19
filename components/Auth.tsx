@@ -10,6 +10,7 @@ import { colors, spacing, radius, fonts } from '../lib/theme'
 import { DEV_BYPASS_KEY, allowDevBypass } from '../lib/devBypass'
 import { useLanguage } from '../lib/i18n/LanguageProvider'
 import { TERMS_VERSION, PRIVACY_VERSION, HEALTH_CONSENT_VERSION } from '../lib/legal'
+import { redeemInvite, PARTNER_REDEEM_FLAG } from '../lib/partnerInvite'
 import { BabyMark } from './illustrations'
 
 function Checkbox({ checked, onPress, children }: { checked: boolean; onPress: () => void; children: React.ReactNode }) {
@@ -38,6 +39,7 @@ export default function Auth() {
   const [agreedHealthData, setAgreedHealthData] = useState(false)
   const [agreedAge, setAgreedAge] = useState(false)
   const [confirmationPending, setConfirmationPending] = useState(false)
+  const [inviteCode, setInviteCode] = useState('')
 
   const canSignUp = mode === 'signin' || (agreedTerms && agreedHealthData && agreedAge && usernameStatus === 'available')
 
@@ -68,30 +70,77 @@ export default function Auth() {
     ])
   }
 
+  const PENDING_INVITE_KEY = 'bumpling_pending_invite_code'
+
+  // Handles both a code typed this submit and one stashed earlier (see the
+  // confirmation-pending branch below) — only surfaces an error for a code
+  // the user just typed; a stashed one could legitimately be expired/used.
+  // Returns whether a redemption actually succeeded, so the caller can
+  // navigate straight to the partner view rather than racing the root
+  // layout's own auth-state-driven redirect (which can run before this
+  // pregnancy_members insert lands, and won't automatically re-check once
+  // it's already sent someone to the wrong screen).
+  async function redeemCodeIfPresent(): Promise<boolean> {
+    const typed = inviteCode.trim()
+    const code = typed || (await AsyncStorage.getItem(PENDING_INVITE_KEY)) || ''
+    if (!code) return false
+    const result = await redeemInvite(code)
+    await AsyncStorage.removeItem(PENDING_INVITE_KEY)
+    if (result.ok) {
+      setInviteCode('')
+      return true
+    }
+    if (typed) Alert.alert(t('error'), t('inviteCodeInvalid'))
+    return false
+  }
+
+  function goToPartnerHome() {
+    if (Platform.OS === 'web') window.alert(t('inviteJoined'))
+    else Alert.alert(t('inviteJoinedTitle'), t('inviteJoined'))
+    router.replace('/partner-home')
+  }
+
   async function submit() {
     if (!canSignUp) return
     setLoading(true)
-    if (mode === 'signin') {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) { Alert.alert(error.message); setLoading(false); return }
-      if (data.user) await writeConsentIfMissing(data.user.id)
+    // Set before the auth call itself — the root layout's own redirect
+    // effect can fire the instant a session appears (via onAuthStateChange),
+    // which races this function's own await chain. While this flag is set,
+    // that effect skips itself entirely instead of possibly routing to the
+    // LMP screen a beat before this function's own navigation corrects it.
+    const hasInviteIntent = !!(inviteCode.trim() || (await AsyncStorage.getItem(PENDING_INVITE_KEY)))
+    if (hasInviteIntent) await AsyncStorage.setItem(PARTNER_REDEEM_FLAG, 'true')
+    try {
+      if (mode === 'signin') {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) { Alert.alert(error.message); setLoading(false); return }
+        if (data.user) await writeConsentIfMissing(data.user.id)
+        const joined = await redeemCodeIfPresent()
+        setLoading(false)
+        if (joined) goToPartnerHome()
+        return
+      }
+      const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { username: username.trim() } } })
+      if (error) {
+        Alert.alert(error.message)
+        setLoading(false)
+        return
+      }
+      if (data.user && data.session) {
+        await writeConsentIfMissing(data.user.id)
+        const joined = await redeemCodeIfPresent()
+        setLoading(false)
+        if (joined) goToPartnerHome()
+        return
+      }
+      // No immediate session (email confirmation pending) — stash the code
+      // so it can be redeemed on the first real sign-in, once a session exists.
+      if (inviteCode.trim()) await AsyncStorage.setItem(PENDING_INVITE_KEY, inviteCode.trim())
+      setConfirmationPending(true)
       setLoading(false)
-      return
+    } finally {
+      if (hasInviteIntent) await AsyncStorage.removeItem(PARTNER_REDEEM_FLAG)
     }
-    const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { username: username.trim() } } })
-    if (error) {
-      Alert.alert(error.message)
-      setLoading(false)
-      return
-    }
-    if (data.user && data.session) {
-      await writeConsentIfMissing(data.user.id)
-      setLoading(false)
-      return
-    }
-    // No immediate session — this project requires email confirmation.
-    setConfirmationPending(true)
-    setLoading(false)
   }
 
   async function devSkip() {
@@ -199,6 +248,24 @@ export default function Auth() {
             </View>
 
             {mode === 'signup' && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>{t('inviteCodeLabel')}</Text>
+                <View style={styles.inputRow}>
+                  <Ionicons name="people-outline" size={18} color={colors.textSecondary} />
+                  <TextInput
+                    style={styles.input}
+                    value={inviteCode}
+                    onChangeText={v => setInviteCode(v.toUpperCase())}
+                    placeholder={t('inviteCodePlaceholder')}
+                    placeholderTextColor={colors.textSecondary}
+                    autoCapitalize="characters"
+                  />
+                </View>
+                <Text style={styles.usernameHint}>{t('inviteCodeHint')}</Text>
+              </View>
+            )}
+
+            {mode === 'signup' && (
               <View style={styles.consentGroup}>
                 <Checkbox checked={agreedTerms} onPress={() => setAgreedTerms(v => !v)}>
                   {t('consent.termsPrefix')}
@@ -235,6 +302,14 @@ export default function Auth() {
                 </Text>
               </Text>
             </TouchableOpacity>
+
+            {mode === 'signin' && (
+              <TouchableOpacity style={styles.switchMode} onPress={() => setMode('signup')}>
+                <Text style={styles.switchModeText}>
+                  <Text style={styles.switchModeLink}>{t('haveInviteCode')}</Text>
+                </Text>
+              </TouchableOpacity>
+            )}
 
             {/* TODO: Sign in with Apple / Google — see BACKEND.md Section 13. Needs an Apple Developer account first; Apple is then required alongside Google per App Store Guideline 4.8. */}
           </View>

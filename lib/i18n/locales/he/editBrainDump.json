@@ -12,6 +12,8 @@
   "noUpcomingAppointments": "אין עדיין תורים קרובים.",
   "bookBy": "להזמין עד {{date}}",
   "addTag": "הוסף תגית",
+  "shareWithPartner": "שיתוף עם בן/בת הזוג",
+  "shareWithPartnerOn": "גלוי לבן/בת הזוג שלך",
   "deleteEntry": "מחק רשומה",
   "deleteEntryTitle": "למחוק את הרשומה הזו?",
   "delete": "מחיקה"
