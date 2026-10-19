@@ -1,6 +1,8 @@
 {
   "title": "Your birth preferences",
   "subtitle": "A flexible summary you can revisit anytime.",
+  "titlePartner": "Birth plan",
+  "subtitlePartner": "What's been decided so far — shared with you automatically.",
   "notSetYet": "Not set yet",
   "unpredictableNote": "Birth can be unpredictable — your preferences may change, and that's okay.",
   "edit": "Edit",

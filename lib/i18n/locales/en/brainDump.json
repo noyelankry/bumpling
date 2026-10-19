@@ -17,6 +17,8 @@
   "emptyNoMatch": "Nothing matches this filter.",
   "markDone": "Mark done",
   "markNotDone": "Mark not done",
+  "shareEntry": "Share with partner",
+  "unshareEntry": "Stop sharing with partner",
   "deleteEntry": "Delete entry",
   "deleteEntryTitle": "Delete this entry?",
   "cancel": "Cancel",

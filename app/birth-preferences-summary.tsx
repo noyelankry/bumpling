@@ -10,6 +10,8 @@ import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 import { loadProfile } from '../lib/profileData'
 import { showAlert } from '../lib/alert'
 import { loadMomPhone } from '../lib/momContact'
+import { currentRole } from '../lib/carePlan'
+import { loadConnectedMomName } from '../lib/partnerView'
 import { getTopics, getRelationshipOptions, optionFor, relationshipOption, loadBirthPrefs, isTopicDone, type BirthPrefsData } from '../lib/birthPrefs'
 import { buildBirthPlanHtml, exportBirthPlanPdf } from '../lib/birthPlanDocument'
 
@@ -24,16 +26,25 @@ export default function BirthPreferencesSummaryScreen() {
   const { back: backIcon, forward } = useDirectionalIcon()
   const TOPICS = useMemo(() => getTopics(tTopics), [tTopics])
   const RELATIONSHIP_OPTIONS = useMemo(() => getRelationshipOptions(tTopics), [tTopics])
-  const back = () => goBack(router, '/prepare-for-birth')
+  const [isPartnerView, setIsPartnerView] = useState(false)
+  const back = () => goBack(router, isPartnerView ? '/(tabs)/plan' : '/prepare-for-birth')
   const [prefs, setPrefs] = useState<BirthPrefsData>(EMPTY_PREFS)
   const [momName, setMomName] = useState('')
   const [momPhone, setMomPhone] = useState('')
   const [exporting, setExporting] = useState(false)
 
   useFocusEffect(useCallback(() => {
+    currentRole().then(role => {
+      const partner = role === 'partner'
+      setIsPartnerView(partner)
+      // momName on the PDF must stay the pregnant person's name even when a
+      // partner is the one exporting it — loadProfile() would otherwise
+      // return the signed-in partner's own name.
+      if (partner) loadConnectedMomName().then(name => { if (name) setMomName(name) })
+      else loadProfile().then(p => { if (p.full_name) setMomName(p.full_name) })
+    })
     loadBirthPrefs().then(setPrefs)
     loadMomPhone().then(setMomPhone)
-    loadProfile().then(p => { if (p.full_name) setMomName(p.full_name) })
   }, []))
 
   async function shareSummary() {
@@ -53,7 +64,7 @@ export default function BirthPreferencesSummaryScreen() {
         <TouchableOpacity onPress={back} hitSlop={8}>
           <Ionicons name={backIcon} size={26} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('title')}</Text>
+        <Text style={styles.headerTitle}>{t(isPartnerView ? 'titlePartner' : 'title')}</Text>
         <View style={{ width: 26 }} />
       </View>
 
@@ -64,15 +75,16 @@ export default function BirthPreferencesSummaryScreen() {
             <Ionicons name="document-text-outline" size={24} color={colors.lavenderDeep} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.heroTitle}>{t('title')}</Text>
-            <Text style={styles.heroSub}>{t('subtitle')}</Text>
+            <Text style={styles.heroTitle}>{t(isPartnerView ? 'titlePartner' : 'title')}</Text>
+            <Text style={styles.heroSub}>{t(isPartnerView ? 'subtitlePartner' : 'subtitle')}</Text>
           </View>
         </View>
 
         {supportTopic && (
           <TouchableOpacity
             style={styles.topicCard}
-            activeOpacity={0.7}
+            activeOpacity={isPartnerView ? 1 : 0.7}
+            disabled={isPartnerView}
             onPress={() => router.push({ pathname: '/birth-preferences', params: { topic: supportTopic.id } })}
           >
             <View style={styles.topicIconChip}>
@@ -90,7 +102,7 @@ export default function BirthPreferencesSummaryScreen() {
                 <Text style={styles.topicValue}>{t('notSetYet')}</Text>
               )}
             </View>
-            <Ionicons name={forward} size={18} color={colors.textSecondary} />
+            {!isPartnerView && <Ionicons name={forward} size={18} color={colors.textSecondary} />}
           </TouchableOpacity>
         )}
 
@@ -101,7 +113,8 @@ export default function BirthPreferencesSummaryScreen() {
               <TouchableOpacity
                 key={topic.id}
                 style={styles.topicCard}
-                activeOpacity={0.7}
+                activeOpacity={isPartnerView ? 1 : 0.7}
+                disabled={isPartnerView}
                 onPress={() => router.push({ pathname: '/birth-preferences', params: { topic: topic.id } })}
               >
                 <View style={styles.topicIconChip}>
@@ -111,7 +124,7 @@ export default function BirthPreferencesSummaryScreen() {
                   <Text style={styles.topicTitle}>{topic.navLabel}</Text>
                   <Text style={styles.topicValue}>{option ? option.summary : t('notSetYet')}</Text>
                 </View>
-                <Ionicons name={forward} size={18} color={colors.textSecondary} />
+                {!isPartnerView && <Ionicons name={forward} size={18} color={colors.textSecondary} />}
               </TouchableOpacity>
             )
           })}
@@ -123,10 +136,12 @@ export default function BirthPreferencesSummaryScreen() {
         </View>
 
         <View style={styles.footerRow}>
-          <TouchableOpacity style={styles.editBtn} onPress={back}>
-            <Ionicons name="pencil-outline" size={16} color={colors.textPrimary} />
-            <Text style={styles.editBtnText}>{t('edit')}</Text>
-          </TouchableOpacity>
+          {!isPartnerView && (
+            <TouchableOpacity style={styles.editBtn} onPress={back}>
+              <Ionicons name="pencil-outline" size={16} color={colors.textPrimary} />
+              <Text style={styles.editBtnText}>{t('edit')}</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity style={styles.shareBtn} onPress={shareSummary} disabled={exporting}>
             {exporting ? <ActivityIndicator color="#fff" /> : <>
               <Ionicons name="document-outline" size={16} color="#fff" />

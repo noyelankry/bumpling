@@ -10,7 +10,7 @@ import { useAutoScrollEnabled } from '../../lib/useAutoScrollEnabled'
 import { useLanguage } from '../../lib/i18n/LanguageProvider'
 import {
   type Entry, type EntryKind, type Filter,
-  loadEntries, addEntry, toggleDone, removeEntry, clearBrainDumpData,
+  loadEntries, addEntry, toggleDone, toggleSharedWithPartner, removeEntry, clearBrainDumpData,
   groupByDay, formatEntryTime, formatEntryDay, filterGroupOf,
 } from '../../lib/brainDump'
 import { currentRole } from '../../lib/carePlan'
@@ -66,6 +66,10 @@ export default function BrainDumpScreen() {
 
   async function handleToggleDone(id: string) {
     setEntries(await toggleDone(entries, id))
+  }
+
+  async function handleToggleShared(id: string) {
+    setEntries(await toggleSharedWithPartner(entries, id))
   }
 
   function confirmDelete(id: string) {
@@ -227,6 +231,7 @@ export default function BrainDumpScreen() {
                         meta={KIND_META[item.kind]}
                         onPress={() => router.push({ pathname: '/edit-brain-dump', params: { id: item.id } })}
                         onToggleDone={() => handleToggleDone(item.id)}
+                        onToggleShared={() => handleToggleShared(item.id)}
                         onDelete={() => confirmDelete(item.id)}
                       />
                     ))}
@@ -242,11 +247,12 @@ export default function BrainDumpScreen() {
   )
 }
 
-function Row({ item, meta, onPress, onToggleDone, onDelete }: {
+function Row({ item, meta, onPress, onToggleDone, onToggleShared, onDelete }: {
   item: Entry
   meta: { icon: IoniconsName; color: string; label: string }
   onPress: () => void
   onToggleDone: () => void
+  onToggleShared: () => void
   onDelete: () => void
 }) {
   const { t } = useTranslation('brainDump')
@@ -272,9 +278,22 @@ function Row({ item, meta, onPress, onToggleDone, onDelete }: {
 
       <View style={styles.rowTrailing}>
         <Text style={styles.rowMeta}>{formatEntryTime(item.createdAt)}</Text>
-        <TouchableOpacity onPress={onDelete} hitSlop={8} accessibilityLabel={t('deleteEntry')}>
-          <Ionicons name="ellipsis-horizontal" size={14} color={colors.textSecondary} />
-        </TouchableOpacity>
+        <View style={styles.rowActions}>
+          <TouchableOpacity
+            onPress={onToggleShared}
+            hitSlop={8}
+            accessibilityLabel={item.sharedWithPartner ? t('unshareEntry') : t('shareEntry')}
+          >
+            <Ionicons
+              name={item.sharedWithPartner ? 'people' : 'people-outline'}
+              size={15}
+              color={item.sharedWithPartner ? colors.sageDeep : colors.textSecondary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onDelete} hitSlop={8} accessibilityLabel={t('deleteEntry')}>
+            <Ionicons name="trash-outline" size={15} color={colors.urgent} />
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   )
@@ -340,4 +359,5 @@ const styles = StyleSheet.create({
 
   rowTrailing: { alignItems: 'flex-end', gap: 8 },
   rowMeta:     { fontSize: 11, color: colors.textSecondary },
+  rowActions:  { flexDirection: 'row', alignItems: 'center', gap: 10 },
 })

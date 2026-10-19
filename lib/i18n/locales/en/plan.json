@@ -46,5 +46,8 @@
   "viewAll": "View all",
   "prepareForBirth": "Prepare for birth",
   "prepareForBirthSub": "Think through your birth preferences, at your own pace.",
-  "explore": "Explore"
+  "birthPlanPartnerTitle": "Birth plan",
+  "birthPlanPartnerSub": "See what's been decided so far.",
+  "explore": "Explore",
+  "view": "View"
 }

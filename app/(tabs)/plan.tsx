@@ -481,20 +481,21 @@ export default function PlanScreen() {
         )}
 
         {/* TODO: gate behind age.weeks once past onboarding, e.g. >= 25. */}
-        {!isPartnerView && (
-          <View style={styles.birthPrepCard}>
-            <View style={styles.birthPrepIconChip}>
-              <Ionicons name="heart-outline" size={22} color={colors.lavenderDeep} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.birthPrepTitle}>{t('prepareForBirth')}</Text>
-              <Text style={styles.birthPrepSub}>{t('prepareForBirthSub')}</Text>
-            </View>
-            <TouchableOpacity style={styles.birthPrepBtn} onPress={() => router.push('/prepare-for-birth')}>
-              <Text style={styles.birthPrepBtnText}>{t('explore')}</Text>
-            </TouchableOpacity>
+        <View style={styles.birthPrepCard}>
+          <View style={styles.birthPrepIconChip}>
+            <Ionicons name="heart-outline" size={22} color={colors.lavenderDeep} />
           </View>
-        )}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.birthPrepTitle}>{t(isPartnerView ? 'birthPlanPartnerTitle' : 'prepareForBirth')}</Text>
+            <Text style={styles.birthPrepSub}>{t(isPartnerView ? 'birthPlanPartnerSub' : 'prepareForBirthSub')}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.birthPrepBtn}
+            onPress={() => router.push(isPartnerView ? '/birth-preferences-summary' : '/prepare-for-birth')}
+          >
+            <Text style={styles.birthPrepBtnText}>{t(isPartnerView ? 'view' : 'explore')}</Text>
+          </TouchableOpacity>
+        </View>
 
       </ScrollView>
     </SafeAreaView>
