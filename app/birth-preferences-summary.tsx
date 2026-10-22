@@ -10,10 +10,11 @@ import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 import { loadProfile } from '../lib/profileData'
 import { showAlert } from '../lib/alert'
 import { loadMomPhone } from '../lib/momContact'
-import { currentRole } from '../lib/carePlan'
+import { currentRole, currentPregnancyId } from '../lib/carePlan'
 import { loadConnectedMomName } from '../lib/partnerView'
 import { getTopics, getRelationshipOptions, optionFor, relationshipOption, loadBirthPrefs, isTopicDone, type BirthPrefsData } from '../lib/birthPrefs'
 import { buildBirthPlanHtml, exportBirthPlanPdf } from '../lib/birthPlanDocument'
+import { subscribeToTable } from '../lib/supabase'
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name']
 
@@ -34,6 +35,7 @@ export default function BirthPreferencesSummaryScreen() {
   const [exporting, setExporting] = useState(false)
 
   useFocusEffect(useCallback(() => {
+    let unsubscribe: (() => void) | undefined
     currentRole().then(role => {
       const partner = role === 'partner'
       setIsPartnerView(partner)
@@ -45,6 +47,14 @@ export default function BirthPreferencesSummaryScreen() {
     })
     loadBirthPrefs().then(setPrefs)
     loadMomPhone().then(setMomPhone)
+    currentPregnancyId().then(pregnancyId => {
+      if (!pregnancyId) return
+      // Mom may still be editing the birth plan while her partner is
+      // viewing this summary — push changes in rather than waiting for the
+      // next focus.
+      unsubscribe = subscribeToTable('birth_preferences', () => { loadBirthPrefs().then(setPrefs) }, `pregnancy_id=eq.${pregnancyId}`)
+    })
+    return () => unsubscribe?.()
   }, []))
 
   async function shareSummary() {

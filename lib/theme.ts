@@ -30,12 +30,6 @@ export const colors = {
   neutralChip: '#EDE8E1',
   neutralChipDeep: '#9C948A',
   scheduledDot: '#3E5C3A',
-
-  // legacy nutrition-tracking accents, still used by diary/goals screens
-  protein: '#4ADE80',
-  carbs: '#FBBF24',
-  fat: '#F87171',
-  fiber: '#93C5FD',
 }
 
 export const radius = { sm: 10, md: 16, lg: 20, xl: 26, pill: 999 }

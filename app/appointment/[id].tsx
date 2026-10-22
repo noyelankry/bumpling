@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Platform, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
@@ -6,11 +6,12 @@ import { Ionicons } from '@expo/vector-icons'
 import { useTranslation } from 'react-i18next'
 import { colors, spacing, radius, fonts } from '../../lib/theme'
 import { formatDate, formatDateRange, formatWeekday, type CareStatus } from '../../lib/pregnancy'
-import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, removeItem, markDone, unmarkDone, markSkipped, unmarkSkipped, saveVisitNotes, computeCareItems, getItemTitle, currentRole, type CareItemWithCustom } from '../../lib/carePlan'
+import { TODAY, DEFAULT_CARE_ITEMS, loadCareItems, loadLMP, removeItem, markDone, unmarkDone, markSkipped, unmarkSkipped, saveVisitNotes, computeCareItems, getItemTitle, currentRole, currentPregnancyId, invalidateCareItemsCache, type CareItemWithCustom } from '../../lib/carePlan'
 import { addAppointmentToCalendar } from '../../lib/calendar'
 import { shareAppointmentWithPartner } from '../../lib/shareAppointment'
 import { type Partner, loadPartner } from '../../lib/partner'
 import { goBack } from '../../lib/navigation'
+import { subscribeToTable } from '../../lib/supabase'
 import { useDirectionalIcon } from '../../lib/i18n/useDirectionalIcon'
 import { useLanguage } from '../../lib/i18n/LanguageProvider'
 import { getTestPurpose } from '../../lib/pregnancyContent'
@@ -58,18 +59,37 @@ export default function AppointmentDetailScreen() {
   // Resets per id — a different appointment is genuinely different data, not
   // a case where showing the previous one briefly is harmless.
   const [loaded, setLoaded] = useState(false)
+  // Read from a realtime push, which can land mid-edit — a ref (not state)
+  // so the push handler always sees the latest value without re-subscribing.
+  const notesEditingRef = useRef(notesEditing)
+  notesEditingRef.current = notesEditing
 
   useFocusEffect(useCallback(() => {
     setLoaded(false)
-    Promise.all([loadCareItems(), loadLMP(), loadPartner(), currentRole()]).then(([all, lmpDate, p, role]) => {
+    let unsubscribe: (() => void) | undefined
+    Promise.all([loadCareItems(), loadLMP(), loadPartner(), currentRole(), currentPregnancyId()]).then(([all, lmpDate, p, role, pregnancyId]) => {
       setItems(all)
       setNotesDraft(all.find(i => i.id === id)?.visitNotes ?? '')
       setLmp(lmpDate)
       setPartner(p)
       setIsPartnerView(role === 'partner')
       setLoaded(true)
+
+      if (pregnancyId) {
+        // Mom and her partner can both land on the same appointment — push
+        // edits (visit notes, scheduling) in instead of waiting for the next
+        // focus to pick them up.
+        unsubscribe = subscribeToTable('care_items', () => {
+          invalidateCareItemsCache()
+          loadCareItems().then(next => {
+            setItems(next)
+            if (!notesEditingRef.current) setNotesDraft(next.find(i => i.id === id)?.visitNotes ?? '')
+          })
+        }, `pregnancy_id=eq.${pregnancyId}`)
+      }
     })
     setNotesEditing(false)
+    return () => unsubscribe?.()
   }, [id]))
 
   const computed = useMemo(() => computeCareItems(items, lmp, TODAY), [items, lmp])

@@ -147,10 +147,6 @@ function splitLS(t: BirthPrefsT, topicKey: string, optionKey: string): { label: 
   return { label: t(`${topicKey}.options.${optionKey}.label`), summary: t(`${topicKey}.options.${optionKey}.summary`) }
 }
 
-export function topicById(topics: Topic[], id: TopicId): Topic {
-  return topics.find(t => t.id === id)!
-}
-
 export function optionFor(topic: Topic, optionId: string | undefined): TopicOption | undefined {
   return topic.options.find(o => o.id === optionId)
 }

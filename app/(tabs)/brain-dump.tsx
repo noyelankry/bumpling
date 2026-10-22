@@ -15,6 +15,7 @@ import {
 } from '../../lib/brainDump'
 import { currentRole } from '../../lib/carePlan'
 import { loadSharedNotes, type SharedNote } from '../../lib/partnerView'
+import { subscribeToTable } from '../../lib/supabase'
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name']
 
@@ -49,12 +50,20 @@ export default function BrainDumpScreen() {
   const [sharedNotes, setSharedNotes] = useState<SharedNote[]>([])
 
   useFocusEffect(useCallback(() => {
+    let unsubscribe: (() => void) | undefined
     currentRole().then(role => {
       const partner = role === 'partner'
       setIsPartnerView(partner)
-      if (partner) loadSharedNotes().then(setSharedNotes)
-      else load()
+      if (partner) {
+        loadSharedNotes().then(setSharedNotes)
+        // Mom may share/unshare a note while her partner is sitting on this
+        // screen — push the change instead of waiting for the next focus.
+        unsubscribe = subscribeToTable('brain_dump_entries', () => { loadSharedNotes().then(setSharedNotes) })
+      } else {
+        load()
+      }
     })
+    return () => unsubscribe?.()
   }, []))
 
   async function load() {

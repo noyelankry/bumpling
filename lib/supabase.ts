@@ -23,3 +23,18 @@ export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
     detectSessionInUrl: false,
   },
 })
+
+/**
+ * Pushes row changes on `table` to `onChange` instead of waiting for the
+ * next focus-triggered refetch — for the few screens where mom and her
+ * partner may realistically be looking at the same data at the same time.
+ * `filter` is a PostgREST-style string (e.g. `pregnancy_id=eq.${id}`);
+ * omit it to rely on RLS alone. Returns an unsubscribe function.
+ */
+export function subscribeToTable(table: string, onChange: () => void, filter?: string) {
+  const channel = supabase
+    .channel(`${table}:${filter ?? 'all'}:${Math.random().toString(36).slice(2)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table, filter }, onChange)
+    .subscribe()
+  return () => { supabase.removeChannel(channel) }
+}

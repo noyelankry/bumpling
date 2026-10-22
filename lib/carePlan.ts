@@ -199,6 +199,11 @@ async function persistMany(ids: string[], items: CareItemWithCustom[]): Promise<
   careItemsCache = null
 }
 
+/** Forces the next loadCareItems() to refetch instead of serving the in-memory cache — used when a realtime push means the cached rows are known-stale. */
+export function invalidateCareItemsCache(): void {
+  careItemsCache = null
+}
+
 export async function loadCareItems(): Promise<CareItemWithCustom[]> {
   const pregnancy = await currentPregnancy()
   if (!pregnancy) return DEFAULT_CARE_ITEMS
