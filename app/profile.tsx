@@ -148,7 +148,7 @@ export default function ProfileScreen() {
         updated_at: new Date().toISOString(),
       }).eq('id', data.claims.sub)
       if (error) { setSaving(false); showAlert(t('error'), error.message); return }
-      setCachedProfile({ ...form, avatar_url: avatarUrl })
+      await setCachedProfile({ ...form, avatar_url: avatarUrl })
     }
     setSaving(false)
     setSaved({ form, phoneCountry, phoneNumber, partner })
@@ -188,7 +188,7 @@ export default function ProfileScreen() {
     setAvatarUploading(false)
     if (result.ok && result.avatarUrl) {
       setAvatarUrl(result.avatarUrl)
-      setCachedProfile({ ...form, avatar_url: result.avatarUrl })
+      await setCachedProfile({ ...form, avatar_url: result.avatarUrl })
     } else if (result.message) {
       showAlert(t('error'), result.message)
     }
@@ -237,6 +237,7 @@ export default function ProfileScreen() {
   function signOut() {
     const doSignOut = async () => {
       await supabase.auth.signOut()
+      clearProfileCache()
       await Promise.all([
         clearCarePlanData(),
         clearHealthData(),

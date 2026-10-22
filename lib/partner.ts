@@ -5,16 +5,19 @@ export type Partner = { name: string; email: string }
 
 const EMPTY_PARTNER: Partner = { name: '', email: '' }
 
-// Session-only cache — profile.tsx and appointment/[id].tsx both load this
-// on every focus; without it, visiting Profile re-fetches on every single
-// navigation. Same pattern as carePlan.ts's cache.
-let partnerCache: Partner | null = null
+// Keyed by user id, not just a blind cache — see profileData.ts for why
+// (a cache that can only be cleared by remembering to, on every sign-out
+// path, will eventually leak the previous account's data into the next one).
+let partnerCache: { userId: string; data: Partner } | null = null
 
 export async function loadPartner(): Promise<Partner> {
-  if (partnerCache) return partnerCache
+  const { data: claims } = await supabase.auth.getClaims()
+  const userId = claims?.claims?.sub
+  if (!userId) return EMPTY_PARTNER
+  if (partnerCache?.userId === userId) return partnerCache.data
   const { data } = await supabase.from('partner_contacts').select('name,email').maybeSingle()
   const partner = data ? { name: data.name ?? '', email: data.email ?? '' } : EMPTY_PARTNER
-  partnerCache = partner
+  partnerCache = { userId, data: partner }
   return partner
 }
 
@@ -23,7 +26,7 @@ export async function savePartner(partner: Partner): Promise<void> {
   const userId = data?.claims?.sub
   if (!userId) return
   await supabase.from('partner_contacts').upsert({ user_id: userId, ...partner })
-  partnerCache = partner
+  partnerCache = { userId, data: partner }
 }
 
 // Clears the in-memory cache — no remote data to clear (server-side,

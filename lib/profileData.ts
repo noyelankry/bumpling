@@ -6,21 +6,29 @@ export type ProfileData = { full_name: string; username: string; avatar_url: str
 
 const EMPTY: ProfileData = { full_name: '', username: '', avatar_url: null }
 
-let profileCache: ProfileData | null = null
+// Keyed by user id, not just a blind cache — signing out and into a
+// different account must never show the previous one's cached profile.
+// clearProfileCache() below is still called on sign-out as a courtesy, but
+// this is the guarantee that actually prevents the leak if a future call
+// site forgets to.
+let profileCache: { userId: string; data: ProfileData } | null = null
 
 export async function loadProfile(): Promise<ProfileData> {
-  if (profileCache) return profileCache
   const { data: claims } = await supabase.auth.getClaims()
   const userId = claims?.claims?.sub
   if (!userId) return EMPTY
+  if (profileCache?.userId === userId) return profileCache.data
   const { data } = await supabase.from('profiles').select('full_name,username,avatar_url').eq('id', userId).maybeSingle()
   const profile = data ? { full_name: data.full_name ?? '', username: data.username ?? '', avatar_url: data.avatar_url ?? null } : EMPTY
-  profileCache = profile
+  profileCache = { userId, data: profile }
   return profile
 }
 
-export function setCachedProfile(profile: ProfileData): void {
-  profileCache = profile
+export async function setCachedProfile(profile: ProfileData): Promise<void> {
+  const { data: claims } = await supabase.auth.getClaims()
+  const userId = claims?.claims?.sub
+  if (!userId) return
+  profileCache = { userId, data: profile }
 }
 
 export function clearProfileCache(): void {

@@ -36,6 +36,10 @@ export default function BrainDumpScreen() {
     { key: 'doctor', label: t('filterDoctor') },
     { key: 'personal', label: t('filterPersonal') },
   ]
+  // A new one each day rather than every render — "tip of the day" should
+  // feel stable if she checks back a few times, not reshuffle on every tap.
+  const partnerTips = t('partnerTips', { returnObjects: true }) as string[]
+  const partnerTip = partnerTips[Math.floor(Date.now() / 86400000) % partnerTips.length]
   const autoScroll = useAutoScrollEnabled()
   const [entries, setEntries] = useState<Entry[]>([])
   const [text, setText] = useState('')
@@ -140,7 +144,10 @@ export default function BrainDumpScreen() {
             </View>
 
             {sharedNotes.length === 0 ? (
-              <Text style={styles.emptyText}>{t('partnerEmptyNoShared')}</Text>
+              <View style={styles.partnerTipCard}>
+                <Ionicons name="heart-outline" size={18} color={colors.lavenderDeep} />
+                <Text style={styles.partnerTipText}>{partnerTip}</Text>
+              </View>
             ) : (
               <View style={styles.section}>
                 <View style={styles.list}>
@@ -343,6 +350,9 @@ const styles = StyleSheet.create({
   filterTextActive: { color: colors.textPrimary },
 
   emptyText: { fontSize: 13.5, color: colors.textSecondary, lineHeight: 19, marginTop: spacing.sm },
+
+  partnerTipCard: { flexDirection: 'row', gap: 10, backgroundColor: colors.lavender, borderRadius: radius.xl, padding: spacing.sm, alignItems: 'flex-start' },
+  partnerTipText: { flex: 1, fontSize: 13.5, color: colors.textPrimary, opacity: 0.8, lineHeight: 19 },
 
   section:      { marginBottom: spacing.md },
   sectionLabel: { fontSize: 11.5, fontWeight: '600', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 },

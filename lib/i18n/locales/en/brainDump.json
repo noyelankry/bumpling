@@ -3,7 +3,13 @@
   "moreOptions": "More options",
   "partnerTitle": "Shared with you",
   "partnerSub": "Notes your partner has chosen to share — everything else stays private to them.",
-  "partnerEmptyNoShared": "Nothing's been shared with you yet.",
+  "partnerTips": [
+    "Nothing new here yet — maybe check in on her today. Ask how she's feeling, and keep that water bottle full.",
+    "Quiet here for now. A good excuse to ask her how she's really doing today.",
+    "Nothing shared yet — even a quick \"how are you feeling?\" goes a long way.",
+    "All quiet here. Today's a good day to check in and see what she needs.",
+    "Nothing new to read — maybe bring her a snack and ask about her day instead."
+  ],
   "heroTitle": "Get it out of your head",
   "heroSub": "A safe space for all your thoughts, questions, and worries — big or small.",
   "placeholder": "What's on your mind?",

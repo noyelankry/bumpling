@@ -43,8 +43,7 @@
   "save": "שמור",
   "shareWithPartner": "שתפי עם {{name}}",
   "shareWithYourPartner": "שתפי עם בן/בת הזוג שלך",
-  "sendsDetailsTo": "שולח את הפרטים אל {{email}}",
-  "addEmailInProfile": "הוסיפי את האימייל שלהם בפרופיל כדי לשלוח ישירות",
+  "shareSub": "בחרי וואטסאפ, הודעת טקסט, אימייל, או כל דרך אחרת",
   "questionsForDoctor": "שאלות לרופא/ה שלך",
   "questionsForDoctorSub": "רשמי כל דבר לשאול לפני התור הזה.",
   "removeFromPlan": "הסר מהתוכנית"

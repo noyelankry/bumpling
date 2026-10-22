@@ -370,9 +370,7 @@ export default function AppointmentDetailScreen() {
                 <TouchableOpacity style={styles.subRow} activeOpacity={0.6} onPress={handleSharePartner}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.subRowTitle}>{partner.name ? t('shareWithPartner', { name: partner.name }) : t('shareWithYourPartner')}</Text>
-                    <Text style={styles.subRowCaption} numberOfLines={1}>
-                      {partner.email ? t('sendsDetailsTo', { email: partner.email }) : t('addEmailInProfile')}
-                    </Text>
+                    <Text style={styles.subRowCaption} numberOfLines={1}>{t('shareSub')}</Text>
                   </View>
                   <Ionicons name={forward} size={16} color={colors.textSecondary} />
                 </TouchableOpacity>

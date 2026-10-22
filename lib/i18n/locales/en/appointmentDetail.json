@@ -43,8 +43,7 @@
   "save": "Save",
   "shareWithPartner": "Share with {{name}}",
   "shareWithYourPartner": "Share with your partner",
-  "sendsDetailsTo": "Sends the details to {{email}}",
-  "addEmailInProfile": "Add their email in Profile to send it directly",
+  "shareSub": "Choose WhatsApp, text, email, or however you'd like",
   "questionsForDoctor": "Questions for your doctor",
   "questionsForDoctorSub": "Jot down anything to ask before this appointment.",
   "removeFromPlan": "Remove from plan"
