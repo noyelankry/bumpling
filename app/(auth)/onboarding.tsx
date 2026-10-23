@@ -277,7 +277,7 @@ export default function OnboardingScreen() {
             <Text style={styles.letsGoBtnText}>{t('letsGo')}</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={styles.arrowBtn} onPress={goNext}>
+          <TouchableOpacity style={styles.arrowBtn} onPress={goNext} accessibilityLabel={t('next')}>
             <Ionicons name={arrowForward} size={24} color="#fff" />
           </TouchableOpacity>
         )}

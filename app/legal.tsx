@@ -12,6 +12,7 @@ import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 export default function LegalScreen() {
   const router = useRouter()
   const { t } = useTranslation('legal')
+  const { t: tCommon } = useTranslation('common')
   const { back: backIcon, forward } = useDirectionalIcon()
   const back = () => goBack(router, '/profile')
   const version = Constants.expoConfig?.version ?? '—'
@@ -19,7 +20,7 @@ export default function LegalScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8}>
+        <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8} accessibilityLabel={tCommon('back')}>
           <Ionicons name={backIcon} size={22} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>

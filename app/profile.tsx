@@ -38,6 +38,7 @@ export default function ProfileScreen() {
   const router = useRouter()
   const navigation = useNavigation()
   const { t } = useTranslation('profile')
+  const { t: tCommon } = useTranslation('common')
   const { language, isRTL, setLanguage } = useLanguage()
   const { back: backIcon, forward } = useDirectionalIcon()
   const back = () => goBack(router, '/(tabs)')
@@ -273,7 +274,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8}>
+          <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8} accessibilityLabel={tCommon('back')}>
             <Ionicons name={backIcon} size={22} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>

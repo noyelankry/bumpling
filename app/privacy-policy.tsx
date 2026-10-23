@@ -10,13 +10,14 @@ import { useDirectionalIcon } from '../lib/i18n/useDirectionalIcon'
 export default function PrivacyPolicyScreen() {
   const router = useRouter()
   const { t } = useTranslation('legal')
+  const { t: tCommon } = useTranslation('common')
   const { back: backIcon } = useDirectionalIcon()
   const back = () => goBack(router, '/legal')
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8}>
+        <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8} accessibilityLabel={tCommon('back')}>
           <Ionicons name={backIcon} size={22} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>

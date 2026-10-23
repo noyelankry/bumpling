@@ -16,6 +16,7 @@ const MIN_LENGTH = 8
 export default function ChangePasswordScreen() {
   const router = useRouter()
   const { t } = useTranslation('changePassword')
+  const { t: tCommon } = useTranslation('common')
   const { back: backIcon } = useDirectionalIcon()
   const { isRTL } = useLanguage()
   const back = () => goBack(router, '/profile')
@@ -43,7 +44,7 @@ export default function ChangePasswordScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8}>
+        <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8} accessibilityLabel={tCommon('back')}>
           <Ionicons name={backIcon} size={22} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>

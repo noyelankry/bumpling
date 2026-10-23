@@ -22,6 +22,7 @@ export default function BirthPreferencesScreen() {
   const router = useRouter()
   const { t } = useTranslation('birthPreferences')
   const { t: tTopics } = useTranslation('birthPrefs')
+  const { t: tCommon } = useTranslation('common')
   const { back: backIcon, forward } = useDirectionalIcon()
   const { isRTL } = useLanguage()
   const TOPICS = useMemo(() => getTopics(tTopics), [tTopics])
@@ -121,7 +122,7 @@ export default function BirthPreferencesScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={back} hitSlop={8}>
+        <TouchableOpacity onPress={back} hitSlop={8} accessibilityLabel={tCommon('back')}>
           <Ionicons name={backIcon} size={26} color={colors.textPrimary} />
         </TouchableOpacity>
         <View style={{ alignItems: 'center' }}>

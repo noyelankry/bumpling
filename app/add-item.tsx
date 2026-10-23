@@ -18,6 +18,7 @@ export default function AddItemScreen() {
   const router = useRouter()
   const { t } = useTranslation('addItem')
   const { t: tBusiness } = useTranslation('business')
+  const { t: tCommon } = useTranslation('common')
   const { back: backIcon } = useDirectionalIcon()
   const { isRTL } = useLanguage()
   const back = () => goBack(router, '/(tabs)/plan')
@@ -87,7 +88,7 @@ export default function AddItemScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
 
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8}>
+          <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8} accessibilityLabel={tCommon('back')}>
             <Ionicons name={backIcon} size={22} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>

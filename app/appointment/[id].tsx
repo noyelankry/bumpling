@@ -422,10 +422,11 @@ export default function AppointmentDetailScreen() {
 }
 
 function Header({ onBack, title, backIcon, eyebrow }: { onBack: () => void; title: string; backIcon: 'chevron-back' | 'chevron-forward'; eyebrow?: string }) {
+  const { t: tCommon } = useTranslation('common')
   return (
     <>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={onBack} hitSlop={8}>
+        <TouchableOpacity style={styles.backBtn} onPress={onBack} hitSlop={8} accessibilityLabel={tCommon('back')}>
           <Ionicons name={backIcon} size={22} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>

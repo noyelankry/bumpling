@@ -17,6 +17,7 @@ export default function PrepareForBirthScreen() {
   const router = useRouter()
   const { t } = useTranslation('prepareForBirth')
   const { t: tTopics } = useTranslation('birthPrefs')
+  const { t: tCommon } = useTranslation('common')
   const { back: backIcon, forward, arrowForward } = useDirectionalIcon()
   const back = () => goBack(router, '/(tabs)/plan')
   const [prefs, setPrefs] = useState<BirthPrefsData>(EMPTY_PREFS)
@@ -38,7 +39,7 @@ export default function PrepareForBirthScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={back} hitSlop={8}>
+        <TouchableOpacity onPress={back} hitSlop={8} accessibilityLabel={tCommon('back')}>
           <Ionicons name={backIcon} size={26} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('title')}</Text>

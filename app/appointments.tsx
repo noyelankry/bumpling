@@ -25,6 +25,7 @@ function metaFor(windowStartWeek: number) {
 export default function AppointmentsScreen() {
   const router = useRouter()
   const { t } = useTranslation('appointments')
+  const { t: tCommon } = useTranslation('common')
   const { back: backIcon, forward } = useDirectionalIcon()
   const back = () => goBack(router, '/(tabs)/plan')
   const [items, setItems] = useState<CareItemWithCustom[]>(DEFAULT_CARE_ITEMS)
@@ -60,7 +61,7 @@ export default function AppointmentsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={back} hitSlop={8}>
+        <TouchableOpacity onPress={back} hitSlop={8} accessibilityLabel={tCommon('back')}>
           <Ionicons name={backIcon} size={26} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('title')}</Text>

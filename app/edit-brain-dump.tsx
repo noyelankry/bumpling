@@ -19,6 +19,7 @@ export default function EditBrainDumpScreen() {
   const router = useRouter()
   const { t } = useTranslation('editBrainDump')
   const { t: tTag } = useTranslation('brainDump')
+  const { t: tCommon } = useTranslation('common')
   const { back: backIcon, forward } = useDirectionalIcon()
   const { isRTL } = useLanguage()
   const KIND_OPTIONS: { kind: EntryKind; icon: IoniconsName; label: string }[] = [
@@ -123,7 +124,7 @@ export default function EditBrainDumpScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8}>
+          <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8} accessibilityLabel={tCommon('back')}>
             <Ionicons name={backIcon} size={22} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>
@@ -138,7 +139,7 @@ export default function EditBrainDumpScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8}>
+          <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8} accessibilityLabel={tCommon('back')}>
             <Ionicons name={backIcon} size={22} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>
@@ -154,7 +155,7 @@ export default function EditBrainDumpScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
 
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8}>
+          <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8} accessibilityLabel={tCommon('back')}>
             <Ionicons name={backIcon} size={22} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>

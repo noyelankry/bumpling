@@ -8,8 +8,8 @@
   "thingsToReview_two": "{{count}} דברים לבדיקה",
   "thingsToReview_other": "{{count}} דברים לבדיקה",
   "targetDates": "טווח תאריכים: {{range}}",
-  "nothingYet": "אין עדיין כלום בתוכנית שלך — נציג בדיקות כשהן יהפכו לרלוונטיות.",
-  "canUpdateAnytime": "את יכולה לעדכן את זה בכל זמן.",
-  "saveCompleted": "שמור פעולות שהושלמו",
+  "nothingYet": "אין עדיין כלום בתוכנית שלך — נציג בדיקות כשיגיע הזמן שלהן.",
+  "canUpdateAnytime": "תמיד אפשר לעדכן את זה.",
+  "saveCompleted": "שמור פריטים שהושלמו",
   "continue": "המשך"
 }

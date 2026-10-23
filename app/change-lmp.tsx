@@ -17,6 +17,7 @@ const MAX_WEEKS_BACK = 43
 export default function ChangeLmpScreen() {
   const router = useRouter()
   const { t } = useTranslation('changeLmp')
+  const { t: tCommon } = useTranslation('common')
   const { back: backIcon } = useDirectionalIcon()
   const back = () => goBack(router, '/profile')
   const [date, setDate] = useState<Date | null>(null)
@@ -46,7 +47,7 @@ export default function ChangeLmpScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8}>
+        <TouchableOpacity style={styles.backBtn} onPress={back} hitSlop={8} accessibilityLabel={tCommon('back')}>
           <Ionicons name={backIcon} size={22} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>

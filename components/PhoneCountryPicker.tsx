@@ -54,7 +54,7 @@ export default function PhoneCountryPicker({ value, onChange, label }: Props) {
 }
 
 const styles = StyleSheet.create({
-  trigger:  { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2, paddingRight: 8 },
+  trigger:  { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2, paddingEnd: 8 },
   flag:     { fontSize: 17 },
   dialCode: { fontSize: 15, color: colors.textPrimary, fontWeight: '600' },
 
