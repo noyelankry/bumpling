@@ -114,6 +114,7 @@ export default function Auth() {
       if (mode === 'signin') {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) { showAlert(error.message); setLoading(false); return }
+        await AsyncStorage.removeItem(DEV_BYPASS_KEY)
         if (data.user) await writeConsentIfMissing(data.user.id)
         const joined = await redeemCodeIfPresent()
         setLoading(false)
@@ -127,6 +128,7 @@ export default function Auth() {
         return
       }
       if (data.user && data.session) {
+        await AsyncStorage.removeItem(DEV_BYPASS_KEY)
         await writeConsentIfMissing(data.user.id)
         const joined = await redeemCodeIfPresent()
         setLoading(false)

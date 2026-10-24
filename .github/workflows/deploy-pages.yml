@@ -1,8 +1,11 @@
 name: Deploy web preview to GitHub Pages
 
+# Manual only, deliberately — a push to master no longer auto-deploys. The
+# public preview is meant to be a controlled snapshot (currently pre-backend,
+# placeholder-Supabase build), not whatever happens to be on master at any
+# given moment. Trigger via "Run workflow" in the Actions tab when a new
+# snapshot is actually ready to go public.
 on:
-  push:
-    branches: [master]
   workflow_dispatch:
 
 permissions:

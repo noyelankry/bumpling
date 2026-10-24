@@ -20,7 +20,7 @@
   "painRelief": {
     "navLabel": "Pain relief",
     "question": "What kind of pain relief approach feels most like you?",
-    "subtitle": "You don't need to decide everything now — this just helps you reflect.",
+    "subtitle": "You don't need to decide everything now. This just helps you reflect.",
     "options": {
       "knowOptions": { "label": "I'd like to know all my options", "summary": "Open to options, unsure about epidural" },
       "openEpidural": { "label": "Open to epidural", "summary": "Open to epidural" },
@@ -59,7 +59,7 @@
   "afterBirth": {
     "navLabel": "After birth",
     "question": "What matters most to you right after birth?",
-    "subtitle": "The first moments can look different ways — what feels right to you?",
+    "subtitle": "The first moments can look different ways. What feels right to you?",
     "options": {
       "skinToSkin": { "label": "Skin-to-skin as soon as possible", "summary": "Skin-to-skin if possible" },
       "delayedCord": { "label": "Delayed cord clamping", "summary": "Delayed cord clamping" },
@@ -70,7 +70,7 @@
   "feeding": {
     "navLabel": "Feeding",
     "question": "How are you thinking about feeding?",
-    "subtitle": "This is just a starting point — babies change the plan often!",
+    "subtitle": "This is just a starting point. Babies change the plan often!",
     "options": {
       "breast": { "label": "Breastfeeding if possible", "summary": "Breastfeeding if possible" },
       "combo": { "label": "Combination feeding", "summary": "Combination feeding" },

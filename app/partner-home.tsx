@@ -6,15 +6,20 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useTranslation } from 'react-i18next'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { colors, spacing, radius, fonts } from '../lib/theme'
 import { supabase } from '../lib/supabase'
+import { DEV_BYPASS_KEY } from '../lib/devBypass'
 import { BabyMark } from '../components/illustrations'
 
 export default function PartnerHomeScreen() {
   const { t } = useTranslation('partnerHome')
 
   function signOut() {
-    const doSignOut = () => supabase.auth.signOut()
+    const doSignOut = async () => {
+      await supabase.auth.signOut()
+      await AsyncStorage.removeItem(DEV_BYPASS_KEY)
+    }
     if (Platform.OS === 'web') {
       if (window.confirm(t('signOutConfirm'))) doSignOut()
       return

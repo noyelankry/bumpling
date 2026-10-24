@@ -8,5 +8,5 @@
   "successTitle": "Updated",
   "successMessage": "Your dates have been recalculated.",
   "error": "Error",
-  "saveFailed": "Couldn't save that — check your connection and try again."
+  "saveFailed": "Couldn't save that. Check your connection and try again."
 }

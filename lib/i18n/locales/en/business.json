@@ -1,6 +1,6 @@
 {
   "calendar": {
-    "webUnavailable": "Calendar sync isn't available in the web preview — this works on iOS and Android.",
+    "webUnavailable": "Calendar sync isn't available in the web preview. This works on iOS and Android.",
     "permissionDenied": "Calendar access was denied. You can allow it in Settings and try again.",
     "noCalendarFound": "Couldn't find a calendar on this device to add it to.",
     "added": "Added to your calendar."

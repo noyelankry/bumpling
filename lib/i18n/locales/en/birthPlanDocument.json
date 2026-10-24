@@ -1,7 +1,7 @@
 {
   "defaultMomName": "Mom",
   "unnamed": "Unnamed",
-  "headerTitle": "Birth Plan — {{name}}",
+  "headerTitle": "Birth Plan: {{name}}",
   "preparedOn": "Prepared with Bumpling on {{date}}",
   "forCareTeam": "For my care team",
   "momsContact": "Mom's contact",
@@ -12,7 +12,7 @@
   "noContactsYet": "No support contacts added yet.",
   "preferences": "Preferences",
   "notSetYet": "Not set yet",
-  "unpredictableNote": "Birth can be unpredictable — these preferences may change, and that's okay.",
+  "unpredictableNote": "Birth can be unpredictable, so these preferences may change, and that's okay.",
   "exportError": "Couldn't create the PDF. Please try again.",
   "shareDialogTitle": "Share birth plan"
 }

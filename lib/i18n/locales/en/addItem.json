@@ -6,7 +6,7 @@
   "titlePlaceholder": "e.g. Dentist checkup, or Baby shower",
   "dateLabel": "Date",
   "datePlaceholder": "Select a date",
-  "outsideWindow": "That's outside the recommended window ({{range}}). Doctors' schedules don't always line up — you can still save it.",
+  "outsideWindow": "That's outside the recommended window ({{range}}). Doctors' schedules don't always line up. You can still save it.",
   "timeLabel": "Time (optional)",
   "timePlaceholder": "e.g. 10:30 AM",
   "locationLabel": "Location (optional)",
